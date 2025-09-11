@@ -1,13 +1,13 @@
-# Universal Registrar Driver: did:btc1
+# Universal Registrar Driver: did:btcr2
 
-This is a [Universal Registrar](https://github.com/decentralized-identity/universal-registrar/) driver for **did:btc1** identifiers.
+This is a [Universal Registrar](https://github.com/decentralized-identity/universal-registrar/) driver for **did:btcr2** identifiers.
 
 (work in progress)
 
 ## Specifications
 
 * [Decentralized Identifiers](https://w3c.github.io/did-core/)
-* [DID Method Specification](https://dcdpr.github.io/did-btc1/)
+* [DID Method Specification](https://dcdpr.github.io/did-btcr2/)
 
 ## Build and Run (Docker)
 
@@ -19,7 +19,7 @@ docker compose up
 ## Example Requests
 
 ```shell
-curl -X POST "http://localhost:9080/1.0/create?method=btc1" \
+curl -X POST "http://localhost:9080/1.0/create?method=btcr2" \
      -H "Content-Type: application/json" \
      -d '{
        "didDocument": {
@@ -34,7 +34,7 @@ curl -X POST "http://localhost:9080/1.0/create?method=btc1" \
 ```
 
 ```shell
-curl -X POST "http://localhost:9080/1.0/create?method=btc1" \
+curl -X POST "http://localhost:9080/1.0/create?method=btcr2" \
      -H "Content-Type: application/json" \
      -d '{
        "didDocument" : {
@@ -61,7 +61,7 @@ curl -X POST "http://localhost:9080/1.0/create?method=btc1" \
 
 The driver recognizes the following environment variables:
 
-### `uniregistrar_driver_did_btc1_bitcoinConnections`
+### `uniregistrar_driver_did_btcr2_bitcoinConnections`
 
 * Specifies how the driver interacts with the Bitcoin blockchain.
 * Possible values:
@@ -72,11 +72,11 @@ The driver recognizes the following environment variables:
     * `esploraelectrsrest`: Connects to Esplora/Electrs REST API
 * Default value: `bitcoind`
 
-### `uniregistrar_driver_did_btc1_bitcoinConnectionsUrls`
+### `uniregistrar_driver_did_btcr2_bitcoinConnectionsUrls`
 
 * Specifies the JSON-RPC URLs of the Bitcoin connections.
 
-### `uniregistrar_driver_did_btc1_bitcoinConnectionsCerts`
+### `uniregistrar_driver_did_btcr2_bitcoinConnectionsCerts`
 
 * Specifies the server TLS certificates of the Bitcoin connections.
 * Default value: ``

@@ -9,7 +9,7 @@
 	</Appenders>
 
 	<Loggers>
-		<Logger name="uniregistrar.driver.did.btc1" level="debug" additivity="false">
+		<Logger name="uniregistrar.driver.did.btcr2" level="debug" additivity="false">
 			<AppenderRef ref="Console"/>
 		</Logger>
 		<Logger name="org.bitcoinj.net" level="error" additivity="false">

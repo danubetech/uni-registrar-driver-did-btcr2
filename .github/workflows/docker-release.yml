@@ -18,7 +18,7 @@ jobs:
   docker-release:
     uses: danubetech/workflows/.github/workflows/docker-release.yml@main
     with:
-      GLOBAL_IMAGE_NAME: universalregistrar/driver-did-btc1
+      GLOBAL_IMAGE_NAME: universalregistrar/driver-did-btcr2
       GLOBAL_REPO_NAME: docker.io
       GLOBAL_FRAMEWORK: maven
       PATH_TO_DOCKERFILE: docker/Dockerfile

@@ -4,7 +4,7 @@
 	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
 	id="WebApp_ID" version="2.5" metadata-complete="true">
 
-	<display-name>uni-registrar-driver-did-btc1</display-name>
+	<display-name>uni-registrar-driver-did-btcr2</display-name>
 
 	<!-- SERVLET -->
 
@@ -14,7 +14,7 @@
 		<servlet-class>uniregistrar.driver.servlet.InitServlet</servlet-class>
 		<init-param>
 			<param-name>Driver</param-name>
-			<param-value>uniregistrar.driver.did.btc1.DidBtc1Driver</param-value>
+			<param-value>uniregistrar.driver.did.btcr2.DidBtcr2Driver</param-value>
 		</init-param>
 		<load-on-startup>1</load-on-startup>
 	</servlet>
