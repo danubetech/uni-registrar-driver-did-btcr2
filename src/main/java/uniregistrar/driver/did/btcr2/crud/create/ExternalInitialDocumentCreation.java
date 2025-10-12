@@ -68,10 +68,10 @@ public class ExternalInitialDocumentCreation {
 
         DIDDocument initialDocument = JsonLDUtil.copy(intermediateDocument, DIDDocument.class);
 
-        // Replace all did:btcr2:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx values in the initialDocument with the did.
+        // Replace all did:btcr2:_ values in the initialDocument with the did.
 
         try {
-            initialDocument = objectMapper.readValue(objectMapper.writeValueAsString(initialDocument).replace("did:btcr2:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", did.getDidString()), DIDDocument.class);
+            initialDocument = objectMapper.readValue(objectMapper.writeValueAsString(initialDocument).replace("did:btcr2:_", did.getDidString()), DIDDocument.class);
         } catch (JsonProcessingException ex) {
             throw new RuntimeException(ex);
         }

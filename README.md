@@ -23,7 +23,7 @@ curl -X POST "http://localhost:9080/1.0/create?method=btcr2" \
      -H "Content-Type: application/json" \
      -d '{
        "didDocument": {
-         "@context": ["https://www.w3.org/ns/did/v1"]
+         "@context": ["https://www.w3.org/TR/did-1.1", "https://btcr2.dev/context/v1"]
        },
        "options": {
          "clientSecretMode": true,
@@ -38,7 +38,7 @@ curl -X POST "http://localhost:9080/1.0/create?method=btcr2" \
      -H "Content-Type: application/json" \
      -d '{
        "didDocument" : {
-         "@context": ["https://www.w3.org/ns/did/v1"],
+         "@context": ["https://www.w3.org/TR/did-1.1", "https://btcr2.dev/context/v1"],
          "verificationMethod" : [ {
            "type" : "Multikey",
            "id" : "#initialKey",
