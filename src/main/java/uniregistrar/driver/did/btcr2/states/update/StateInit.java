@@ -18,6 +18,7 @@ import uniregistrar.driver.did.btcr2.job.Job;
 import uniregistrar.driver.did.btcr2.job.JobRegistry;
 import uniregistrar.driver.did.btcr2.ledger.DidDocUnAssembler;
 import uniregistrar.driver.did.btcr2.util.MulticodecUtil;
+import uniregistrar.openapi.model.DidDocument;
 import uniregistrar.openapi.model.UpdateRequest;
 import uniregistrar.openapi.model.UpdateState;
 
@@ -47,7 +48,8 @@ public class StateInit {
             throw new RegistrationException(RegistrationException.ERROR_INVALID_DID, "Invalid DID: " + updateRequest.getDid());
         }
 
-        DIDDocument didDocument = objectMapper.convertValue(updateRequest.getDidDocument(), DIDDocument.class);
+        List<DidDocument> didDocumentList = updateRequest.getDidDocument();
+        DIDDocument didDocument = (didDocumentList == null || didDocumentList.isEmpty()) ? null : objectMapper.convertValue(didDocumentList.getFirst(), DIDDocument.class);
 
         Network network = updateRequest.getOptions() == null ? null : (updateRequest.getOptions().getAdditionalProperty("network") == null ? null : Network.valueOf((String) updateRequest.getOptions().getAdditionalProperty("network")));
         if (network == null) network = Network.bitcoin;
