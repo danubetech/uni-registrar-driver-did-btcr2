@@ -87,10 +87,10 @@ public class TransitionInit {
 
         List<VerificationMethodTemplate> verificationMethodList = List.of(initialVerificationMethodTemplate, finishedVerificationMethodTemplate);
 
-        SecretVerificationMethodInner secretVerificationMethodInner = new SecretVerificationMethodInner();
-        secretVerificationMethodInner.setActualInstance(verificationMethodList);
+        DidStateSecretVerificationMethodInner didStateSecretVerificationMethodInner = new DidStateSecretVerificationMethodInner();
+        didStateSecretVerificationMethodInner.setActualInstance(verificationMethodList);
 
-        didStateSecret.setVerificationMethod(Collections.singletonList(secretVerificationMethodInner));
+        didStateSecret.setVerificationMethod(Collections.singletonList(didStateSecretVerificationMethodInner));
 
         // REGISTRATION STATE: didState.didDocument
 
