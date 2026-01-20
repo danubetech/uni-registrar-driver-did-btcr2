@@ -6,7 +6,7 @@
 	<artifactId>uni-registrar-driver-did-btcr2</artifactId>
 	<packaging>${packaging.type}</packaging>
 	<name>uni-registrar-driver-did-btcr2</name>
-	<version>0.2-SNAPSHOT</version>
+	<version>0.3-SNAPSHOT</version>
 
 	<parent>
 		<groupId>decentralized-identity</groupId>
