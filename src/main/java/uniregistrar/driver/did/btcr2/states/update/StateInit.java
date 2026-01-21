@@ -72,10 +72,6 @@ public class StateInit {
             return TransitionInit.transitionToInitGetVerificationMethod(bitcoinConnection);
         }
 
-        // unassemble DID document content
-
-        Map<String, Object> unassembledDIDDocumentContent = DidDocUnAssembler.unassembleDIDDocumentContent(didDocument);
-
         // prepare pubKeyBytes
 
         byte[] pubKeyBytes = MulticodecUtil.removeMulticodec(Multibase.decode(unassembledBtcr2InitialKey), MulticodecUtil.MULTICODEC_SECP256K1_PUB);
@@ -83,7 +79,7 @@ public class StateInit {
 
         // prepare sourceDocument
 
-        DIDDocument sourceDocument = unassembledDIDDocumentContent == null ? null : DIDDocument.fromMap(unassembledDIDDocumentContent);
+        DIDDocument sourceDocument = didDocument;
         if (log.isDebugEnabled()) log.debug("sourceDocument: {}", sourceDocument == null ? null : sourceDocument.toJson());
 
         // DID DOCUMENT METADATA

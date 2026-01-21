@@ -74,7 +74,7 @@ public class StateInit {
 
         // prepare intermediateDocument
 
-        DIDDocument intermediateDocument = unassembledDIDDocumentContent == null ? null : DIDDocument.fromMap(unassembledDIDDocumentContent);
+        DIDDocument intermediateDocument = unassembledDIDDocumentContent == null ? null : didDocument;
         if (log.isDebugEnabled()) log.debug("intermediateDocument: {}", intermediateDocument == null ? null : intermediateDocument.toJson());
 
         // DID DOCUMENT METADATA
