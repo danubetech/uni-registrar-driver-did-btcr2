@@ -2,8 +2,6 @@
 
 This is a [Universal Registrar](https://github.com/decentralized-identity/universal-registrar/) driver for **did:btcr2** identifiers.
 
-(work in progress)
-
 ## Specifications
 
 * [Decentralized Identifiers](https://w3c.github.io/did-core/)
