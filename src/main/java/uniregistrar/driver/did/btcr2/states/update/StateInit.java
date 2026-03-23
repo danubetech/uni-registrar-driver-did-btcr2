@@ -34,7 +34,7 @@ public class StateInit {
     public static final int STATE = 0;
 
     static {
-        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        objectMapper.setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL);
     }
 
     public static UpdateState update(JobRegistry jobRegistry, Job job, UpdateRequest updateRequest, Update update, BitcoinConnector bitcoinConnector) throws RegistrationException {
@@ -61,11 +61,11 @@ public class StateInit {
             throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Unknown network: " + network);
         }
 
-        // unassemble btcr2InitialKey
+        // unassemble initialKey
 
-        String unassembledBtcr2InitialKey = DidDocUnAssembler.unassembleBtcr2InitialKey(didDocument);
+        String unassembledInitialKey = DidDocUnAssembler.unassembleInitialKey(didDocument);
 
-        if (unassembledBtcr2InitialKey == null) {
+        if (unassembledInitialKey == null) {
 
             // next state
 
@@ -74,7 +74,7 @@ public class StateInit {
 
         // prepare pubKeyBytes
 
-        byte[] pubKeyBytes = MulticodecUtil.removeMulticodec(Multibase.decode(unassembledBtcr2InitialKey), MulticodecUtil.MULTICODEC_SECP256K1_PUB);
+        byte[] pubKeyBytes = MulticodecUtil.removeMulticodec(Multibase.decode(unassembledInitialKey), MulticodecUtil.MULTICODEC_SECP256K1_PUB);
         if (log.isDebugEnabled()) log.debug("pubKeyBytes: {}", Hex.encode(pubKeyBytes));
 
         // prepare sourceDocument

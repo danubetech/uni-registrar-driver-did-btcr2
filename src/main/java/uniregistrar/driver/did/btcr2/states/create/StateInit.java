@@ -1,7 +1,7 @@
 package uniregistrar.driver.did.btcr2.states.create;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import foundation.identity.did.DID;
 import foundation.identity.did.DIDDocument;
 import fr.acinq.secp256k1.Hex;
@@ -26,19 +26,18 @@ import java.util.Map;
 public class StateInit {
 
     private static final Logger log = LoggerFactory.getLogger(StateInit.class);
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+
+    private static final JsonMapper jsonMapper = JsonMapper.builder()
+            .defaultPropertyInclusion(JsonInclude.Value.ALL_NON_NULL)
+            .build();
 
     public static final int STATE = 0;
-
-    static {
-        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-    }
 
     public static CreateState create(JobRegistry jobRegistry, Job job, CreateRequest createRequest, Create create, BitcoinConnector bitcoinConnector) throws RegistrationException {
 
         // read input fields
 
-        DIDDocument didDocument = objectMapper.convertValue(createRequest.getDidDocument(), DIDDocument.class);
+        DIDDocument didDocument = jsonMapper.convertValue(createRequest.getDidDocument(), DIDDocument.class);
 
         Integer version = createRequest.getOptions() == null ? null : (createRequest.getOptions().getAdditionalProperty("version") == null ? null : ((Number) createRequest.getOptions().getAdditionalProperty("version")).intValue());
 
@@ -52,29 +51,26 @@ public class StateInit {
             throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Unknown network: " + network);
         }
 
-        // unassemble btcr2InitialKey
+        // unassemble initialKey
 
-        String unassembledBtcr2InitialKey = DidDocUnAssembler.unassembleBtcr2InitialKey(didDocument);
-
-        if (unassembledBtcr2InitialKey == null) {
-
+        String unassembledInitialKey = DidDocUnAssembler.unassembleInitialKey(didDocument);
+        if (unassembledInitialKey == null) {
             // next state
-
             return TransitionInit.transitionToInitGetVerificationMethod(bitcoinConnection);
         }
 
-        // unassemble DID document content
+        // unassemble genesisDocument
 
-        Map<String, Object> unassembledDIDDocumentContent = DidDocUnAssembler.unassembleDIDDocumentContent(didDocument);
+        Map<String, Object> unassembledGenesisDocument = DidDocUnAssembler.unassembleGenesisDocument(didDocument);
 
         // prepare pubKeyBytes
 
-        byte[] pubKeyBytes = MulticodecUtil.removeMulticodec(Multibase.decode(unassembledBtcr2InitialKey), MulticodecUtil.MULTICODEC_SECP256K1_PUB);
+        byte[] pubKeyBytes = MulticodecUtil.removeMulticodec(Multibase.decode(unassembledInitialKey), MulticodecUtil.MULTICODEC_SECP256K1_PUB);
         if (log.isDebugEnabled()) log.debug("pubKeyBytes: {}", Hex.encode(pubKeyBytes));
 
         // prepare intermediateDocument
 
-        DIDDocument intermediateDocument = unassembledDIDDocumentContent == null ? null : didDocument;
+        DIDDocument intermediateDocument = unassembledGenesisDocument == null ? null : didDocument;
         if (log.isDebugEnabled()) log.debug("intermediateDocument: {}", intermediateDocument == null ? null : intermediateDocument.toJson());
 
         // DID DOCUMENT METADATA

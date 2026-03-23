@@ -3,6 +3,7 @@ package uniregistrar.driver.did.btcr2.ledger;
 import foundation.identity.did.DIDDocument;
 import foundation.identity.did.VerificationMethod;
 import foundation.identity.did.jsonld.DIDContexts;
+import foundation.identity.jsonld.JsonLDDereferencer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,38 +24,38 @@ public class DidDocUnAssembler {
 
     private static final Logger log = LoggerFactory.getLogger(DidDocUnAssembler.class);
 
-    public static String unassembleBtcr2InitialKey(DIDDocument didDocument) {
+    public static String unassembleInitialKey(DIDDocument didDocument) {
 
-        String unassembledBtcr2InitialKey = null;
+        if (didDocument == null) return null;
+
+        String unassembledInitialKey = null;
 
         try {
 
-            if (didDocument == null) return null;
-
-            VerificationMethod verificationMethodInitialKey = findVerificationMethodInitialKey(didDocument);
+            VerificationMethod verificationMethodInitialKey = (VerificationMethod) JsonLDDereferencer.findByIdInJsonLdObject(didDocument, RELATIVE_ID_INITIALKEY, null);
             if (verificationMethodInitialKey == null) return null;
 
-            if (!"Multikey".equals(verificationMethodInitialKey.getType())) {
+            if (! "Multikey".equals(verificationMethodInitialKey.getType())) {
                 if (log.isWarnEnabled()) log.warn("Unexpected type for '#initialKey' verification method " + verificationMethodInitialKey.getId() + ": " + verificationMethodInitialKey.getType());
                 return null;
             }
 
-            unassembledBtcr2InitialKey = verificationMethodInitialKey.getPublicKeyMultibase();
-            return unassembledBtcr2InitialKey;
+            unassembledInitialKey = verificationMethodInitialKey.getPublicKeyMultibase();
+            return unassembledInitialKey;
         } finally {
 
-            if (log.isDebugEnabled()) log.debug("Unassembled btcr2Initialkey: " + unassembledBtcr2InitialKey);
+            if (log.isDebugEnabled()) log.debug("Unassembled btcr2Initialkey: " + unassembledInitialKey);
         }
     }
 
-    public static Map<String, Object> unassembleDIDDocumentContent(DIDDocument didDocument) {
+    public static Map<String, Object> unassembleGenesisDocument(DIDDocument didDocument) {
 
         if (didDocument == null) return null;
 
-        Map<String, Object> unassembledDIDDocumentContent = new TreeMap<>(didDocument.toMap());
+        Map<String, Object> unassembledGenesisDocument = new TreeMap<>(didDocument.toMap());
 
         String id = didDocument.getId() == null ? null : didDocument.getId().toString();
-        unassembledDIDDocumentContent.remove("id");
+        unassembledGenesisDocument.remove("id");
 
         List<String> unassembledContexts = didDocument.getContexts() == null ? null : didDocument.getContexts()
                 .stream()
@@ -91,40 +92,40 @@ public class DidDocUnAssembler {
         if (log.isDebugEnabled()) log.debug("Unassembled ' capabilityDelegation': " + unassembledCapabilityDelegations);
 
         if (unassembledContexts != null && ! unassembledContexts.isEmpty()) {
-            unassembledDIDDocumentContent.put("@context", unassembledContexts);
+            unassembledGenesisDocument.put("@context", unassembledContexts);
         } else {
-            unassembledDIDDocumentContent.remove("@context");
+            unassembledGenesisDocument.remove("@context");
         }
         if (unassembledVerificationMethods != null && ! unassembledVerificationMethods.isEmpty()) {
-            unassembledDIDDocumentContent.put("verificationMethod", unassembledVerificationMethods);
+            unassembledGenesisDocument.put("verificationMethod", unassembledVerificationMethods);
         } else {
-            unassembledDIDDocumentContent.remove("verificationMethod");
+            unassembledGenesisDocument.remove("verificationMethod");
         }
         if (unassembledAuthentications != null && ! unassembledAuthentications.isEmpty()) {
-            unassembledDIDDocumentContent.put("authentication", unassembledAuthentications);
+            unassembledGenesisDocument.put("authentication", unassembledAuthentications);
         } else {
-            unassembledDIDDocumentContent.remove("authentication");
+            unassembledGenesisDocument.remove("authentication");
         }
         if (unassembledAssertionMethods != null && ! unassembledAssertionMethods.isEmpty()) {
-            unassembledDIDDocumentContent.put("assertionMethod", unassembledAssertionMethods);
+            unassembledGenesisDocument.put("assertionMethod", unassembledAssertionMethods);
         } else {
-            unassembledDIDDocumentContent.remove("assertionMethod");
+            unassembledGenesisDocument.remove("assertionMethod");
         }
         if (unassembledCapabilityInvocations != null && ! unassembledCapabilityInvocations.isEmpty()) {
-            unassembledDIDDocumentContent.put("capabilityInvocation", unassembledCapabilityInvocations);
+            unassembledGenesisDocument.put("capabilityInvocation", unassembledCapabilityInvocations);
         } else {
-            unassembledDIDDocumentContent.remove("capabilityInvocation");
+            unassembledGenesisDocument.remove("capabilityInvocation");
         }
         if (unassembledCapabilityDelegations != null && ! unassembledCapabilityDelegations.isEmpty()) {
-            unassembledDIDDocumentContent.put("capabilityDelegation", unassembledCapabilityDelegations);
+            unassembledGenesisDocument.put("capabilityDelegation", unassembledCapabilityDelegations);
         } else {
-            unassembledDIDDocumentContent.remove("capabilityDelegation");
+            unassembledGenesisDocument.remove("capabilityDelegation");
         }
 
-        if (unassembledDIDDocumentContent.isEmpty()) unassembledDIDDocumentContent = null;
+        if (unassembledGenesisDocument.isEmpty()) unassembledGenesisDocument = null;
 
-        if (log.isDebugEnabled()) log.debug("Unassembled DID document content: " + unassembledDIDDocumentContent);
-        return unassembledDIDDocumentContent;
+        if (log.isDebugEnabled()) log.debug("Unassembled DID document content: " + unassembledGenesisDocument);
+        return unassembledGenesisDocument;
     }
 
     private static boolean removeContext(URI context) {
@@ -165,28 +166,5 @@ public class DidDocUnAssembler {
 
         if (log.isDebugEnabled()) log.debug("Remove 'authentication' " + authentication + " (" + (authentication == null ? null : authentication.getClass().getSimpleName()) + ") for id " + id + ": " + remove);
         return remove;
-    }
-
-    /*
-     * Helper methods
-     */
-
-    private static VerificationMethod findVerificationMethodInitialKey(DIDDocument didDocument) {
-
-        if (didDocument.getVerificationMethods() == null) return null;
-
-        URI absoluteIdVerkey = didDocument.getId() == null ? null : URI.create(didDocument.getId().toString() + RELATIVE_ID_INITIALKEY);
-
-        VerificationMethod verificationMethodInitialkey = null;
-        for (VerificationMethod verificationMethod : didDocument.getVerificationMethods()) {
-            if (verificationMethod == null || verificationMethod.getId() == null) continue;
-            if (verificationMethod.getId().equals(RELATIVE_ID_INITIALKEY) || verificationMethod.getId().equals(absoluteIdVerkey)) {
-                verificationMethodInitialkey = verificationMethod;
-                break;
-            }
-        }
-
-        if (log.isDebugEnabled()) log.debug("Found '#initialKey' verification method: " + verificationMethodInitialkey);
-        return verificationMethodInitialkey;
     }
 }
