@@ -1,101 +1,216 @@
 package uniregistrar.driver.did.btcr2.crud.update;
 
-import foundation.identity.did.DID;
-import foundation.identity.did.DIDDocument;
+import com.danubetech.dataintegrity.signer.DataIntegrityProofLdSigner;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import foundation.identity.did.DIDDocumentV1_1;
 import foundation.identity.did.VerificationMethod;
-import foundation.identity.jsonld.JsonLDObject;
+import foundation.identity.jsonld.JsonLDDereferencer;
+import foundation.identity.jsonld.JsonLDException;
 import jakarta.json.JsonPatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
+import uniregistrar.driver.did.btcr2.algorithms.JSONDocumentHashing;
 import uniregistrar.driver.did.btcr2.connections.bitcoin.BitcoinConnector;
 import uniregistrar.driver.did.btcr2.connections.ipfs.IPFSConnection;
+import uniregistrar.driver.did.btcr2.data.jsonld.BTCR2Update;
+import uniregistrar.driver.did.btcr2.util.JSONPatchUtil;
+import uniregistrar.openapi.model.SigningResponse;
+import uniregistrar.openapi.model.VerificationMethodPublicData;
 
+import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
 public class Update {
 
+    private static final String BTCR2_UNSIGNED_UPDATE_TEMPLATE =
+            """
+                {
+                  "@context": [
+                    "https://w3id.org/security/v2",
+                    "https://w3id.org/zcap/v1",
+                    "https://w3id.org/json-ld-patch/v1",
+                    "https://btcr2.dev/context/v1"
+                  ],
+                  "patch": {{array-of-patches}},
+                  "sourceHash": "{{source-hash}}",
+                  "targetHash": "{{target-hash}}",
+                  "targetVersionId": {{target-version-id}}
+                }
+            """;
+
+    private static final String DATA_INTEGRITY_TEMPLATE =
+            """
+                {
+                  "@context": [
+                    "https://w3id.org/security/v2",
+                    "https://w3id.org/zcap/v1",
+                    "https://w3id.org/json-ld-patch/v1",
+                    "https://btcr2.dev/context/v1"
+                  ],
+                  "type": "DataIntegrityProof",
+                  "cryptosuite": "bip340-jcs-2025",
+                  "verificationMethod": "{{ verification-method }}",
+                  "proofPurpose": "capabilityInvocation",
+                  "capability": "{{ capability }}",
+                  "capabilityAction": "Write"
+                }
+            """;
+
     private static final Logger log = LoggerFactory.getLogger(Update.class);
 
-    private ConstructBTCR2Update constructBTCR2Update;
-    private InvokeBTCR2Update invokeBTCR2Update;
-    private AnnounceDIDUpdate announceDIDUpdate;
+    private static final JsonMapper jsonMapper = JsonMapper.builder()
+            .build();
+
+    private BitcoinConnector bitcoinConnector;
+    private IPFSConnection ipfsConnection;
 
     public Update(BitcoinConnector bitcoinConnector, IPFSConnection ipfsConnection) {
-        this.constructBTCR2Update = new ConstructBTCR2Update(this, bitcoinConnector, ipfsConnection);
-        this.invokeBTCR2Update = new InvokeBTCR2Update(this, bitcoinConnector, ipfsConnection);
-        this.announceDIDUpdate = new AnnounceDIDUpdate(this, bitcoinConnector, ipfsConnection);
+        this.bitcoinConnector = bitcoinConnector;
+        this.ipfsConnection = ipfsConnection;
     }
 
     /*
-     * 7.3 Update
+     * Update
+     * See https://dcdpr.github.io/did-btcr2/operations/update.html
      */
 
-    // See https://dcdpr.github.io/did-btcr2/#update
-    public List<Map<String, Object>> update(DID identifier, DIDDocument sourceDocument, Integer sourceVersionId, JsonPatch documentPatch, URI verificationMethodId, List<URI> beaconIds, /* TODO: extra, not in spec */ Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public List<Map<String, Object>> update(DIDDocumentV1_1 didSourceDocument, List<JsonPatch> jsonPatches, Integer targetVersionId, VerificationMethodPublicData verificationMethodPublicData, SigningResponse signingResponse, Map<String, Object> didDocumentMetadata) throws RegistrationException, GetVerificationMethodException, SignPayloadException {
 
-        // Set unsecuredUpdate to the result of passing btcr2Identifier,
-        // sourceDocument, sourceVersionId, and documentPatch into the Construct BTCR2 Update algorithm.
+        URI verificationMethodId = null;
+        if (verificationMethodPublicData != null) verificationMethodId = URI.create(verificationMethodPublicData.getId());
+        if (signingResponse != null) verificationMethodId = URI.create(signingResponse.getKid());
 
-        JsonLDObject unsecuredUpdate = this.getConstructDIDUpdatePayload().constructBTCR2Update(identifier, sourceDocument, sourceVersionId, documentPatch, didDocumentMetadata);
+        /*
+         * Construct BTCR2 Unsigned Update
+         * See https://dcdpr.github.io/did-btcr2/operations/update.html#construct-btcr2-unsigned-update
+         */
 
-        // Set verificationMethod to the result of retrieving the verificationMethod from sourceDocument using
-        // the verificationMethodId.
+        // Apply all JSON patches in jsonPatches to didSourceDocument to create didTargetDocument.
 
-        VerificationMethod verificationMethod = sourceDocument.getVerificationMethods().stream().filter(v -> verificationMethodId.equals(v.getId())).findFirst().orElse(null);
-        if (verificationMethod == null) throw new RegistrationException("invalidVerificationMethod", "Verification method not found: " + verificationMethodId);
+        DIDDocumentV1_1 didTargetDocument = didSourceDocument;
+        for (JsonPatch jsonPatch : jsonPatches) didTargetDocument = JSONPatchUtil.apply(didTargetDocument, jsonPatch);
 
-        // Validate the verificationMethod is a BIP340 Multikey:
-        // verificationMethod.type == Multikey
-        // verificationMethod.publicKeyMultibase[4] == zQ3s
+        // Fill the BTCR2 Unsigned Update (data structure) template below with the required template variables.
 
-        if (! "MultiKey".equals(verificationMethod.getType()) || ! "zQ3s".equals(verificationMethod.getPublicKeyMultibase().substring(0, 4))) {
-            throw new RegistrationException("Invalid verification method: " + verificationMethod.getType() + ", " + verificationMethod.getPublicKeyMultibase());
+        String arrayOfPatchesString;
+        try {
+            arrayOfPatchesString = jsonMapper.writeValueAsString(jsonPatches);
+        } catch (JsonProcessingException ex) {
+            throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Cannot prepare array of patches: " + jsonPatches);
+        }
+        String updateString = BTCR2_UNSIGNED_UPDATE_TEMPLATE
+                .replace("{{array-of-patches}}", arrayOfPatchesString)
+                .replace("{{source-hash}}", Base64.getUrlEncoder().encodeToString(JSONDocumentHashing.jsonDocumentHashing(didSourceDocument)))
+                .replace("{{target-hash}}", Base64.getUrlEncoder().encodeToString(JSONDocumentHashing.jsonDocumentHashing(didTargetDocument)))
+                .replace("{{target-version-id}}", targetVersionId.toString());
+
+        // Let update be the result of parsing the rendered template as JSON.
+
+        BTCR2Update update = BTCR2Update.fromJson(updateString);
+
+        /*
+         * Construct BTCR2 Signed Update
+         * See https://dcdpr.github.io/did-btcr2/operations/update.html#construct-btcr2-signed-update
+         */
+
+        // An INVALID_DID_UPDATE error MUST be raised if the didSourceDocument.verificationMethod Set does not contain an id matching verificationMethodId.
+
+        VerificationMethod verificationMethod = (VerificationMethod) JsonLDDereferencer.findByIdInJsonLdObject(didSourceDocument, verificationMethodId, null);
+        if (! didSourceDocument.getVerificationMethods().contains(verificationMethod)) {
+            throw new RegistrationException("INVALID_DID_UPDATE", "didSourceDocument.verificationMethod does not contain " + verificationMethodId);
         }
 
-        // Set unsecuredBtcr2Update to the result of passing btcr2Identifier, unsecuredUpdate, and
-        // verificationMethod` to the Invoke BTCR2 Update algorithm.
+        // An INVALID_DID_UPDATE error MUST be raised if the didSourceDocument.capabilityInvocation Set does not contain verificationMethodId.
 
-        JsonLDObject btcr2Update = this.getInvokeDIDUpdatePayload().invokeBTCR2Update(identifier, unsecuredUpdate, verificationMethod, didDocumentMetadata);
+        if (! didSourceDocument.getCapabilityInvocationVerificationMethodsDereferenced().contains(verificationMethod)) {
+            throw new RegistrationException("INVALID_DID_UPDATE", "didSourceDocument.capabilityInvocation does not contain " + verificationMethodId);
+        }
 
-        // Set signalsMetadata to the result of passing btcr2Identifier, sourceDocument, beaconIds and
-        // unsecuredBtcr2Update to the Announce DID Update algorithm.
+        // Create cryptosuite as a BIP340 Cryptosuite [BIP340-Cryptosuite] instance with privateKey and "bip340-jcs-2025" cryptosuite.
 
-        List<Map<String, Object>> signalsMetadata = this.getAnnounceDIDUpdate().announceDIDUpdate(identifier, sourceDocument, beaconIds, btcr2Update, didDocumentMetadata);
+        DataIntegrityProofLdSigner cryptosuite = new DataIntegrityProofLdSigner();
+        cryptosuite.setCryptosuite("bip340-jcs-2025");
 
-        // Return signalsMetadata. It is up to implementations to ensure that the signalsMetadata is persisted.
+        // Fill the Data Integrity [VC-DATA-INTEGRITY] template below with the required template variables.
 
-        if (log.isDebugEnabled()) log.debug("Update: " + signalsMetadata);
-        return signalsMetadata;
+        cryptosuite.setVerificationMethod(verificationMethod.getId());
+        cryptosuite.setProofPurpose("capabilityInvocation");
+        cryptosuite.setCapability(URI.create("urn:zcap:root:" + URLEncoder.encode(didSourceDocument.getId().toString(), StandardCharsets.UTF_8)));
+        cryptosuite.setCapabilityAction("Write");
+
+        // Pass update and proofConfig to the cryptosuite.createProof method and set
+        // update.proof to the resulting Data Integrity Proof (data structure).
+
+        if (verificationMethodPublicData == null && signingResponse == null) {
+            throw new GetVerificationMethodException();
+        }
+
+        if (verificationMethodPublicData != null && signingResponse == null) {
+            throw new SignPayloadException(verificationMethodId);
+        }
+
+        try {
+            cryptosuite.sign(update, true, false);
+        } catch (IOException | GeneralSecurityException | JsonLDException ex) {
+            throw new RegistrationException("Cannot sign the BTCR2 Update: " + ex.getMessage(), ex);
+        }
+
+        /*
+         * Announce DID Update
+         * See https://dcdpr.github.io/did-btcr2/operations/update.html#announce-did-update
+         */
+
+        // TODO
+
+
+        // DID DOCUMENT METADATA
+
+        didDocumentMetadata.put("update", update);
+
+        // done
+
+        // TODO
+        return null;
+    }
+
+    /*
+     * Helper classes
+     */
+
+    public static class GetVerificationMethodException extends Exception {
+
+    }
+
+    public static class SignPayloadException extends Exception {
+
+        private final URI verificationMethodId;
+
+        public SignPayloadException(URI verificationMethodId) {
+            this.verificationMethodId = verificationMethodId;
+        }
+
+        public URI getVerificationMethodId() {
+            return verificationMethodId;
+        }
     }
 
     /*
      * Getters and settes
      */
 
-    public ConstructBTCR2Update getConstructDIDUpdatePayload() {
-        return this.constructBTCR2Update;
+    public BitcoinConnector getBitcoinConnector() {
+        return bitcoinConnector;
     }
 
-    public void setConstructDIDUpdatePayload(ConstructBTCR2Update constructBTCR2Update) {
-        this.constructBTCR2Update = constructBTCR2Update;
-    }
-
-    public InvokeBTCR2Update getInvokeDIDUpdatePayload() {
-        return this.invokeBTCR2Update;
-    }
-
-    public void setInvokeDIDUpdatePayload(InvokeBTCR2Update invokeBTCR2Update) {
-        this.invokeBTCR2Update = invokeBTCR2Update;
-    }
-
-    public AnnounceDIDUpdate getAnnounceDIDUpdate() {
-        return this.announceDIDUpdate;
-    }
-
-    public void setAnnounceDIDUpdate(AnnounceDIDUpdate announceDIDUpdate) {
-        this.announceDIDUpdate = announceDIDUpdate;
+    public void setBitcoinConnector(BitcoinConnector bitcoinConnector) {
+        this.bitcoinConnector = bitcoinConnector;
     }
 }

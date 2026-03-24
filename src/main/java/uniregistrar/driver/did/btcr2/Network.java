@@ -16,10 +16,9 @@ public enum Network {
     reserved9,
     reservedA,
     reservedB,
-    userdefinedC,
-    userdefinedD,
-    userdefinedE,
-    userdefinedF;
+    custom1,
+    custom2,
+    custom3;
 
     public static Network valueOf(Object value) {
         if (value instanceof String) return Network.valueOf((String) value);
@@ -41,10 +40,9 @@ public enum Network {
             case 0x09 -> Network.reserved9;
             case 0x0A -> Network.reservedA;
             case 0x0B -> Network.reservedB;
-            case 0x0C -> Network.userdefinedC;
-            case 0x0D -> Network.userdefinedD;
-            case 0x0E -> Network.userdefinedE;
-            case 0x0F -> Network.userdefinedF;
+            case 0x0C -> Network.custom1;
+            case 0x0D -> Network.custom2;
+            case 0x0E -> Network.custom3;
             default -> throw new IllegalArgumentException("Unsupported 'network' value: " + byteValue);
         };
     }
@@ -63,10 +61,9 @@ public enum Network {
             case reserved9 -> 0x09;
             case reservedA -> 0x0a;
             case reservedB -> 0x0b;
-            case userdefinedC -> 0x0c;
-            case userdefinedD -> 0x0d;
-            case userdefinedE -> 0x0e;
-            case userdefinedF -> 0x0f;
+            case custom1 -> 0x0c;
+            case custom2 -> 0x0d;
+            case custom3 -> 0x0e;
         };
     }
 

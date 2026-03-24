@@ -1,5 +1,6 @@
 package uniregistrar.driver.did.btcr2.util;
 
+import foundation.identity.did.DID;
 import uniregistrar.openapi.model.VerificationMethodTemplate;
 
 import java.util.List;
