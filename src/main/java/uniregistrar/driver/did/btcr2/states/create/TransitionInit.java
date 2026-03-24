@@ -1,5 +1,6 @@
 package uniregistrar.driver.did.btcr2.states.create;
 
+import foundation.identity.did.DID;
 import uniregistrar.RegistrationException;
 import uniregistrar.driver.did.btcr2.connections.bitcoin.*;
 import uniregistrar.driver.did.btcr2.job.Job;
@@ -66,7 +67,7 @@ public class TransitionInit {
         return createState;
     }
 
-    public static CreateState transitionToFinished(JobRegistry jobRegistry, Job job, BitcoinConnection bitcoinConnection, String btcr2Did, Map<String, Object> didDocumentMetadata) {
+    public static CreateState transitionToFinished(JobRegistry jobRegistry, Job job, BitcoinConnection bitcoinConnection, String did, Map<String, Object> didDocumentMetadata) {
 
         // REGISTRATION STATE: jobId
 
@@ -75,8 +76,6 @@ public class TransitionInit {
         // REGISTRATION STATE: didState.state="finished"
 
         // REGISTRATION STATE: didState.did
-
-        String did = btcr2Did;
 
         // REGISTRATION STATE: didState.secret
 

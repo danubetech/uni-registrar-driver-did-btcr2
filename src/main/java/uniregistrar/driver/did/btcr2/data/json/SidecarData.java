@@ -2,7 +2,7 @@ package uniregistrar.driver.did.btcr2.data.json;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import foundation.identity.did.DIDDocument;
-import uniresolver.driver.did.btcr2.data.jsonld.BTCR2Update;
+import uniregistrar.driver.did.btcr2.data.jsonld.BTCR2Update;
 
 import java.util.List;
 import java.util.Objects;

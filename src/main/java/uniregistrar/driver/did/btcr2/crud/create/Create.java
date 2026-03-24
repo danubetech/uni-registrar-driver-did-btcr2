@@ -13,7 +13,6 @@ import uniregistrar.driver.did.btcr2.connections.ipfs.IPFSConnection;
 import uniregistrar.driver.did.btcr2.data.records.GenesisBytesType;
 import uniregistrar.driver.did.btcr2.syntax.DidBtcr2IdentifierEncoding;
 
-import java.util.AbstractMap;
 import java.util.Map;
 
 public class Create {
@@ -33,7 +32,7 @@ public class Create {
      * See https://dcdpr.github.io/did-btcr2/operations/create.html#create
      */
 
-    public Map.Entry<DID, DIDDocument> create(byte[] initialKey, DIDDocument genesisDocument, Integer version, Network network, /* TODO: extra, not in spec */ Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public DID create(byte[] initialKey, DIDDocument genesisDocument, Integer version, Network network, Map<String, Object> didDocumentMetadata) throws RegistrationException {
 
         // A did:btcr2 identifier encodes a few pieces of information: an indicator for a specific Bitcoin network and a collection of Genesis Bytes.
 
@@ -57,17 +56,16 @@ public class Create {
         // These three values are encoded with the DID-BTCR2 Identifier Encoding algorithm.
 
         DID did = DidBtcr2IdentifierEncoding.didBtcr2IdentifierEncoding(version, network, genesisBytes, genesisBytesType);
-        Map.Entry<DID, DIDDocument> didAndInitialDocument = new AbstractMap.SimpleEntry<>(did, )
 
         // DID DOCUMENT METADATA
 
         didDocumentMetadata.put("initialKey", initialKey == null ? null : Hex.encodeHexString(initialKey));
         didDocumentMetadata.put("genesisDocument", genesisDocument == null ? null : genesisDocument.toMap());
 
-        // Return DID and initial DID document.
+        // done
 
-        if (log.isDebugEnabled()) log.debug("Create: " + didAndInitialDocument);
-        return didAndInitialDocument;
+        if (log.isDebugEnabled()) log.debug("Create: " + did);
+        return did;
     }
 
     /*
@@ -103,6 +101,7 @@ public class Create {
         byte[] genesisBytes = JsonCanonicalizationAndHash.jsonCanonicalizationAndHash(genesisDocument);
 
         if (log.isDebugEnabled()) log.debug("genesisDocumentHash: {} -> {}", genesisDocument, Hex.encodeHexString(genesisBytes));
+        return genesisBytes;
     }
 
     /*

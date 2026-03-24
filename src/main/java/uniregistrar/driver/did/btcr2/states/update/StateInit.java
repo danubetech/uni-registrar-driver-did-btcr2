@@ -14,9 +14,11 @@ import uniregistrar.driver.did.btcr2.Network;
 import uniregistrar.driver.did.btcr2.connections.bitcoin.BitcoinConnection;
 import uniregistrar.driver.did.btcr2.connections.bitcoin.BitcoinConnector;
 import uniregistrar.driver.did.btcr2.crud.update.Update;
+import uniregistrar.driver.did.btcr2.data.records.IdentifierComponents;
 import uniregistrar.driver.did.btcr2.job.Job;
 import uniregistrar.driver.did.btcr2.job.JobRegistry;
 import uniregistrar.driver.did.btcr2.ledger.DidDocUnAssembler;
+import uniregistrar.driver.did.btcr2.syntax.DidBtcr2IdentifierDecoding;
 import uniregistrar.driver.did.btcr2.util.MulticodecUtil;
 import uniregistrar.openapi.model.DidDocument;
 import uniregistrar.openapi.model.UpdateRequest;
@@ -47,35 +49,25 @@ public class StateInit {
         } catch (ParserException ex) {
             throw new RegistrationException(RegistrationException.ERROR_INVALID_DID, "Invalid DID: " + updateRequest.getDid());
         }
-
         List<DidDocument> didDocumentList = updateRequest.getDidDocument();
         DIDDocument didDocument = (didDocumentList == null || didDocumentList.isEmpty()) ? null : objectMapper.convertValue(didDocumentList.getFirst(), DIDDocument.class);
 
-        Network network = updateRequest.getOptions() == null ? null : (updateRequest.getOptions().getAdditionalProperty("network") == null ? null : Network.valueOf((String) updateRequest.getOptions().getAdditionalProperty("network")));
-        if (network == null) network = Network.bitcoin;
+        // parse DID
+
+        IdentifierComponents identifierComponents = DidBtcr2IdentifierDecoding.didBtcr2IdentifierDecoding(did);
 
         // find Bitcoin connection
 
-        BitcoinConnection bitcoinConnection = bitcoinConnector.getBitcoinConnection(network);
-        if (bitcoinConnection == null) {
-            throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Unknown network: " + network);
-        }
+        BitcoinConnection bitcoinConnection = bitcoinConnector.getBitcoinConnection(identifierComponents.network());
+        if (bitcoinConnection == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_DID, "Unknown network: " + identifierComponents.network());
 
         // unassemble initialKey
 
-        String unassembledInitialKey = DidDocUnAssembler.unassembleInitialKey(didDocument);
-
+        byte[] unassembledInitialKey = DidDocUnAssembler.unassembleInitialKey(didDocument);
         if (unassembledInitialKey == null) {
-
             // next state
-
             return TransitionInit.transitionToInitGetVerificationMethod(bitcoinConnection);
         }
-
-        // prepare pubKeyBytes
-
-        byte[] pubKeyBytes = MulticodecUtil.removeMulticodec(Multibase.decode(unassembledInitialKey), MulticodecUtil.MULTICODEC_SECP256K1_PUB);
-        if (log.isDebugEnabled()) log.debug("pubKeyBytes: {}", Hex.encode(pubKeyBytes));
 
         // prepare sourceDocument
 
