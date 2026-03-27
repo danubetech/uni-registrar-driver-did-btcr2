@@ -3,6 +3,7 @@ package uniregistrar.driver.did.btcr2.states.update;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import foundation.identity.did.DID;
+import foundation.identity.did.DIDDocument;
 import foundation.identity.did.DIDDocumentV1_1;
 import foundation.identity.did.parser.ParserException;
 import jakarta.json.Json;
@@ -36,7 +37,12 @@ public class StateInit {
 
     public static UpdateState update(JobRegistry jobRegistry, Job job, UpdateRequest updateRequest, Update update, BitcoinConnector bitcoinConnector) throws RegistrationException {
 
-        // check input DID
+        // prepare didRegistrationMetadata and didDocumentMetadata
+
+        Map<String, Object> didRegistrationMetadata = new LinkedHashMap<>();
+        Map<String, Object> didDocumentMetadata = new LinkedHashMap<>();
+
+        // read input DID
 
         DID did;
         try {
@@ -47,7 +53,11 @@ public class StateInit {
 
         IdentifierComponents identifierComponents = DidBtcr2IdentifierDecoding.didBtcr2IdentifierDecoding(did);
 
-        // check input DID document update operations
+        // read input DID documents
+
+        List<DIDDocument> didDocument = updateRequest.getDidDocument().stream().map(x -> jsonMapper.convertValue(x, DIDDocument.class)).toList();
+
+        // read input DID document update operations
 
         List<JsonPatch> jsonPatches = new ArrayList<>();
         if (updateRequest.getDidDocumentOperation() != null && updateRequest.getDidDocument() != null) {
@@ -60,9 +70,11 @@ public class StateInit {
             }
         }
 
-        // check options and secret
+        // read targetVersionId option
 
         Integer targetVersionId = updateRequest.getOptions() == null ? null : (Integer) updateRequest.getOptions().getAdditionalProperties().get("targetVersionId");
+
+        // read verification method public data and signing response
 
         VerificationMethodPublicData verificationMethodPublicData = null;
         SigningResponse signingResponse = null;
@@ -77,27 +89,26 @@ public class StateInit {
 
         // prepare didSourceDocument
 
-        DIDDocumentV1_1 didSourceDocument = didDocument;
-        if (log.isDebugEnabled()) log.debug("didSourceDocument: {}", didSourceDocument == null ? null : didSourceDocument.toJson());
+        DIDDocumentV1_1 didSourceDocument = (DIDDocumentV1_1) didDocument;
 
-        // DID DOCUMENT METADATA
-
-        Map<String, Object> didDocumentMetadata = new LinkedHashMap<>();
-
-        // update
+        // update()
 
         try {
             update.update(didSourceDocument, jsonPatches, targetVersionId, verificationMethodPublicData, signingResponse, didDocumentMetadata);
         } catch (Update.GetVerificationMethodException ex) {
-            // TODO
-            throw new RuntimeException(ex);
+
+            // next state
+
+            return TransitionInit.transitionToInitGetVerificationMethod(bitcoinConnection, didRegistrationMetadata, didDocumentMetadata);
         } catch (Update.SignPayloadException ex) {
-            // TODO
-            throw new RuntimeException(ex);
+
+            // next state
+
+            return TransitionInit.transitionToSignPayload(bitcoinConnection, verificationMethodPublicData, didRegistrationMetadata, didDocumentMetadata);
         }
 
         // next state
 
-        return TransitionInit.transitionToFinished(jobRegistry, job, bitcoinConnection, /* TODO */ null, didDocumentMetadata);
+        return TransitionInit.transitionToFinished(jobRegistry, job, bitcoinConnection, did, didRegistrationMetadata, didDocumentMetadata);
     }
 }

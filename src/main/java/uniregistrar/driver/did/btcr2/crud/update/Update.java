@@ -1,13 +1,17 @@
 package uniregistrar.driver.did.btcr2.crud.update;
 
 import com.danubetech.dataintegrity.signer.DataIntegrityProofLdSigner;
+import com.danubetech.keyformats.crypto.ByteSigner;
+import com.danubetech.keyformats.jose.JWSAlgorithm;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import foundation.identity.did.DIDDocument;
 import foundation.identity.did.DIDDocumentV1_1;
 import foundation.identity.did.VerificationMethod;
 import foundation.identity.jsonld.JsonLDDereferencer;
 import foundation.identity.jsonld.JsonLDException;
 import jakarta.json.JsonPatch;
+import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
@@ -20,13 +24,16 @@ import uniregistrar.openapi.model.SigningResponse;
 import uniregistrar.openapi.model.VerificationMethodPublicData;
 
 import java.io.IOException;
+import java.lang.ref.SoftReference;
 import java.net.URI;
 import java.net.URLEncoder;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class Update {
 
@@ -82,11 +89,11 @@ public class Update {
      * See https://dcdpr.github.io/did-btcr2/operations/update.html
      */
 
-    public List<Map<String, Object>> update(DIDDocumentV1_1 didSourceDocument, List<JsonPatch> jsonPatches, Integer targetVersionId, VerificationMethodPublicData verificationMethodPublicData, SigningResponse signingResponse, Map<String, Object> didDocumentMetadata) throws RegistrationException, GetVerificationMethodException, SignPayloadException {
+    public List<Map<String, Object>> update(DIDDocument didSourceDocument, List<JsonPatch> jsonPatches, Integer targetVersionId, VerificationMethodPublicData verificationMethodPublicData, SigningResponse signingResponse, Map<String, Object> didDocumentMetadata) throws RegistrationException, GetVerificationMethodException, SignPayloadException {
 
         URI verificationMethodId = null;
-        if (verificationMethodPublicData != null) verificationMethodId = URI.create(verificationMethodPublicData.getId());
-        if (signingResponse != null) verificationMethodId = URI.create(signingResponse.getKid());
+        if (verificationMethodPublicData != null && verificationMethodPublicData.getId() != null) verificationMethodId = URI.create(verificationMethodPublicData.getId());
+        if (signingResponse != null && signingResponse.getKid() != null) verificationMethodId = URI.create(signingResponse.getKid());
 
         /*
          * Construct BTCR2 Unsigned Update
@@ -95,7 +102,7 @@ public class Update {
 
         // Apply all JSON patches in jsonPatches to didSourceDocument to create didTargetDocument.
 
-        DIDDocumentV1_1 didTargetDocument = didSourceDocument;
+        DIDDocument didTargetDocument = didSourceDocument;
         for (JsonPatch jsonPatch : jsonPatches) didTargetDocument = JSONPatchUtil.apply(didTargetDocument, jsonPatch);
 
         // Fill the BTCR2 Unsigned Update (data structure) template below with the required template variables.
@@ -149,16 +156,33 @@ public class Update {
         // Pass update and proofConfig to the cryptosuite.createProof method and set
         // update.proof to the resulting Data Integrity Proof (data structure).
 
-        if (verificationMethodPublicData == null && signingResponse == null) {
-            throw new GetVerificationMethodException();
-        }
-
-        if (verificationMethodPublicData != null && signingResponse == null) {
-            throw new SignPayloadException(verificationMethodId);
-        }
-
         try {
+
+            final byte[] signingResponseSignature = signingResponse == null ? null : Base64.getDecoder().decode(signingResponse.getSignature());
+            final AtomicReference<byte[]> serializedPayload = new AtomicReference<>();
+
+            if (verificationMethodId == null && signingResponseSignature == null) {
+                throw new GetVerificationMethodException();
+            }
+
+            cryptosuite.setSigner(new ByteSigner(JWSAlgorithm.ES256K) {
+                @Override
+                protected byte[] sign(byte[] bytes) {
+                    if (log.isDebugEnabled()) log.debug("Signing bytes {} with signing response signature {}", Hex.encodeHexString(bytes), Hex.encodeHexString(signingResponseSignature));
+                    if (signingResponseSignature == null) {
+                        serializedPayload.set(bytes);
+                        return new byte[0];
+                    } else {
+                        return signingResponseSignature;
+                    }
+                }
+            });
+
             cryptosuite.sign(update, true, false);
+
+            if (serializedPayload.get() != null) {
+                throw new SignPayloadException(verificationMethodId, serializedPayload.get());
+            }
         } catch (IOException | GeneralSecurityException | JsonLDException ex) {
             throw new RegistrationException("Cannot sign the BTCR2 Update: " + ex.getMessage(), ex);
         }
@@ -192,13 +216,19 @@ public class Update {
     public static class SignPayloadException extends Exception {
 
         private final URI verificationMethodId;
+        private final byte[] payload;
 
-        public SignPayloadException(URI verificationMethodId) {
+        public SignPayloadException(URI verificationMethodId, byte[] payload) {
             this.verificationMethodId = verificationMethodId;
+            this.payload = payload;
         }
 
         public URI getVerificationMethodId() {
             return verificationMethodId;
+        }
+
+        public byte[] getPayload() {
+            return payload;
         }
     }
 

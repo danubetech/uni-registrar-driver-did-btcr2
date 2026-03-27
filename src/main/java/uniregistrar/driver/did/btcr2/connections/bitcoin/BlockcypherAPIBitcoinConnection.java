@@ -3,6 +3,8 @@ package uniregistrar.driver.did.btcr2.connections.bitcoin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
+
 public class BlockcypherAPIBitcoinConnection extends AbstractBitcoinConnection implements BitcoinConnection {
 
 	private static final Logger log = LoggerFactory.getLogger(BlockcypherAPIBitcoinConnection.class);
@@ -13,5 +15,10 @@ public class BlockcypherAPIBitcoinConnection extends AbstractBitcoinConnection i
 
 	public static BlockcypherAPIBitcoinConnection create() {
 		return new BlockcypherAPIBitcoinConnection();
+	}
+
+	@Override
+	public Map<String, Object> getMetadata() {
+		return Map.of();
 	}
 }

@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import wf.bitcoin.javabitcoindrpcclient.BitcoinJSONRPCClient;
 
 import java.net.URL;
+import java.util.Map;
 
 public class BTCDRPCBitcoinConnection extends AbstractBitcoinConnection implements BitcoinConnection {
 
@@ -31,6 +32,12 @@ public class BTCDRPCBitcoinConnection extends AbstractBitcoinConnection implemen
 	public static BTCDRPCBitcoinConnection create(URL rpcUrl) {
 		if (log.isDebugEnabled()) log.debug("Creating BTCDRPCBitcoinConnection: " + rpcUrl);
 		return new BTCDRPCBitcoinConnection(new BitcoinJSONRPCClient(rpcUrl));
+	}
+
+	@Override
+	public Map<String, Object> getMetadata() {
+		return Map.of(
+				"apiEndpointBase", "" + this.getBitcoinJsonRpcClient().rpcURL);
 	}
 
 	/*

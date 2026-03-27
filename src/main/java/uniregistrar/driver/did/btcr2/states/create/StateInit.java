@@ -32,11 +32,20 @@ public class StateInit {
 
     public static CreateState create(JobRegistry jobRegistry, Job job, CreateRequest createRequest, Create create, BitcoinConnector bitcoinConnector) throws RegistrationException {
 
-        // read input fields
+        // prepare didRegistrationMetadata and didDocumentMetadata
+
+        Map<String, Object> didRegistrationMetadata = new LinkedHashMap<>();
+        Map<String, Object> didDocumentMetadata = new LinkedHashMap<>();
+
+        // read input DID document
 
         DIDDocument didDocument = jsonMapper.convertValue(createRequest.getDidDocument(), DIDDocument.class);
+
+        // read version and network options
+
         Integer version = createRequest.getOptions() == null ? null : (createRequest.getOptions().getAdditionalProperty("version") == null ? null : ((Number) createRequest.getOptions().getAdditionalProperty("version")).intValue());
         Network network = createRequest.getOptions() == null ? null : (createRequest.getOptions().getAdditionalProperty("network") == null ? null : Network.valueOf((String) createRequest.getOptions().getAdditionalProperty("network")));
+        if (version == null) version = 1;
         if (network == null) network = Network.bitcoin;
 
         // find Bitcoin connection
@@ -48,24 +57,22 @@ public class StateInit {
 
         byte[] unassembledInitialKey = DidDocUnAssembler.unassembleInitialKey(didDocument);
         if (unassembledInitialKey == null) {
+
             // next state
-            return TransitionInit.transitionToInitGetVerificationMethod(bitcoinConnection);
+
+            return TransitionInit.transitionToInitGetVerificationMethod(bitcoinConnection, didRegistrationMetadata, didDocumentMetadata);
         }
 
         // unassemble genesisDocument
 
         DIDDocument unassembledGenesisDocument = DidDocUnAssembler.unassembleGenesisDocument(didDocument);
 
-        // DID DOCUMENT METADATA
-
-        Map<String, Object> didDocumentMetadata = new LinkedHashMap<>();
-
-        // create
+        // create()
 
         DID did = create.create(unassembledInitialKey, unassembledGenesisDocument, version, network, didDocumentMetadata);
 
         // next state
 
-        return TransitionInit.transitionToFinished(jobRegistry, job, bitcoinConnection, did.getDidString(), didDocumentMetadata);
+        return TransitionInit.transitionToFinished(jobRegistry, job, bitcoinConnection, did, didRegistrationMetadata, didDocumentMetadata);
     }
 }
