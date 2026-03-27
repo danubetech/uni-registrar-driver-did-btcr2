@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import foundation.identity.did.DID;
 import foundation.identity.did.DIDDocument;
-import foundation.identity.did.DIDDocumentV1_1;
 import foundation.identity.did.parser.ParserException;
 import jakarta.json.Json;
 import jakarta.json.JsonPatch;
@@ -53,26 +52,28 @@ public class StateInit {
 
         IdentifierComponents identifierComponents = DidBtcr2IdentifierDecoding.didBtcr2IdentifierDecoding(did);
 
-        // read input DID documents
+        // read input DID document operations and DID documents
 
-        List<DIDDocument> didDocument = updateRequest.getDidDocument().stream().map(x -> jsonMapper.convertValue(x, DIDDocument.class)).toList();
+        List<String> didDocumentOperations = updateRequest.getDidDocumentOperation() == null ? Collections.emptyList() : updateRequest.getDidDocumentOperation();;
+        List<DIDDocument> didDocuments = updateRequest.getDidDocument() == null ? Collections.emptyList() : updateRequest.getDidDocument().stream().map(x -> jsonMapper.convertValue(x, DIDDocument.class)).toList();
 
         // read input DID document update operations
 
         List<JsonPatch> jsonPatches = new ArrayList<>();
-        if (updateRequest.getDidDocumentOperation() != null && updateRequest.getDidDocument() != null) {
-            for (int i=0; i<updateRequest.getDidDocumentOperation().size(); i++) {
-                String didDocumentOperation = updateRequest.getDidDocumentOperation().get(i);
-                DIDDocumentV1_1 didDocument = jsonMapper.convertValue(updateRequest.getDidDocument().get(i), DIDDocumentV1_1.class);
-                if (! "patchDidDocument".equals(didDocumentOperation)) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Unsupported DID document operation: " + didDocumentOperation);
-                JsonPatch jsonPatch = Json.createPatch(Json.createArrayBuilder(Collections.singletonList(didDocument.getJsonObject())).build());
-                jsonPatches.add(jsonPatch);
-            }
+        for (int i=0; i<didDocumentOperations.size(); i++) {
+            String didDocumentOperation = didDocumentOperations.get(i);
+            DIDDocument didDocument = didDocuments.get(i);
+            if (! "patchDidDocument".equals(didDocumentOperation)) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Unsupported DID document operation: " + didDocumentOperation);
+            JsonPatch jsonPatch = Json.createPatch(Json.createArrayBuilder(Collections.singletonList(didDocument.getJsonObject())).build());
+            jsonPatches.add(jsonPatch);
         }
 
-        // read targetVersionId option
+        // read didSourceDocument and targetVersionId options
 
+        DIDDocument didSourceDocument = updateRequest.getOptions() == null ? null : DIDDocument.fromJson(((String) updateRequest.getOptions().getAdditionalProperty("didSourceDocument")));
         Integer targetVersionId = updateRequest.getOptions() == null ? null : (Integer) updateRequest.getOptions().getAdditionalProperties().get("targetVersionId");
+        if (didSourceDocument == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'didSourceDocument' option");
+        if (targetVersionId == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'targetVersionId' option");
 
         // read verification method public data and signing response
 
@@ -87,13 +88,10 @@ public class StateInit {
         BitcoinConnection bitcoinConnection = bitcoinConnector.getBitcoinConnection(identifierComponents.network());
         if (bitcoinConnection == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_DID, "Unknown network: " + identifierComponents.network());
 
-        // prepare didSourceDocument
-
-        DIDDocumentV1_1 didSourceDocument = (DIDDocumentV1_1) didDocument;
-
         // update()
 
         try {
+
             update.update(didSourceDocument, jsonPatches, targetVersionId, verificationMethodPublicData, signingResponse, didDocumentMetadata);
         } catch (Update.GetVerificationMethodException ex) {
 
@@ -104,7 +102,7 @@ public class StateInit {
 
             // next state
 
-            return TransitionInit.transitionToSignPayload(bitcoinConnection, verificationMethodPublicData, didRegistrationMetadata, didDocumentMetadata);
+            return TransitionInit.transitionToSignPayload(bitcoinConnection, ex.getVerificationMethodId(), ex.getPayload(), didRegistrationMetadata, didDocumentMetadata);
         }
 
         // next state

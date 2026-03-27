@@ -7,6 +7,7 @@ import uniregistrar.driver.did.btcr2.job.Job;
 import uniregistrar.driver.did.btcr2.job.JobRegistry;
 import uniregistrar.openapi.model.*;
 
+import java.net.URI;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
@@ -45,12 +46,12 @@ public class TransitionInit {
         return updateState;
     }
 
-    public static UpdateState transitionToSignPayload(BitcoinConnection bitcoinConnection, VerificationMethodPublicData verificationMethodPublicData, byte[] serializedPayload, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public static UpdateState transitionToSignPayload(BitcoinConnection bitcoinConnection, URI verificationMethodID, byte[] serializedPayload, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
 
         // REGISTRATION STATE: signing requesst
 
         SigningRequest didUpdateSigningRequest = new SigningRequest()
-                .kid(verificationMethodPublicData.getId())
+                .kid(verificationMethodID.toString())
                 .serializedPayload(Base64.getUrlEncoder().encodeToString(serializedPayload));
 
         // REGISTRATION STATE: didState.state="action"

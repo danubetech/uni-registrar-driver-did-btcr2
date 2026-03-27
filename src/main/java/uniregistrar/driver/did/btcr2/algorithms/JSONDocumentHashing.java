@@ -7,7 +7,7 @@ import org.apache.commons.codec.binary.Hex;
 import org.erdtman.jcs.JsonCanonicalizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uniresolver.driver.did.btcr2.util.SHA256Util;
+import uniregistrar.driver.did.btcr2.util.SHA256Util;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

@@ -84,6 +84,7 @@ public class EsploraElectrsRESTBitcoinConnection extends AbstractBitcoinConnecti
 		return Map.of(
 				"apiEndpointBase", "" + this.getApiEndpointBase());
 	}
+
 	/*
 	 * Helper methods
 	 */
