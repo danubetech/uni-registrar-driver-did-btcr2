@@ -69,7 +69,7 @@ public class StateInit {
 
         // create()
 
-        DID did = create.create(unassembledInitialKey, unassembledGenesisDocument, version, network, didDocumentMetadata);
+        DID did = create.create(bitcoinConnection, unassembledInitialKey, unassembledGenesisDocument, version, network, didDocumentMetadata);
 
         // next state
 

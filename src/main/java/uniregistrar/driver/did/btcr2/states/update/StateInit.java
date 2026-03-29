@@ -92,7 +92,7 @@ public class StateInit {
 
         try {
 
-            update.update(didSourceDocument, jsonPatches, targetVersionId, verificationMethodPublicData, signingResponse, didDocumentMetadata);
+            update.update(bitcoinConnection, didSourceDocument, jsonPatches, targetVersionId, verificationMethodPublicData, signingResponse, didDocumentMetadata);
         } catch (Update.GetVerificationMethodException ex) {
 
             // next state

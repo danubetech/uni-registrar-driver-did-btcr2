@@ -1,23 +1,34 @@
 package uniregistrar.driver.did.btcr2.crud.update;
 
-import com.danubetech.btc.connection.BitcoinConnector;
+import com.danubetech.btc.connection.BitcoinConnection;
+import com.danubetech.btc.connection.records.Tx;
+import com.danubetech.btc.connection.records.TxOut;
+import com.danubetech.btc.util.AddressUtil;
 import com.danubetech.dataintegrity.signer.DataIntegrityProofLdSigner;
 import com.danubetech.keyformats.crypto.ByteSigner;
 import com.danubetech.keyformats.jose.JWSAlgorithm;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import foundation.identity.did.DIDDocument;
+import foundation.identity.did.Service;
 import foundation.identity.did.VerificationMethod;
 import foundation.identity.jsonld.JsonLDDereferencer;
 import foundation.identity.jsonld.JsonLDException;
 import jakarta.json.JsonPatch;
 import org.apache.commons.codec.binary.Hex;
+import org.bitcoinj.base.Coin;
+import org.bitcoinj.base.Sha256Hash;
+import org.bitcoinj.core.Transaction;
+import org.bitcoinj.core.TransactionInput;
+import org.bitcoinj.script.Script;
+import org.bitcoinj.script.ScriptBuilder;
+import org.bitcoinj.uri.BitcoinURIParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
 import uniregistrar.driver.did.btcr2.algorithms.JSONDocumentHashing;
-import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.driver.did.btcr2.data.jsonld.BTCR2Update;
+import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.driver.did.btcr2.util.JSONPatchUtil;
 import uniregistrar.openapi.model.SigningResponse;
 import uniregistrar.openapi.model.VerificationMethodPublicData;
@@ -73,11 +84,9 @@ public class Update {
     private static final JsonMapper jsonMapper = JsonMapper.builder()
             .build();
 
-    private BitcoinConnector bitcoinConnector;
     private IPFSConnection ipfsConnection;
 
-    public Update(BitcoinConnector bitcoinConnector, IPFSConnection ipfsConnection) {
-        this.bitcoinConnector = bitcoinConnector;
+    public Update(IPFSConnection ipfsConnection) {
         this.ipfsConnection = ipfsConnection;
     }
 
@@ -86,7 +95,7 @@ public class Update {
      * See https://dcdpr.github.io/did-btcr2/operations/update.html
      */
 
-    public List<Map<String, Object>> update(DIDDocument didSourceDocument, List<JsonPatch> jsonPatches, Integer targetVersionId, VerificationMethodPublicData verificationMethodPublicData, SigningResponse signingResponse, Map<String, Object> didDocumentMetadata) throws RegistrationException, GetVerificationMethodException, SignPayloadException {
+    public Map<String, Object> update(BitcoinConnection bitcoinConnection, DIDDocument didSourceDocument, List<JsonPatch> jsonPatches, Integer targetVersionId, VerificationMethodPublicData verificationMethodPublicData, SigningResponse signingResponse, Map<String, Object> didDocumentMetadata) throws RegistrationException, GetVerificationMethodException, SignPayloadException {
 
         URI verificationMethodId = null;
         if (verificationMethodPublicData != null && verificationMethodPublicData.getId() != null) verificationMethodId = URI.create(verificationMethodPublicData.getId());
@@ -201,24 +210,55 @@ public class Update {
         byte[] btcr2UpdateAnnouncement = JSONDocumentHashing.jsonDocumentHashing(update);
 
         // This 32-byte SHA-256 hash is used as the Signal Bytes when constructing a Beacon Signal Bitcoin transaction.
-        // The Beacon Signal is signed by the private key that controls the Beacon Address and broadcast to the Bitcoin network.
 
-        
+        // TODO fix selecting the correct service
+        Service beaconService = didSourceDocument.getServices().stream().filter(service -> "SingletonBeacon".equals(service.getType()) && service.getId().toString().endsWith("#initialP2PKH")).findFirst().orElse(null);
+        if (beaconService == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_DID_DOCUMENT, "No beacon service found in source DID document: " + didSourceDocument);
+        String beaconServiceAddress;
+        try {
+            beaconServiceAddress = AddressUtil.bitcoinUriToAddressString((URI) beaconService.getServiceEndpoint());
+        } catch (BitcoinURIParseException ex) {
+            throw new RegistrationException(RegistrationException.ERROR_INVALID_DID_DOCUMENT, "Invalid beacon service found in source DID document: " + beaconService);
+        }
+        List<Tx> beaconServiceAddressTransactions = bitcoinConnection.getAddressTransactions(beaconServiceAddress);
+        Script bitcoinjScript = ScriptBuilder.createOpReturnScript(btcr2UpdateAnnouncement);
+        Transaction bitcoinjTransaction = new Transaction();
+        for (TxOut beaconServiceAddressTransactionOut : beaconServiceAddressTransactions.getFirst().txOuts()) {
+            TransactionInput transactionInput;
+            bitcoinjTransaction.addInput(beaconServiceAddressTransactionOut.)
+        }
+        bitcoinjTransaction.addOutput(Coin.ZERO, bitcoinjScript);
+
+        // The Beacon Signal is signed by the private key that controls the Beacon Address
+
+        if (signPayloadResponse != null) {
+            Script inputScript = ScriptBuilder.createInputScript(signature, pubKey);
+            tx.getInput(0).setScriptSig(inputScript);
+        } else {
+            Sha256Hash hash = tx.hashForSignature(
+                    inputIndex,
+                    scriptPubKey,
+                    Transaction.SigHash.ALL,
+                    false
+            );
+        }
+
+        // and broadcast to the Bitcoin network.
+
+        byte[] beaconSignal = bitcoinjTransaction.serialize();
+        if (log.isDebugEnabled()) log.debug("Broadcasting beacon signal: " + Hex.encodeHexString(beaconSignal));
+        bitcoinConnection.broadcastRawTransaction(beaconSignal);
 
         /*
          * Announcing to an Aggregate Beacon
          * See https://dcdpr.github.io/did-btcr2/operations/update.html#announcing-to-an-aggregate-beacon
          */
 
-
-        // DID DOCUMENT METADATA
-
-        didDocumentMetadata.put("update", update);
+        // TODO
 
         // done
 
-        // TODO
-        return null;
+        return update.toMap();
     }
 
     /*
@@ -252,11 +292,11 @@ public class Update {
      * Getters and settes
      */
 
-    public BitcoinConnector getBitcoinConnector() {
-        return bitcoinConnector;
+    public IPFSConnection getIpfsConnection() {
+        return ipfsConnection;
     }
 
-    public void setBitcoinConnector(BitcoinConnector bitcoinConnector) {
-        this.bitcoinConnector = bitcoinConnector;
+    public void setIpfsConnection(IPFSConnection ipfsConnection) {
+        this.ipfsConnection = ipfsConnection;
     }
 }

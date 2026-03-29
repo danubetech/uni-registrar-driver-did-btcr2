@@ -1,6 +1,6 @@
 package uniregistrar.driver.did.btcr2.crud.create;
 
-import com.danubetech.btc.connection.BitcoinConnector;
+import com.danubetech.btc.connection.BitcoinConnection;
 import com.danubetech.btc.connection.Network;
 import com.danubetech.btc.syntax.GenesisBytesType;
 import foundation.identity.did.DID;
@@ -19,11 +19,9 @@ public class Create {
 
     private static final Logger log = LoggerFactory.getLogger(Create.class);
 
-    private BitcoinConnector bitcoinConnector;
     private IPFSConnection ipfsConnection;
 
-    public Create(BitcoinConnector bitcoinConnector, IPFSConnection ipfsConnection) {
-        this.bitcoinConnector = bitcoinConnector;
+    public Create(IPFSConnection ipfsConnection) {
         this.ipfsConnection = ipfsConnection;
     }
 
@@ -32,7 +30,7 @@ public class Create {
      * See https://dcdpr.github.io/did-btcr2/operations/create.html#create
      */
 
-    public DID create(byte[] initialKey, DIDDocument genesisDocument, Integer version, Network network, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public DID create(BitcoinConnection bitcoinConnection, byte[] initialKey, DIDDocument genesisDocument, Integer version, Network network, Map<String, Object> didDocumentMetadata) throws RegistrationException {
 
         // A did:btcr2 identifier encodes a few pieces of information: an indicator for a specific Bitcoin network and a collection of Genesis Bytes.
 
@@ -107,14 +105,6 @@ public class Create {
     /*
      * Getters and setters
      */
-
-    public BitcoinConnector getBitcoinConnector() {
-        return bitcoinConnector;
-    }
-
-    public void setBitcoinConnector(BitcoinConnector bitcoinConnector) {
-        this.bitcoinConnector = bitcoinConnector;
-    }
 
     public IPFSConnection getIpfsConnection() {
         return ipfsConnection;
