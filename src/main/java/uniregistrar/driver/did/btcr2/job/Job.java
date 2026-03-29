@@ -1,6 +1,7 @@
 package uniregistrar.driver.did.btcr2.job;
 
-import uniregistrar.driver.did.btcr2.connections.bitcoin.BitcoinConnection;
+
+import com.danubetech.btc.connection.BitcoinConnection;
 
 import java.util.UUID;
 

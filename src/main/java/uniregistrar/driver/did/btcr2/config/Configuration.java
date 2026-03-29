@@ -1,11 +1,13 @@
 package uniregistrar.driver.did.btcr2.config;
 
+import com.danubetech.btc.connection.BitcoinConnection;
+import com.danubetech.btc.connection.BitcoinConnector;
+import com.danubetech.btc.connection.Network;
+import com.danubetech.btc.connection.impl.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.driver.did.btcr2.DidBtcr2Driver;
-import uniregistrar.driver.did.btcr2.Network;
-import uniregistrar.driver.did.btcr2.connections.bitcoin.*;
-import uniregistrar.driver.did.btcr2.connections.ipfs.IPFSConnection;
+import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.driver.did.btcr2.crud.create.Create;
 import uniregistrar.driver.did.btcr2.crud.deactivate.Deactivate;
 import uniregistrar.driver.did.btcr2.crud.update.Update;

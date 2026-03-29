@@ -1,5 +1,8 @@
 package uniregistrar.driver.did.btcr2.syntax;
 
+import com.danubetech.btc.connection.Network;
+import com.danubetech.btc.syntax.GenesisBytesType;
+import com.danubetech.btc.syntax.IdentifierComponents;
 import foundation.identity.did.DID;
 import org.bitcoinj.base.Bech32;
 import org.bitcoinj.base.exceptions.AddressFormatException;
@@ -7,10 +10,6 @@ import org.bouncycastle.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
-import uniregistrar.driver.did.btcr2.Network;
-import uniregistrar.driver.did.btcr2.appendix.Bech32mDecoding;
-import uniregistrar.driver.did.btcr2.data.records.GenesisBytesType;
-import uniregistrar.driver.did.btcr2.data.records.IdentifierComponents;
 
 public class DidBtcr2IdentifierDecoding {
 
@@ -32,7 +31,7 @@ public class DidBtcr2IdentifierDecoding {
 
         Bech32.Bech32Data bech32Data;
         try {
-            bech32Data = Bech32mDecoding.bech32Decode(identifier.getMethodSpecificId());
+            bech32Data = Bech32.decode(identifier.getMethodSpecificId());
         } catch (AddressFormatException ex) {
             throw new RegistrationException(RegistrationException.ERROR_INVALID_DID, "Cannot bech32m-decode identifier: " + identifier.getMethodSpecificId(), ex);
         }

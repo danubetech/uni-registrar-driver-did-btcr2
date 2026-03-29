@@ -1,10 +1,10 @@
 package uniregistrar.driver.did.btcr2.crud.deactivate;
 
+import com.danubetech.btc.connection.BitcoinConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
-import uniregistrar.driver.did.btcr2.connections.bitcoin.BitcoinConnector;
-import uniregistrar.driver.did.btcr2.connections.ipfs.IPFSConnection;
+import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 
 import java.util.Map;
 

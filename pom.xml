@@ -184,24 +184,14 @@
             <version>1.22.0</version>
         </dependency>
         <dependency>
+            <groupId>com.danubetech</groupId>
+            <artifactId>btc-common-java</artifactId>
+            <version>0.1-SNAPSHOT</version>
+        </dependency>
+        <dependency>
             <groupId>com.github.ipfs</groupId>
             <artifactId>java-ipfs-http-client</artifactId>
             <version>1.5.1</version>
-        </dependency>
-        <dependency>
-            <groupId>wf.bitcoin</groupId>
-            <artifactId>bitcoin-rpc-client</artifactId>
-            <version>1.2.4</version>
-        </dependency>
-        <dependency>
-            <groupId>fr.acinq.bitcoin</groupId>
-            <artifactId>bitcoin-kmp-jvm</artifactId>
-            <version>0.29.0</version>
-        </dependency>
-        <dependency>
-            <groupId>fr.acinq.secp256k1</groupId>
-            <artifactId>secp256k1-kmp-jni-jvm</artifactId>
-            <version>0.23.0</version>
         </dependency>
         <dependency>
             <groupId>com.apicatalog</groupId>

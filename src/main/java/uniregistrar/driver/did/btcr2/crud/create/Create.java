@@ -1,16 +1,16 @@
 package uniregistrar.driver.did.btcr2.crud.create;
 
+import com.danubetech.btc.connection.BitcoinConnector;
+import com.danubetech.btc.connection.Network;
+import com.danubetech.btc.syntax.GenesisBytesType;
 import foundation.identity.did.DID;
 import foundation.identity.did.DIDDocument;
 import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
-import uniregistrar.driver.did.btcr2.Network;
 import uniregistrar.driver.did.btcr2.appendix.JsonCanonicalizationAndHash;
-import uniregistrar.driver.did.btcr2.connections.bitcoin.BitcoinConnector;
-import uniregistrar.driver.did.btcr2.connections.ipfs.IPFSConnection;
-import uniregistrar.driver.did.btcr2.data.records.GenesisBytesType;
+import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.driver.did.btcr2.syntax.DidBtcr2IdentifierEncoding;
 
 import java.util.Map;

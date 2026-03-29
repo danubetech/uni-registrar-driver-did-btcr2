@@ -1,8 +1,8 @@
 package uniregistrar.driver.did.btcr2.states.update;
 
+import com.danubetech.btc.connection.BitcoinConnection;
 import foundation.identity.did.DID;
 import uniregistrar.RegistrationException;
-import uniregistrar.driver.did.btcr2.connections.bitcoin.BitcoinConnection;
 import uniregistrar.driver.did.btcr2.job.Job;
 import uniregistrar.driver.did.btcr2.job.JobRegistry;
 import uniregistrar.openapi.model.*;

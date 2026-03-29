@@ -1,5 +1,8 @@
 package uniregistrar.driver.did.btcr2.states.create;
 
+import com.danubetech.btc.connection.BitcoinConnection;
+import com.danubetech.btc.connection.BitcoinConnector;
+import com.danubetech.btc.connection.Network;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import foundation.identity.did.DID;
@@ -7,9 +10,6 @@ import foundation.identity.did.DIDDocument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
-import uniregistrar.driver.did.btcr2.Network;
-import uniregistrar.driver.did.btcr2.connections.bitcoin.BitcoinConnection;
-import uniregistrar.driver.did.btcr2.connections.bitcoin.BitcoinConnector;
 import uniregistrar.driver.did.btcr2.crud.create.Create;
 import uniregistrar.driver.did.btcr2.job.Job;
 import uniregistrar.driver.did.btcr2.job.JobRegistry;

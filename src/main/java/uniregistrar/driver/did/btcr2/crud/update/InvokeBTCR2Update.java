@@ -1,5 +1,6 @@
 package uniregistrar.driver.did.btcr2.crud.update;
 
+import com.danubetech.btc.connection.BitcoinConnector;
 import com.danubetech.dataintegrity.signer.DataIntegrityProofLdSigner;
 import foundation.identity.did.DID;
 import foundation.identity.did.VerificationMethod;
@@ -9,8 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
 import uniregistrar.driver.did.btcr2.appendix.DeriveRootCapabilityFromDidBtcr2Identifier;
-import uniregistrar.driver.did.btcr2.connections.bitcoin.BitcoinConnector;
-import uniregistrar.driver.did.btcr2.connections.ipfs.IPFSConnection;
+import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;

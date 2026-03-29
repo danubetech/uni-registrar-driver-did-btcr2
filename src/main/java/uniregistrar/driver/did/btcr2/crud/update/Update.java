@@ -1,12 +1,12 @@
 package uniregistrar.driver.did.btcr2.crud.update;
 
+import com.danubetech.btc.connection.BitcoinConnector;
 import com.danubetech.dataintegrity.signer.DataIntegrityProofLdSigner;
 import com.danubetech.keyformats.crypto.ByteSigner;
 import com.danubetech.keyformats.jose.JWSAlgorithm;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import foundation.identity.did.DIDDocument;
-import foundation.identity.did.DIDDocumentV1_1;
 import foundation.identity.did.VerificationMethod;
 import foundation.identity.jsonld.JsonLDDereferencer;
 import foundation.identity.jsonld.JsonLDException;
@@ -16,18 +16,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
 import uniregistrar.driver.did.btcr2.algorithms.JSONDocumentHashing;
-import uniregistrar.driver.did.btcr2.connections.bitcoin.BitcoinConnector;
-import uniregistrar.driver.did.btcr2.connections.ipfs.IPFSConnection;
+import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.driver.did.btcr2.data.jsonld.BTCR2Update;
 import uniregistrar.driver.did.btcr2.util.JSONPatchUtil;
 import uniregistrar.openapi.model.SigningResponse;
 import uniregistrar.openapi.model.VerificationMethodPublicData;
 
 import java.io.IOException;
-import java.lang.ref.SoftReference;
 import java.net.URI;
 import java.net.URLEncoder;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.util.Base64;
@@ -193,6 +190,25 @@ public class Update {
          */
 
         // TODO
+
+        /*
+         * Announcing to a Singleton Beacon
+         * See https://dcdpr.github.io/did-btcr2/operations/update.html#announcing-to-a-singleton-beacon
+         */
+
+        // A BTCR2 Update Announcement for a Singleton Beacon is the BTCR2 Signed Update hashed with the JSON Document Hashing algorithm.
+
+        byte[] btcr2UpdateAnnouncement = JSONDocumentHashing.jsonDocumentHashing(update);
+
+        // This 32-byte SHA-256 hash is used as the Signal Bytes when constructing a Beacon Signal Bitcoin transaction.
+        // The Beacon Signal is signed by the private key that controls the Beacon Address and broadcast to the Bitcoin network.
+
+        
+
+        /*
+         * Announcing to an Aggregate Beacon
+         * See https://dcdpr.github.io/did-btcr2/operations/update.html#announcing-to-an-aggregate-beacon
+         */
 
 
         // DID DOCUMENT METADATA
