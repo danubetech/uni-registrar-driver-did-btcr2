@@ -95,7 +95,7 @@ public class Update {
      * See https://dcdpr.github.io/did-btcr2/operations/update.html
      */
 
-    public Map<String, Object> update(BitcoinConnection bitcoinConnection, DIDDocument didSourceDocument, List<JsonPatch> jsonPatches, Integer targetVersionId, VerificationMethodPublicData verificationMethodPublicData, SigningResponse signingResponse, Map<String, Object> didDocumentMetadata) throws RegistrationException, GetVerificationMethodException, SignPayloadException {
+    public Map<String, Object> update(BitcoinConnection bitcoinConnection, DIDDocument didSourceDocument, List<JsonPatch> jsonPatches, Integer targetVersionId, VerificationMethodPublicData verificationMethodPublicData, SigningResponse signingResponse, Map<String, Object> didDocumentMetadata) throws RegistrationException, UpdateGetVerificationMethodException, UpdateSignPayloadException {
 
         URI verificationMethodId = null;
         if (verificationMethodPublicData != null && verificationMethodPublicData.getId() != null) verificationMethodId = URI.create(verificationMethodPublicData.getId());
@@ -168,7 +168,7 @@ public class Update {
             final AtomicReference<byte[]> serializedPayload = new AtomicReference<>();
 
             if (verificationMethodId == null && signingResponseSignature == null) {
-                throw new GetVerificationMethodException();
+                throw new UpdateGetVerificationMethodException();
             }
 
             cryptosuite.setSigner(new ByteSigner(JWSAlgorithm.ES256K) {
@@ -187,7 +187,7 @@ public class Update {
             cryptosuite.sign(update, true, false);
 
             if (serializedPayload.get() != null) {
-                throw new SignPayloadException(verificationMethodId, serializedPayload.get());
+                throw new UpdateSignPayloadException(verificationMethodId, serializedPayload.get());
             }
         } catch (IOException | GeneralSecurityException | JsonLDException ex) {
             throw new RegistrationException("Cannot sign the BTCR2 Update: " + ex.getMessage(), ex);
@@ -265,16 +265,35 @@ public class Update {
      * Helper classes
      */
 
-    public static class GetVerificationMethodException extends Exception {
+    public static class UpdateGetVerificationMethodException extends Exception {
 
     }
 
-    public static class SignPayloadException extends Exception {
+    public static class UpdateSignPayloadException extends Exception {
 
         private final URI verificationMethodId;
         private final byte[] payload;
 
-        public SignPayloadException(URI verificationMethodId, byte[] payload) {
+        public UpdateSignPayloadException(URI verificationMethodId, byte[] payload) {
+            this.verificationMethodId = verificationMethodId;
+            this.payload = payload;
+        }
+
+        public URI getVerificationMethodId() {
+            return verificationMethodId;
+        }
+
+        public byte[] getPayload() {
+            return payload;
+        }
+    }
+
+    public static class BitcoinSignPayloadException extends Exception {
+
+        private final URI verificationMethodId;
+        private final byte[] payload;
+
+        public UpdateSignPayloadException(URI verificationMethodId, byte[] payload) {
             this.verificationMethodId = verificationMethodId;
             this.payload = payload;
         }

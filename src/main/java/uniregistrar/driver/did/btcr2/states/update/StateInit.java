@@ -93,12 +93,12 @@ public class StateInit {
         try {
 
             update.update(bitcoinConnection, didSourceDocument, jsonPatches, targetVersionId, verificationMethodPublicData, signingResponse, didDocumentMetadata);
-        } catch (Update.GetVerificationMethodException ex) {
+        } catch (Update.UpdateGetVerificationMethodException ex) {
 
             // next state
 
             return TransitionInit.transitionToInitGetVerificationMethod(bitcoinConnection, didRegistrationMetadata, didDocumentMetadata);
-        } catch (Update.SignPayloadException ex) {
+        } catch (Update.UpdateSignPayloadException ex) {
 
             // next state
 
