@@ -220,12 +220,12 @@ public class Update {
         } catch (BitcoinURIParseException ex) {
             throw new RegistrationException(RegistrationException.ERROR_INVALID_DID_DOCUMENT, "Invalid beacon service found in source DID document: " + beaconService);
         }
-        List<Tx> beaconServiceAddressTransactions = bitcoinConnection.getAddressTransactions(beaconServiceAddress);
+        List<TxOut> beaconServiceAddressUtxos = bitcoinConnection.getAddressUtxos(beaconServiceAddress);
         Script bitcoinjScript = ScriptBuilder.createOpReturnScript(btcr2UpdateAnnouncement);
         Transaction bitcoinjTransaction = new Transaction();
-        for (TxOut beaconServiceAddressTransactionOut : beaconServiceAddressTransactions.getFirst().txOuts()) {
+        for (TxOut beaconServiceAddressUtxo : beaconServiceAddressUtxos) {
             TransactionInput transactionInput;
-            bitcoinjTransaction.addInput(beaconServiceAddressTransactionOut.)
+            bitcoinjTransaction.addInput().addInput().addInput(beaconServiceAddressUtxo.to)
         }
         bitcoinjTransaction.addOutput(Coin.ZERO, bitcoinjScript);
 
