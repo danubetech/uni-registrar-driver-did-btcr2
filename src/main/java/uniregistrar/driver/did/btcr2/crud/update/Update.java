@@ -1,7 +1,6 @@
 package uniregistrar.driver.did.btcr2.crud.update;
 
 import com.danubetech.btc.connection.BitcoinConnection;
-import com.danubetech.btc.connection.records.Tx;
 import com.danubetech.btc.connection.records.TxOut;
 import com.danubetech.btc.util.AddressUtil;
 import com.danubetech.dataintegrity.signer.DataIntegrityProofLdSigner;
@@ -16,10 +15,15 @@ import foundation.identity.jsonld.JsonLDDereferencer;
 import foundation.identity.jsonld.JsonLDException;
 import jakarta.json.JsonPatch;
 import org.apache.commons.codec.binary.Hex;
+import org.bitcoinj.base.Address;
 import org.bitcoinj.base.Coin;
 import org.bitcoinj.base.Sha256Hash;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionInput;
+import org.bitcoinj.core.TransactionOutput;
+import org.bitcoinj.crypto.ECKey;
+import org.bitcoinj.crypto.SignatureDecodeException;
+import org.bitcoinj.crypto.TransactionSignature;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptBuilder;
 import org.bitcoinj.uri.BitcoinURIParseException;
@@ -42,6 +46,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.IntStream;
 
 public class Update {
 
@@ -95,11 +100,11 @@ public class Update {
      * See https://dcdpr.github.io/did-btcr2/operations/update.html
      */
 
-    public Map<String, Object> update(BitcoinConnection bitcoinConnection, DIDDocument didSourceDocument, List<JsonPatch> jsonPatches, Integer targetVersionId, VerificationMethodPublicData verificationMethodPublicData, SigningResponse signingResponse, Map<String, Object> didDocumentMetadata) throws RegistrationException, UpdateGetVerificationMethodException, UpdateSignPayloadException {
+    public Map<String, Object> update(BitcoinConnection bitcoinConnection, DIDDocument didSourceDocument, List<JsonPatch> jsonPatches, Integer targetVersionId, VerificationMethodPublicData updateVerificationMethodPublicData, SigningResponse updateSigningResponse, List<SigningResponse> utxoSigningResponses, Map<String, Object> didDocumentMetadata) throws RegistrationException, UpdateGetVerificationMethodException, UpdateSignPayloadException, UtxoSignPayloadException {
 
         URI verificationMethodId = null;
-        if (verificationMethodPublicData != null && verificationMethodPublicData.getId() != null) verificationMethodId = URI.create(verificationMethodPublicData.getId());
-        if (signingResponse != null && signingResponse.getKid() != null) verificationMethodId = URI.create(signingResponse.getKid());
+        if (updateVerificationMethodPublicData != null && updateVerificationMethodPublicData.getId() != null) verificationMethodId = URI.create(updateVerificationMethodPublicData.getId());
+        if (updateSigningResponse != null && updateSigningResponse.getKid() != null) verificationMethodId = URI.create(updateSigningResponse.getKid());
 
         /*
          * Construct BTCR2 Unsigned Update
@@ -164,30 +169,30 @@ public class Update {
 
         try {
 
-            final byte[] signingResponseSignature = signingResponse == null ? null : Base64.getDecoder().decode(signingResponse.getSignature());
-            final AtomicReference<byte[]> serializedPayload = new AtomicReference<>();
+            final byte[] updateSigningResponseSignature = updateSigningResponse == null ? null : Base64.getDecoder().decode(updateSigningResponse.getSignature());
+            final AtomicReference<byte[]> updateSerializedPayload = new AtomicReference<>();
 
-            if (verificationMethodId == null && signingResponseSignature == null) {
+            if (verificationMethodId == null && updateSigningResponseSignature == null) {
                 throw new UpdateGetVerificationMethodException();
             }
 
             cryptosuite.setSigner(new ByteSigner(JWSAlgorithm.ES256K) {
                 @Override
                 protected byte[] sign(byte[] bytes) {
-                    if (log.isDebugEnabled()) log.debug("Signing bytes {} with signing response signature {}", Hex.encodeHexString(bytes), Hex.encodeHexString(signingResponseSignature));
-                    if (signingResponseSignature == null) {
-                        serializedPayload.set(bytes);
+                    if (log.isDebugEnabled()) log.debug("Signing bytes {} with signing response signature {}", Hex.encodeHexString(bytes), Hex.encodeHexString(updateSigningResponseSignature));
+                    if (updateSigningResponseSignature == null) {
+                        updateSerializedPayload.set(bytes);
                         return new byte[0];
                     } else {
-                        return signingResponseSignature;
+                        return updateSigningResponseSignature;
                     }
                 }
             });
 
             cryptosuite.sign(update, true, false);
 
-            if (serializedPayload.get() != null) {
-                throw new UpdateSignPayloadException(verificationMethodId, serializedPayload.get());
+            if (updateSerializedPayload.get() != null) {
+                throw new UpdateSignPayloadException(verificationMethodId, updateSerializedPayload.get());
             }
         } catch (IOException | GeneralSecurityException | JsonLDException ex) {
             throw new RegistrationException("Cannot sign the BTCR2 Update: " + ex.getMessage(), ex);
@@ -214,33 +219,66 @@ public class Update {
         // TODO fix selecting the correct service
         Service beaconService = didSourceDocument.getServices().stream().filter(service -> "SingletonBeacon".equals(service.getType()) && service.getId().toString().endsWith("#initialP2PKH")).findFirst().orElse(null);
         if (beaconService == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_DID_DOCUMENT, "No beacon service found in source DID document: " + didSourceDocument);
-        String beaconServiceAddress;
+
+        Address beaconServiceAddress;
         try {
-            beaconServiceAddress = AddressUtil.bitcoinUriToAddressString((URI) beaconService.getServiceEndpoint());
+            beaconServiceAddress = AddressUtil.bitcoinUriToBitcoinjAddress((URI) beaconService.getServiceEndpoint());
         } catch (BitcoinURIParseException ex) {
             throw new RegistrationException(RegistrationException.ERROR_INVALID_DID_DOCUMENT, "Invalid beacon service found in source DID document: " + beaconService);
         }
-        List<Tx> beaconServiceAddressTransactions = bitcoinConnection.getAddressTransactions(beaconServiceAddress);
-        Script bitcoinjScript = ScriptBuilder.createOpReturnScript(btcr2UpdateAnnouncement);
+
+        List<TxOut> beaconServiceAddressUtxos = bitcoinConnection.getAddressUtxos(beaconServiceAddress.toString());
+
         Transaction bitcoinjTransaction = new Transaction();
-        for (TxOut beaconServiceAddressTransactionOut : beaconServiceAddressTransactions.getFirst().txOuts()) {
-            TransactionInput transactionInput;
-            bitcoinjTransaction.addInput(beaconServiceAddressTransactionOut.)
+        long totalValue = 0;
+        for (TxOut beaconServiceAddressUtxo : beaconServiceAddressUtxos) {
+            TransactionOutput transactionOutput = new TransactionOutput(null, Coin.valueOf(beaconServiceAddressUtxo.value()), beaconServiceAddressUtxo.scriptBytes());
+            bitcoinjTransaction.addInput(transactionOutput);
+            totalValue += beaconServiceAddressUtxo.value();
         }
-        bitcoinjTransaction.addOutput(Coin.ZERO, bitcoinjScript);
+        bitcoinjTransaction.addOutput(Coin.valueOf(totalValue), beaconServiceAddress);
+        bitcoinjTransaction.addOutput(Coin.ZERO, ScriptBuilder.createOpReturnScript(btcr2UpdateAnnouncement));
 
         // The Beacon Signal is signed by the private key that controls the Beacon Address
 
-        if (signPayloadResponse != null) {
-            Script inputScript = ScriptBuilder.createInputScript(signature, pubKey);
-            tx.getInput(0).setScriptSig(inputScript);
-        } else {
-            Sha256Hash hash = tx.hashForSignature(
-                    inputIndex,
-                    scriptPubKey,
-                    Transaction.SigHash.ALL,
-                    false
-            );
+        try {
+
+            List<byte[]> utxoSigningResponseSignatures = utxoSigningResponses == null ? null : utxoSigningResponses.stream().map(SigningResponse::getSignature).map(signature -> Base64.getDecoder().decode(signature)).toList();
+            if (utxoSigningResponseSignatures == null || utxoSigningResponseSignatures.size() != bitcoinjTransaction.getInputs().size()) {
+                List<byte[]> payloads = IntStream.range(0, bitcoinjTransaction.getInputs().size())
+                        .mapToObj(i -> bitcoinjTransaction.hashForSignature(
+                                i,
+                                bitcoinjTransaction.getInput(i).getScriptBytes(),
+                                Transaction.SigHash.ALL,
+                                false))
+                        .map(Sha256Hash::getBytes)
+                        .toList();
+                throw new UtxoSignPayloadException(payloads);
+            }
+
+            for (int i=0; i<bitcoinjTransaction.getInputs().size(); i++) {
+                TransactionInput transactionInput = bitcoinjTransaction.getInput(i);
+                byte[] utxoSigningResponseSignature = utxoSigningResponseSignatures.get(i);
+                TransactionSignature transactionSignature = new TransactionSignature(
+                        ECKey.ECDSASignature.decodeFromDER(utxoSigningResponseSignature /* TODO, not DER */),
+                        Transaction.SigHash.ALL,
+                        false);
+                transactionInput = transactionInput.withScriptSig(ScriptBuilder.createInputScript(transactionSignature, null /* TODO key */));
+            }
+
+            if (signPayloadResponse != null) {
+                Script inputScript = ScriptBuilder.createInputScript(signature, pubKey);
+                tx.getInput(0).setScriptSig(inputScript);
+            } else {
+                Sha256Hash hash = tx.hashForSignature(
+                        inputIndex,
+                        scriptPubKey,
+                        Transaction.SigHash.ALL,
+                        false
+                );
+            }
+        } catch (IOException | GeneralSecurityException | JsonLDException | SignatureDecodeException ex) {
+            throw new RegistrationException("Cannot sign the Bitcoin transaction: " + ex.getMessage(), ex);
         }
 
         // and broadcast to the Bitcoin network.
@@ -288,22 +326,16 @@ public class Update {
         }
     }
 
-    public static class BitcoinSignPayloadException extends Exception {
+    public static class UtxoSignPayloadException extends Exception {
 
-        private final URI verificationMethodId;
-        private final byte[] payload;
+        private final List<byte[]> payloads;
 
-        public UpdateSignPayloadException(URI verificationMethodId, byte[] payload) {
-            this.verificationMethodId = verificationMethodId;
-            this.payload = payload;
+        public UtxoSignPayloadException(List<byte[]> payloads) {
+            this.payloads = payloads;
         }
 
-        public URI getVerificationMethodId() {
-            return verificationMethodId;
-        }
-
-        public byte[] getPayload() {
-            return payload;
+        public List<byte[]> getPayloads() {
+            return payloads;
         }
     }
 

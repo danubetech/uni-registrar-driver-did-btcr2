@@ -77,11 +77,15 @@ public class StateInit {
 
         // read verification method public data and signing response
 
-        VerificationMethodPublicData verificationMethodPublicData = null;
-        SigningResponse signingResponse = null;
+        VerificationMethodPublicData updateVerificationMethodPublicData = null;
+        SigningResponse updateSigningResponse = null;
+        List<SigningResponse> utxoSigningResponses = null;
 
-        if (updateRequest.getSecret() != null && updateRequest.getSecret().getVerificationMethod() != null && ! updateRequest.getSecret().getVerificationMethod().isEmpty()) verificationMethodPublicData = updateRequest.getSecret().getVerificationMethod().getFirst().getVerificationMethodPublicData();
-        if (updateRequest.getSecret() != null && updateRequest.getSecret().getSigningResponse() != null && ! updateRequest.getSecret().getSigningResponse().isEmpty()) signingResponse = updateRequest.getSecret().getSigningResponse().get("didUpdate");
+        if (updateRequest.getSecret() != null && updateRequest.getSecret().getVerificationMethod() != null && ! updateRequest.getSecret().getVerificationMethod().isEmpty()) updateVerificationMethodPublicData = updateRequest.getSecret().getVerificationMethod().getFirst().getVerificationMethodPublicData();
+        if (updateRequest.getSecret() != null && updateRequest.getSecret().getSigningResponse() != null && ! updateRequest.getSecret().getSigningResponse().isEmpty()) {
+            updateSigningResponse = updateRequest.getSecret().getSigningResponse().get("didUpdate");
+            utxoSigningResponses = updateRequest.getSecret().getSigningResponse().entrySet().stream().filter(signingResponseEntry -> signingResponseEntry.getKey().startsWith("utxo")).map(Map.Entry::getValue).toList();
+        }
 
         // find Bitcoin connection
 
@@ -92,7 +96,7 @@ public class StateInit {
 
         try {
 
-            update.update(bitcoinConnection, didSourceDocument, jsonPatches, targetVersionId, verificationMethodPublicData, signingResponse, didDocumentMetadata);
+            update.update(bitcoinConnection, didSourceDocument, jsonPatches, targetVersionId, updateVerificationMethodPublicData, updateSigningResponse, utxoSigningResponses, didDocumentMetadata);
         } catch (Update.UpdateGetVerificationMethodException ex) {
 
             // next state
