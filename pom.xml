@@ -176,7 +176,7 @@
         <dependency>
             <groupId>decentralized-identity</groupId>
             <artifactId>did-common-java</artifactId>
-            <version>1.24.0</version>
+            <version>1.25.0</version>
         </dependency>
         <dependency>
             <groupId>com.danubetech</groupId>
