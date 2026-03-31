@@ -99,11 +99,15 @@ public class Update {
      * See https://dcdpr.github.io/did-btcr2/operations/update.html
      */
 
-    public Map<String, Object> update(BitcoinConnection bitcoinConnection, DIDDocument didSourceDocument, List<JsonPatch> jsonPatches, Integer targetVersionId, VerificationMethodPublicData updateVerificationMethodPublicData, SigningResponse updateSigningResponse, List<SigningResponse> utxoSigningResponses, Map<String, Object> didDocumentMetadata) throws RegistrationException, ActionUpdateGetVerificationMethodException, ActionUpdateSignPayloadException, ActionUtxoSignPayloadsException {
+    public Map<String, Object> update(BitcoinConnection bitcoinConnection, DIDDocument didSourceDocument, JsonPatch jsonPatch, Integer targetVersionId, VerificationMethodPublicData updateVerificationMethodPublicData, SigningResponse updateSigningResponse, List<SigningResponse> utxoSigningResponses, Map<String, Object> didDocumentMetadata) throws RegistrationException, ActionUpdateGetVerificationMethodException, ActionUpdateSignPayloadException, ActionUtxoSignPayloadsException {
 
         URI verificationMethodId = null;
         if (updateVerificationMethodPublicData != null && updateVerificationMethodPublicData.getId() != null) verificationMethodId = URI.create(updateVerificationMethodPublicData.getId());
         if (updateSigningResponse != null && updateSigningResponse.getKid() != null) verificationMethodId = URI.create(updateSigningResponse.getKid());
+
+        if (verificationMethodId == null && updateSigningResponse == null && utxoSigningResponses == null) {
+            throw new ActionUpdateGetVerificationMethodException();
+        }
 
         /*
          * Construct BTCR2 Unsigned Update
@@ -113,25 +117,28 @@ public class Update {
         // Apply all JSON patches in jsonPatches to didSourceDocument to create didTargetDocument.
 
         DIDDocument didTargetDocument = didSourceDocument;
-        for (JsonPatch jsonPatch : jsonPatches) didTargetDocument = JSONPatchUtil.apply(didTargetDocument, jsonPatch);
+        didTargetDocument = JSONPatchUtil.apply(didTargetDocument, jsonPatch);
+        if (log.isDebugEnabled()) log.debug("didTargetDocument: " + didTargetDocument);
 
         // Fill the BTCR2 Unsigned Update (data structure) template below with the required template variables.
 
         String arrayOfPatchesString;
         try {
-            arrayOfPatchesString = jsonMapper.writeValueAsString(jsonPatches);
+            arrayOfPatchesString = jsonMapper.writeValueAsString(jsonPatch.toJsonArray());
         } catch (JsonProcessingException ex) {
-            throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Cannot prepare array of patches: " + jsonPatches);
+            throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Cannot prepare array of patches: " + ex.getMessage(), ex);
         }
         String updateString = BTCR2_UNSIGNED_UPDATE_TEMPLATE
                 .replace("{{array-of-patches}}", arrayOfPatchesString)
                 .replace("{{source-hash}}", Base64.getUrlEncoder().encodeToString(JSONDocumentHashing.jsonDocumentHashing(didSourceDocument)))
                 .replace("{{target-hash}}", Base64.getUrlEncoder().encodeToString(JSONDocumentHashing.jsonDocumentHashing(didTargetDocument)))
                 .replace("{{target-version-id}}", targetVersionId.toString());
+        if (log.isDebugEnabled()) log.debug("updateString: " + updateString);
 
         // Let update be the result of parsing the rendered template as JSON.
 
         BTCR2Update update = BTCR2Update.fromJson(updateString);
+        if (log.isDebugEnabled()) log.debug("update: " + update);
 
         /*
          * Construct BTCR2 Signed Update
@@ -171,10 +178,6 @@ public class Update {
             final byte[] updateSigningResponseSignature = updateSigningResponse == null ? null : Base64.getDecoder().decode(updateSigningResponse.getSignature());
             final AtomicReference<byte[]> updateSerializedPayload = new AtomicReference<>();
 
-            if (verificationMethodId == null && updateSigningResponseSignature == null) {
-                throw new ActionUpdateGetVerificationMethodException();
-            }
-
             cryptosuite.setSigner(new ByteSigner(JWSAlgorithm.ES256K) {
                 @Override
                 protected byte[] sign(byte[] bytes) {
@@ -213,6 +216,7 @@ public class Update {
         // hashed with the JSON Document Hashing algorithm.
 
         byte[] btcr2UpdateAnnouncement = JSONDocumentHashing.jsonDocumentHashing(update);
+        if (log.isDebugEnabled()) log.debug("btcr2UpdateAnnouncement: " + Hex.encodeHexString(btcr2UpdateAnnouncement));
 
         // This 32-byte SHA-256 hash is used as the Signal Bytes when constructing a Beacon Signal Bitcoin transaction.
 

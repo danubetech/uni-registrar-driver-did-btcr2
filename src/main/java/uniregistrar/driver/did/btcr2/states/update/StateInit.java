@@ -13,10 +13,10 @@ import jakarta.json.JsonPatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
-import uniregistrar.driver.did.btcr2.crud.update.Update;
 import uniregistrar.driver.did.btcr2.crud.update.ActionUpdateGetVerificationMethodException;
 import uniregistrar.driver.did.btcr2.crud.update.ActionUpdateSignPayloadException;
 import uniregistrar.driver.did.btcr2.crud.update.ActionUtxoSignPayloadsException;
+import uniregistrar.driver.did.btcr2.crud.update.Update;
 import uniregistrar.driver.did.btcr2.job.Job;
 import uniregistrar.driver.did.btcr2.job.JobRegistry;
 import uniregistrar.driver.did.btcr2.syntax.DidBtcr2IdentifierDecoding;
@@ -62,19 +62,19 @@ public class StateInit {
 
         // read input DID document update operations
 
-        List<JsonPatch> jsonPatches = new ArrayList<>();
+        List<Map<String, Object>> jsonPatchesObjects = new LinkedList<>();
         for (int i=0; i<didDocumentOperations.size(); i++) {
             String didDocumentOperation = didDocumentOperations.get(i);
             DIDDocument didDocument = didDocuments.get(i);
             if (! "patchDidDocument".equals(didDocumentOperation)) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Unsupported DID document operation: " + didDocumentOperation);
-            JsonPatch jsonPatch = Json.createPatch(Json.createArrayBuilder(Collections.singletonList(didDocument.getJsonObject())).build());
-            jsonPatches.add(jsonPatch);
+            jsonPatchesObjects.add(didDocument.getJsonObject());
         }
+        JsonPatch jsonPatch = Json.createPatch(Json.createArrayBuilder(jsonPatchesObjects).build());
 
         // read didSourceDocument and targetVersionId options
 
-        DIDDocument didSourceDocument = updateRequest.getOptions() == null ? null : DIDDocument.fromJson(((String) updateRequest.getOptions().getAdditionalProperty("didSourceDocument")));
-        Integer targetVersionId = updateRequest.getOptions() == null ? null : (Integer) updateRequest.getOptions().getAdditionalProperties().get("targetVersionId");
+        DIDDocument didSourceDocument = updateRequest.getOptions() == null || updateRequest.getOptions().getAdditionalProperty("didSourceDocument") == null ? null : DIDDocument.fromJsonObject((Map<String, Object>) updateRequest.getOptions().getAdditionalProperty("didSourceDocument"));
+        Integer targetVersionId = updateRequest.getOptions() == null ? null : (Integer) updateRequest.getOptions().getAdditionalProperty("targetVersionId");
         if (didSourceDocument == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'didSourceDocument' option");
         if (targetVersionId == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'targetVersionId' option");
 
@@ -99,7 +99,7 @@ public class StateInit {
 
         try {
 
-            update.update(bitcoinConnection, didSourceDocument, jsonPatches, targetVersionId, updateVerificationMethodPublicData, updateSigningResponse, utxoSigningResponses, didDocumentMetadata);
+            update.update(bitcoinConnection, didSourceDocument, jsonPatch, targetVersionId, updateVerificationMethodPublicData, updateSigningResponse, utxoSigningResponses, didDocumentMetadata);
         } catch (ActionUpdateGetVerificationMethodException ex) {
 
             // next state
