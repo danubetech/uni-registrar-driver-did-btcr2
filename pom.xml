@@ -11,7 +11,7 @@
 	<parent>
 		<groupId>decentralized-identity</groupId>
 		<artifactId>uni-registrar</artifactId>
-		<version>1.10.0</version>
+		<version>1.11.0</version>
 	</parent>
 
     <scm>
@@ -39,7 +39,7 @@
         <!-- Dependency Versions -->
 
         <jcl-over-slf4j.version>2.0.17</jcl-over-slf4j.version>
-        <log4j-slf4j2-impl.version>2.25.3</log4j-slf4j2-impl.version>
+        <log4j-slf4j2-impl.version>2.25.4</log4j-slf4j2-impl.version>
 	</properties>
 
     <profiles>
@@ -171,7 +171,7 @@
         <dependency>
             <groupId>com.danubetech</groupId>
             <artifactId>key-formats-java</artifactId>
-            <version>1.29.0</version>
+            <version>1.30.0</version>
         </dependency>
         <dependency>
             <groupId>decentralized-identity</groupId>
