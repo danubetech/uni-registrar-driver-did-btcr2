@@ -14,6 +14,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
 import uniregistrar.driver.did.btcr2.crud.update.Update;
+import uniregistrar.driver.did.btcr2.crud.update.ActionUpdateGetVerificationMethodException;
+import uniregistrar.driver.did.btcr2.crud.update.ActionUpdateSignPayloadException;
+import uniregistrar.driver.did.btcr2.crud.update.ActionUtxoSignPayloadsException;
 import uniregistrar.driver.did.btcr2.job.Job;
 import uniregistrar.driver.did.btcr2.job.JobRegistry;
 import uniregistrar.driver.did.btcr2.syntax.DidBtcr2IdentifierDecoding;
@@ -97,16 +100,21 @@ public class StateInit {
         try {
 
             update.update(bitcoinConnection, didSourceDocument, jsonPatches, targetVersionId, updateVerificationMethodPublicData, updateSigningResponse, utxoSigningResponses, didDocumentMetadata);
-        } catch (Update.UpdateGetVerificationMethodException ex) {
+        } catch (ActionUpdateGetVerificationMethodException ex) {
 
             // next state
 
             return TransitionInit.transitionToInitGetVerificationMethod(bitcoinConnection, didRegistrationMetadata, didDocumentMetadata);
-        } catch (Update.UpdateSignPayloadException ex) {
+        } catch (ActionUpdateSignPayloadException ex) {
 
             // next state
 
-            return TransitionInit.transitionToSignPayload(bitcoinConnection, ex.getVerificationMethodId(), ex.getPayload(), didRegistrationMetadata, didDocumentMetadata);
+            return TransitionInit.transitionToUpdateSignPayload(bitcoinConnection, ex.getVerificationMethodId(), ex.getPayload(), didRegistrationMetadata, didDocumentMetadata);
+        } catch (ActionUtxoSignPayloadsException ex) {
+
+            // next state
+
+            return TransitionInit.transitionToUtxoSignPayloads(bitcoinConnection, ex.getPayloads(), didRegistrationMetadata, didDocumentMetadata);
         }
 
         // next state

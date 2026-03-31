@@ -8,10 +8,7 @@ import uniregistrar.driver.did.btcr2.job.JobRegistry;
 import uniregistrar.openapi.model.*;
 
 import java.net.URI;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class TransitionInit {
 
@@ -46,12 +43,13 @@ public class TransitionInit {
         return updateState;
     }
 
-    public static UpdateState transitionToSignPayload(BitcoinConnection bitcoinConnection, URI verificationMethodID, byte[] serializedPayload, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public static UpdateState transitionToUpdateSignPayload(BitcoinConnection bitcoinConnection, URI verificationMethodID, byte[] serializedPayload, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
 
-        // REGISTRATION STATE: signing requesst
+        // REGISTRATION STATE: signing request
 
         SigningRequest didUpdateSigningRequest = new SigningRequest()
                 .kid(verificationMethodID.toString())
+                .purpose("capabilityInvocation")
                 .serializedPayload(Base64.getUrlEncoder().encodeToString(serializedPayload));
 
         // REGISTRATION STATE: didState.state="action"
@@ -59,7 +57,43 @@ public class TransitionInit {
         DidStateAction didStateAction = new DidStateAction();
         didStateAction.setState("action");
         didStateAction.setAction("signPayload");
-        didStateAction.setSigningRequest(Map.of("didUpdate", didUpdateSigningRequest));
+        didStateAction.setSigningRequest(Map.of("btcr2Update", didUpdateSigningRequest));
+
+        // REGISTRATION STATE: didRegistrationMetadata
+
+        didRegistrationMetadata.putAll(bitcoinConnection.getMetadata());
+
+        // REGISTRATION STATE: update()
+
+        UpdateState updateState = new UpdateState();
+        updateState.setDidState(didStateAction);
+        updateState.setDidRegistrationMetadata(didRegistrationMetadata);
+        updateState.setDidDocumentMetadata(didDocumentMetadata);
+
+        // done
+
+        return updateState;
+    }
+
+    public static UpdateState transitionToUtxoSignPayloads(BitcoinConnection bitcoinConnection, List<byte[]> serializedPayloads, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+
+        // REGISTRATION STATE: signing request
+
+        List<SigningRequest> utxoSigningRequests = serializedPayloads.stream().map( x -> new SigningRequest()
+                        .purpose("capabilityInvocation")
+                        .serializedPayload(Base64.getUrlEncoder().encodeToString(x)))
+                .toList();
+        Map<String, SigningRequest> utxoSigningRequestsMap = new LinkedHashMap<>();
+        for (int i=0; i<utxoSigningRequests.size(); i++) {
+            utxoSigningRequestsMap.put("btcr2Utxo" + i, utxoSigningRequests.get(i));
+        }
+
+        // REGISTRATION STATE: didState.state="action"
+
+        DidStateAction didStateAction = new DidStateAction();
+        didStateAction.setState("action");
+        didStateAction.setAction("signPayload");
+        didStateAction.setSigningRequest(utxoSigningRequestsMap);
 
         // REGISTRATION STATE: didRegistrationMetadata
 

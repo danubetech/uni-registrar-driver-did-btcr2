@@ -6,6 +6,7 @@ import foundation.identity.did.VerificationMethod;
 import foundation.identity.did.jsonld.DIDContexts;
 import foundation.identity.did.jsonld.DIDKeywords;
 import foundation.identity.jsonld.JsonLDDereferencer;
+import foundation.identity.jsonld.JsonLDObject;
 import foundation.identity.jsonld.JsonLDUtils;
 import fr.acinq.secp256k1.Hex;
 import io.ipfs.multibase.Multibase;
@@ -32,7 +33,8 @@ public class DidDocUnAssembler {
 
         if (didDocument == null) return null;
 
-        VerificationMethod verificationMethodInitialKey = (VerificationMethod) JsonLDDereferencer.findByIdInJsonLdObject(didDocument, GENESIS_ID_VERIFICATIONMETHOD, null);
+        JsonLDObject verificationMethodInitialKeyJsonLDObject = JsonLDDereferencer.findByIdInJsonLdObject(didDocument, GENESIS_ID_VERIFICATIONMETHOD, null);
+        VerificationMethod verificationMethodInitialKey = verificationMethodInitialKeyJsonLDObject == null ? null : VerificationMethod.fromJsonLDObject(verificationMethodInitialKeyJsonLDObject);
         if (verificationMethodInitialKey == null) return null;
 
         if (! "Multikey".equals(verificationMethodInitialKey.getType())) {
