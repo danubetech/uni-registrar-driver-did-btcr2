@@ -9,8 +9,8 @@ import uniregistrar.driver.did.btcr2.config.Configuration;
 import uniregistrar.driver.did.btcr2.crud.create.Create;
 import uniregistrar.driver.did.btcr2.crud.deactivate.Deactivate;
 import uniregistrar.driver.did.btcr2.crud.update.Update;
-import uniregistrar.driver.did.btcr2.job.Job;
-import uniregistrar.driver.did.btcr2.job.JobRegistry;
+import uniregistrar.driver.did.btcr2.job.CreateJob;
+import uniregistrar.driver.did.btcr2.job.UpdateJob;
 import uniregistrar.openapi.model.CreateRequest;
 import uniregistrar.openapi.model.CreateState;
 import uniregistrar.openapi.model.UpdateRequest;
@@ -29,8 +29,6 @@ public class DidBtcr2Driver implements Driver {
     private Deactivate deactivate;
     private BitcoinConnector bitcoinConnector;
 
-    private JobRegistry jobRegistry = new JobRegistry();
-
 	public DidBtcr2Driver() {
 		this(Configuration.getPropertiesFromEnvironment());
 	}
@@ -44,7 +42,7 @@ public class DidBtcr2Driver implements Driver {
 
         // read input fields
 
-        String jobId = createRequest.getJobId();
+        Map<String, Object> jobId = (Map<String, Object>) createRequest.getJobId();
         Boolean clientSecretMode = createRequest.getOptions() == null ? null : createRequest.getOptions().getClientSecretMode();
 
         // check client-managed secret mode
@@ -53,15 +51,14 @@ public class DidBtcr2Driver implements Driver {
             throw new RegistrationException("This driver only supports clientSecretMode=true");
         }
 
-        // find job
+        // restore job
 
-        Job job = jobId == null ? null : this.getJobRegistry().getJob(jobId);
-        if (jobId != null && job == null) throw new RegistrationException("Job not found: " + jobId);
+        CreateJob createJob = jobId == null ? null : CreateJob.fromJsonObject(jobId);
 
-        if (job == null || job.getNextState() == uniregistrar.driver.did.btcr2.states.create.StateInit.STATE) {
-            return uniregistrar.driver.did.btcr2.states.create.StateInit.create(this.getJobRegistry(), job, createRequest, this.getCreate(), this.getBitcoinConnector());
+        if (createJob == null || createJob.getNextState() == uniregistrar.driver.did.btcr2.states.create.StateInit.STATE) {
+            return uniregistrar.driver.did.btcr2.states.create.StateInit.create(createJob, createRequest, this.getCreate(), this.getBitcoinConnector());
         } else {
-            throw new RegistrationException("Invalid state " + job.getNextState() + " for job " + job.getJobId());
+            throw new RegistrationException("Invalid state " + createJob.getNextState() + " for job " + createJob.getJobId());
         }
     }
 
@@ -70,7 +67,7 @@ public class DidBtcr2Driver implements Driver {
 
         // read input fields
 
-        String jobId = updateRequest.getJobId();
+        Map<String, Object> jobId = (Map<String, Object>) updateRequest.getJobId();
         Boolean clientSecretMode = updateRequest.getOptions() == null ? null : updateRequest.getOptions().getClientSecretMode();
 
         // check client-managed secret mode
@@ -81,13 +78,16 @@ public class DidBtcr2Driver implements Driver {
 
         // find job
 
-        Job job = jobId == null ? null : this.getJobRegistry().getJob(jobId);
-        if (jobId != null && job == null) throw new RegistrationException("Job not found: " + jobId);
+        UpdateJob updateJob = jobId == null ? null : UpdateJob.fromJsonObject(jobId);
 
-        if (job == null || job.getNextState() == uniregistrar.driver.did.btcr2.states.create.StateInit.STATE) {
-            return uniregistrar.driver.did.btcr2.states.update.StateInit.update(this.getJobRegistry(), job, updateRequest, this.getUpdate(), this.getBitcoinConnector());
+        if (updateJob == null || (updateJob.updateSignPayload() == null && updateJob.utxoSignPayloads() == null)) {
+            return uniregistrar.driver.did.btcr2.states.update.StateInit.update(updateJob, updateRequest, this.getUpdate(), this.getBitcoinConnector());
+        } else if (updateJob.updateSignPayload() != null && updateJob.utxoSignPayloads() == null) {
+            return uniregistrar.driver.did.btcr2.states.update.StateProcessUpdateSignPayload.update(updateJob, updateRequest, this.getUpdate(), this.getBitcoinConnector());
+        } else if (updateJob.updateSignPayload() == null && updateJob.utxoSignPayloads() != null) {
+            return uniregistrar.driver.did.btcr2.states.update.StateProcessUtxoSignPayloads.update(updateJob, updateRequest, this.getUpdate(), this.getBitcoinConnector());
         } else {
-            throw new RegistrationException("Invalid state " + job.getNextState() + " for job " + job.getJobId());
+            throw new RegistrationException("Invalid state for job " + updateJob);
         }
     }
 
@@ -139,13 +139,5 @@ public class DidBtcr2Driver implements Driver {
 
     public void setBitcoinConnector(BitcoinConnector bitcoinConnector) {
         this.bitcoinConnector = bitcoinConnector;
-    }
-
-    public JobRegistry getJobRegistry() {
-        return this.jobRegistry;
-    }
-
-    public void setJobRegistry(JobRegistry jobRegistry) {
-        this.jobRegistry = jobRegistry;
     }
 }

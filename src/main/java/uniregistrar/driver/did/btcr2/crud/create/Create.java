@@ -15,6 +15,11 @@ import uniregistrar.driver.did.btcr2.syntax.DidBtcr2IdentifierEncoding;
 
 import java.util.Map;
 
+/*
+ * Create
+ * See https://dcdpr.github.io/did-btcr2/operations/create.html#create
+ */
+
 public class Create {
 
     private static final Logger log = LoggerFactory.getLogger(Create.class);
@@ -24,11 +29,6 @@ public class Create {
     public Create(IPFSConnection ipfsConnection) {
         this.ipfsConnection = ipfsConnection;
     }
-
-    /*
-     * Create
-     * See https://dcdpr.github.io/did-btcr2/operations/create.html#create
-     */
 
     public DID create(BitcoinConnection bitcoinConnection, byte[] initialKey, DIDDocument genesisDocument, Integer version, Network network, Map<String, Object> didDocumentMetadata) throws RegistrationException {
 

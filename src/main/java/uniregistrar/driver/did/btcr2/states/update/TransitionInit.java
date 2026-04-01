@@ -1,14 +1,15 @@
 package uniregistrar.driver.did.btcr2.states.update;
 
 import com.danubetech.btc.connection.BitcoinConnection;
-import foundation.identity.did.DID;
 import uniregistrar.RegistrationException;
-import uniregistrar.driver.did.btcr2.job.Job;
-import uniregistrar.driver.did.btcr2.job.JobRegistry;
+import uniregistrar.driver.did.btcr2.job.UpdateJob;
 import uniregistrar.openapi.model.*;
 
 import java.net.URI;
-import java.util.*;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 public class TransitionInit {
 
@@ -43,14 +44,20 @@ public class TransitionInit {
         return updateState;
     }
 
-    public static UpdateState transitionToUpdateSignPayload(BitcoinConnection bitcoinConnection, URI verificationMethodID, byte[] serializedPayload, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public static UpdateState transitionToUpdateSignPayload(BitcoinConnection bitcoinConnection, URI verificationMethodId, byte[] updateSignPayload, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+
+        // REGISTRATION STATE: jobId
+
+        UpdateJob updateJob = new UpdateJob(Base64.getUrlEncoder().encodeToString(updateSignPayload), null);
+
+        Map<String, Object> jobId = updateJob.toJsonObject();
 
         // REGISTRATION STATE: signing request
 
         SigningRequest didUpdateSigningRequest = new SigningRequest()
-                .kid(verificationMethodID.toString())
+                .kid(verificationMethodId.toString())
                 .purpose("capabilityInvocation")
-                .serializedPayload(Base64.getUrlEncoder().encodeToString(serializedPayload));
+                .serializedPayload(Base64.getUrlEncoder().encodeToString(updateSignPayload));
 
         // REGISTRATION STATE: didState.state="action"
 
@@ -66,71 +73,8 @@ public class TransitionInit {
         // REGISTRATION STATE: update()
 
         UpdateState updateState = new UpdateState();
+        updateState.setJobId(new RegistrarStateJobId(jobId));
         updateState.setDidState(didStateAction);
-        updateState.setDidRegistrationMetadata(didRegistrationMetadata);
-        updateState.setDidDocumentMetadata(didDocumentMetadata);
-
-        // done
-
-        return updateState;
-    }
-
-    public static UpdateState transitionToUtxoSignPayloads(BitcoinConnection bitcoinConnection, List<byte[]> serializedPayloads, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
-
-        // REGISTRATION STATE: signing request
-
-        List<SigningRequest> utxoSigningRequests = serializedPayloads.stream().map( x -> new SigningRequest()
-                        .purpose("capabilityInvocation")
-                        .serializedPayload(Base64.getUrlEncoder().encodeToString(x)))
-                .toList();
-        Map<String, SigningRequest> utxoSigningRequestsMap = new LinkedHashMap<>();
-        for (int i=0; i<utxoSigningRequests.size(); i++) {
-            utxoSigningRequestsMap.put("btcr2Utxo" + i, utxoSigningRequests.get(i));
-        }
-
-        // REGISTRATION STATE: didState.state="action"
-
-        DidStateAction didStateAction = new DidStateAction();
-        didStateAction.setState("action");
-        didStateAction.setAction("signPayload");
-        didStateAction.setSigningRequest(utxoSigningRequestsMap);
-
-        // REGISTRATION STATE: didRegistrationMetadata
-
-        didRegistrationMetadata.putAll(bitcoinConnection.getMetadata());
-
-        // REGISTRATION STATE: update()
-
-        UpdateState updateState = new UpdateState();
-        updateState.setDidState(didStateAction);
-        updateState.setDidRegistrationMetadata(didRegistrationMetadata);
-        updateState.setDidDocumentMetadata(didDocumentMetadata);
-
-        // done
-
-        return updateState;
-    }
-
-    public static UpdateState transitionToFinished(JobRegistry jobRegistry, Job job, BitcoinConnection bitcoinConnection, DID did, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
-
-        // REGISTRATION STATE: jobId
-
-        if (job != null) jobRegistry.removeJob(job);
-
-        // REGISTRATION STATE: didState.state="finished"
-
-        DidStateFinished didStateFinished = new DidStateFinished();
-        didStateFinished.setState("finished");
-        didStateFinished.setDid(did.getDidString());
-
-        // REGISTRATION STATE: didRegistrationMetadata
-
-        didRegistrationMetadata.putAll(bitcoinConnection.getMetadata());
-
-        // update() state
-
-        UpdateState updateState = new UpdateState();
-        updateState.setDidState(didStateFinished);
         updateState.setDidRegistrationMetadata(didRegistrationMetadata);
         updateState.setDidDocumentMetadata(didDocumentMetadata);
 

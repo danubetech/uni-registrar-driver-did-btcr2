@@ -11,8 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
 import uniregistrar.driver.did.btcr2.crud.create.Create;
-import uniregistrar.driver.did.btcr2.job.Job;
-import uniregistrar.driver.did.btcr2.job.JobRegistry;
+import uniregistrar.driver.did.btcr2.job.CreateJob;
 import uniregistrar.driver.did.btcr2.ledger.DidDocUnAssembler;
 import uniregistrar.openapi.model.CreateRequest;
 import uniregistrar.openapi.model.CreateState;
@@ -30,7 +29,7 @@ public class StateInit {
 
     public static final int STATE = 0;
 
-    public static CreateState create(JobRegistry jobRegistry, Job job, CreateRequest createRequest, Create create, BitcoinConnector bitcoinConnector) throws RegistrationException {
+    public static CreateState create(CreateJob createJob, CreateRequest createRequest, Create create, BitcoinConnector bitcoinConnector) throws RegistrationException {
 
         // prepare didRegistrationMetadata and didDocumentMetadata
 
@@ -73,6 +72,6 @@ public class StateInit {
 
         // next state
 
-        return TransitionInit.transitionToFinished(jobRegistry, job, bitcoinConnection, did, didRegistrationMetadata, didDocumentMetadata);
+        return TransitionInit.transitionToFinished(bitcoinConnection, did, didRegistrationMetadata, didDocumentMetadata);
     }
 }

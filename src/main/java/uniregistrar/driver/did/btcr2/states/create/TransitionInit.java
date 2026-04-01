@@ -3,8 +3,6 @@ package uniregistrar.driver.did.btcr2.states.create;
 import com.danubetech.btc.connection.BitcoinConnection;
 import foundation.identity.did.DID;
 import uniregistrar.RegistrationException;
-import uniregistrar.driver.did.btcr2.job.Job;
-import uniregistrar.driver.did.btcr2.job.JobRegistry;
 import uniregistrar.openapi.model.*;
 
 import java.util.Collections;
@@ -47,11 +45,9 @@ public class TransitionInit {
         return createState;
     }
 
-    public static CreateState transitionToFinished(JobRegistry jobRegistry, Job job, BitcoinConnection bitcoinConnection, DID did, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
+    public static CreateState transitionToFinished(BitcoinConnection bitcoinConnection, DID did, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
 
         // REGISTRATION STATE: jobId
-
-        if (job != null) jobRegistry.removeJob(job);
 
         // REGISTRATION STATE: verification method templates
 

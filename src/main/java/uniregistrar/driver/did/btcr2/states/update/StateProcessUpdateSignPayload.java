@@ -14,17 +14,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
 import uniregistrar.driver.did.btcr2.crud.update.Update;
-import uniregistrar.driver.did.btcr2.crud.update.UpdateInitResult;
+import uniregistrar.driver.did.btcr2.crud.update.UpdateProcessUpdateSignPayloadResult;
 import uniregistrar.driver.did.btcr2.job.UpdateJob;
 import uniregistrar.driver.did.btcr2.syntax.DidBtcr2IdentifierDecoding;
-import uniregistrar.openapi.model.*;
+import uniregistrar.openapi.model.RequestSecret;
+import uniregistrar.openapi.model.SigningResponse;
+import uniregistrar.openapi.model.UpdateRequest;
+import uniregistrar.openapi.model.UpdateState;
 
 import java.net.URI;
 import java.util.*;
 
-public class StateInit {
+public class StateProcessUpdateSignPayload {
 
-    private static final Logger log = LoggerFactory.getLogger(StateInit.class);
+    private static final Logger log = LoggerFactory.getLogger(StateProcessUpdateSignPayload.class);
 
     private static final JsonMapper jsonMapper = JsonMapper.builder()
             .defaultPropertyInclusion(JsonInclude.Value.ALL_NON_NULL)
@@ -67,7 +70,7 @@ public class StateInit {
             if (! "patchDidDocument".equals(didDocumentOperation)) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Unsupported DID document operation: " + didDocumentOperation);
             jsonPatchesObjects.add(didDocument.getJsonObject());
         }
-        JsonPatch jsonPatches = Json.createPatch(Json.createArrayBuilder(jsonPatchesObjects).build());
+        JsonPatch jsonPatch = Json.createPatch(Json.createArrayBuilder(jsonPatchesObjects).build());
 
         // read didSourceDocument and targetVersionId options
 
@@ -76,27 +79,22 @@ public class StateInit {
         if (didSourceDocument == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'didSourceDocument' option");
         if (targetVersionId == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'targetVersionId' option");
 
-        // read verification method public data
+        // read signing response
 
         RequestSecret requestSecret = updateRequest.getSecret();
-        List<RequestSecretVerificationMethodInner> requestSecretVerificationMethodInners = requestSecret == null ? null : requestSecret.getVerificationMethod();
-        VerificationMethodPublicData updateVerificationMethodPublicData = requestSecretVerificationMethodInners == null ? null : requestSecretVerificationMethodInners.getFirst().getVerificationMethodPublicData();
+        Map<String, SigningResponse> signingResponses = requestSecret == null ? null : requestSecret.getSigningResponse();
+        SigningResponse updateSigningResponse = signingResponses == null ? null : signingResponses.get("didUpdate");
+        if (updateSigningResponse == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Signing response 'didUpdate' not found");
 
-        if (updateVerificationMethodPublicData == null) {
-
-            // next state
-
-            return TransitionInit.transitionToInitGetVerificationMethod(bitcoinConnection, didRegistrationMetadata, didDocumentMetadata);
-        }
-
-        URI verificationMethodId = URI.create(updateVerificationMethodPublicData.getId());
+        URI verificationMethodId = URI.create(updateSigningResponse.getKid());
+        byte[] updateSigningResponseSignature = Base64.getDecoder().decode(updateSigningResponse.getSignature());
 
         // update()
 
-        UpdateInitResult updateInitResult = update.updateInit(bitcoinConnection, didSourceDocument, jsonPatches, targetVersionId, verificationMethodId, didDocumentMetadata);
+        UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayloadResult = update.updateProcessUpdateSignPayload(bitcoinConnection, didSourceDocument, jsonPatch, targetVersionId, verificationMethodId, updateSigningResponseSignature, didDocumentMetadata);
 
         // next state
 
-        return TransitionInit.transitionToUpdateSignPayload(bitcoinConnection, updateInitResult.verificationMethodId(), updateInitResult.updateSignPayload(), didRegistrationMetadata, didDocumentMetadata);
+        return TransitionProcessUpdateSignPayload.transitionToUtxoSignPayloads(bitcoinConnection, updateProcessUpdateSignPayloadResult.btcr2UpdateAnnouncement(), updateProcessUpdateSignPayloadResult.utxoSignPayloads(), didRegistrationMetadata, didDocumentMetadata);
     }
 }
