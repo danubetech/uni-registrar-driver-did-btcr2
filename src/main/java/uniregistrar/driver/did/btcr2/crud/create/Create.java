@@ -81,7 +81,7 @@ public class Create {
         // of a single prefix byte (0x02 or 0x03) followed by the 32-byte x-coordinate of the elliptic curve point.
 
         if (initialKey.length != 33) throw new RegistrationException(RegistrationException.ERROR_INVALID_DID, "Invalid initial key length: " + initialKey.length);
-        if (initialKey[0] != 0x02 && initialKey[1] != 0x03) throw new RegistrationException(RegistrationException.ERROR_INVALID_DID, "Invalid initial key prefix byte: " + Hex.encodeHexString(initialKey));
+        if (initialKey[0] != 0x02 && initialKey[0] != 0x03) throw new RegistrationException(RegistrationException.ERROR_INVALID_DID, "Invalid initial key prefix byte: " + Hex.encodeHexString(initialKey));
 
         if (log.isDebugEnabled()) log.debug("secp256k1PublicKey: {} -> {}", Hex.encodeHexString(initialKey), Hex.encodeHexString(genesisBytes));
         return genesisBytes;
