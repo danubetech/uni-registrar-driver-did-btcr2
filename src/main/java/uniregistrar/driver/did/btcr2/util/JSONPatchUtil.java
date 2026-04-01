@@ -9,9 +9,9 @@ import java.io.StringWriter;
 
 public class JSONPatchUtil {
 
-    public static DIDDocument apply(DIDDocument didDocument, JsonPatch jsonPatch) {
+    public static DIDDocument apply(DIDDocument didDocument, JsonPatch jsonPatches) {
         JsonObject didDocumentObject = Json.createObjectBuilder(didDocument.toMap()).build();
-        JsonObject patchedDidDocumentObject = jsonPatch.apply(didDocumentObject);
+        JsonObject patchedDidDocumentObject = jsonPatches.apply(didDocumentObject);
         StringWriter stringWriter = new StringWriter();
         Json.createWriter(stringWriter).write(patchedDidDocumentObject);
         return DIDDocument.fromJson(stringWriter.toString());

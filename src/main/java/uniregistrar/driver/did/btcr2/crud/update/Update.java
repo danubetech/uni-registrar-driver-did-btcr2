@@ -8,6 +8,7 @@ import com.danubetech.keyformats.crypto.ByteSigner;
 import com.danubetech.keyformats.jose.JWSAlgorithm;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import foundation.identity.did.DID;
 import foundation.identity.did.DIDDocument;
 import foundation.identity.did.Service;
 import foundation.identity.did.VerificationMethod;
@@ -99,7 +100,7 @@ public class Update {
         this.ipfsConnection = ipfsConnection;
     }
 
-    public UpdateInitResult updateInit(BitcoinConnection bitcoinConnection, DIDDocument didSourceDocument, JsonPatch jsonPatches, Integer targetVersionId, URI verificationMethodId, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public UpdateInitResult updateInit(BitcoinConnection bitcoinConnection, DIDDocument didSourceDocument, Integer targetVersionId, JsonPatch jsonPatches, URI verificationMethodId, Map<String, Object> didDocumentMetadata) throws RegistrationException {
 
         /*
          * Construct BTCR2 Unsigned Update
@@ -140,7 +141,7 @@ public class Update {
         // An INVALID_DID_UPDATE error MUST be raised if the didSourceDocument.verificationMethod Set does not contain an id matching verificationMethodId.
         // An INVALID_DID_UPDATE error MUST be raised if the didSourceDocument.capabilityInvocation Set does not contain verificationMethodId.
 
-        VerificationMethod verificationMethod = (VerificationMethod) JsonLDDereferencer.findByIdInJsonLdObject(didSourceDocument, verificationMethodId, null);
+        VerificationMethod verificationMethod = (VerificationMethod) JsonLDDereferencer.findByIdInJsonLdObject(didSourceDocument, verificationMethodId, didSourceDocument.getId());
         if (! didSourceDocument.getVerificationMethods().contains(verificationMethod)) {
             throw new RegistrationException("INVALID_DID_UPDATE", "didSourceDocument.verificationMethod does not contain " + verificationMethodId);
         }
@@ -187,10 +188,12 @@ public class Update {
 
         // result
 
-        return new UpdateInitResult(verificationMethodId, updateSignPayload);
+        UpdateInitResult updateInitResult = new UpdateInitResult(verificationMethodId, updateSignPayload);
+        if (log.isDebugEnabled()) log.debug("Update: " + updateInitResult);
+        return updateInitResult;
     }
 
-    public UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayload(BitcoinConnection bitcoinConnection, DIDDocument didSourceDocument, JsonPatch jsonPatch, Integer targetVersionId, URI verificationMethodId, byte[] updateSigningResponseSignature, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayload(BitcoinConnection bitcoinConnection, DIDDocument didSourceDocument, Integer targetVersionId, JsonPatch jsonPatches, URI verificationMethodId, byte[] updateSigningResponseSignature, Map<String, Object> didDocumentMetadata) throws RegistrationException {
 
         /*
          * Construct BTCR2 Unsigned Update
@@ -200,14 +203,14 @@ public class Update {
         // Apply all JSON patches in jsonPatches to didSourceDocument to create didTargetDocument.
 
         DIDDocument didTargetDocument = didSourceDocument;
-        didTargetDocument = JSONPatchUtil.apply(didTargetDocument, jsonPatch);
+        didTargetDocument = JSONPatchUtil.apply(didTargetDocument, jsonPatches);
         if (log.isDebugEnabled()) log.debug("didTargetDocument: " + didTargetDocument);
 
         // Fill the BTCR2 Unsigned Update (data structure) template below with the required template variables.
 
         String arrayOfPatchesString;
         try {
-            arrayOfPatchesString = jsonMapper.writeValueAsString(jsonPatch.toJsonArray());
+            arrayOfPatchesString = jsonMapper.writeValueAsString(jsonPatches.toJsonArray());
         } catch (JsonProcessingException ex) {
             throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Cannot prepare array of patches: " + ex.getMessage(), ex);
         }
@@ -231,7 +234,7 @@ public class Update {
         // An INVALID_DID_UPDATE error MUST be raised if the didSourceDocument.verificationMethod Set does not contain an id matching verificationMethodId.
         // An INVALID_DID_UPDATE error MUST be raised if the didSourceDocument.capabilityInvocation Set does not contain verificationMethodId.
 
-        VerificationMethod verificationMethod = (VerificationMethod) JsonLDDereferencer.findByIdInJsonLdObject(didSourceDocument, verificationMethodId, null);
+        VerificationMethod verificationMethod = (VerificationMethod) JsonLDDereferencer.findByIdInJsonLdObject(didSourceDocument, verificationMethodId, didSourceDocument.getId());
         if (! didSourceDocument.getVerificationMethods().contains(verificationMethod)) {
             throw new RegistrationException("INVALID_DID_UPDATE", "didSourceDocument.verificationMethod does not contain " + verificationMethodId);
         }
@@ -325,10 +328,12 @@ public class Update {
 
         // result
 
-        return new UpdateProcessUpdateSignPayloadResult(btcr2UpdateAnnouncement, utxoSignPayloads);
+        UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayloadResult = new UpdateProcessUpdateSignPayloadResult(btcr2UpdateAnnouncement, utxoSignPayloads);
+        if (log.isDebugEnabled()) log.debug("Update: " + updateProcessUpdateSignPayloadResult);
+        return updateProcessUpdateSignPayloadResult;
     }
 
-    public UpdateProcessUtxoSignPayloadsResult updateProcessUtxoSignPayloads(BitcoinConnection bitcoinConnection, byte[] btcr2UpdateAnnouncement, List<byte[]> utxoSigningResponseSignatures, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public UpdateProcessUtxoSignPayloadsResult updateProcessUtxoSignPayloads(BitcoinConnection bitcoinConnection, DID did, DIDDocument didSourceDocument, Integer targetVersionId, JsonPatch jsonPatches, byte[] btcr2UpdateAnnouncement, List<byte[]> utxoSigningResponseSignatures, Map<String, Object> didDocumentMetadata) throws RegistrationException {
 
         /*
          * Announce DID Update
@@ -394,7 +399,9 @@ public class Update {
 
         // result
 
-        return new UpdateProcessUtxoSignPayloadsResult(btcr2UpdateAnnouncement);
+        UpdateProcessUtxoSignPayloadsResult updateProcessUtxoSignPayloadsResult = new UpdateProcessUtxoSignPayloadsResult(did);
+        if (log.isDebugEnabled()) log.debug("Update: " + updateProcessUtxoSignPayloadsResult);
+        return updateProcessUtxoSignPayloadsResult;
     }
 
     /*

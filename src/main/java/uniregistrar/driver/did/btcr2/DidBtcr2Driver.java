@@ -55,10 +55,10 @@ public class DidBtcr2Driver implements Driver {
 
         CreateJob createJob = jobId == null ? null : CreateJob.fromJsonObject(jobId);
 
-        if (createJob == null || createJob.getNextState() == uniregistrar.driver.did.btcr2.states.create.StateInit.STATE) {
+        if (createJob == null) {
             return uniregistrar.driver.did.btcr2.states.create.StateInit.create(createJob, createRequest, this.getCreate(), this.getBitcoinConnector());
         } else {
-            throw new RegistrationException("Invalid state " + createJob.getNextState() + " for job " + createJob.getJobId());
+            throw new RegistrationException("Invalid state for job " + createJob);
         }
     }
 
@@ -76,7 +76,7 @@ public class DidBtcr2Driver implements Driver {
             throw new RegistrationException("This driver only supports clientSecretMode=true");
         }
 
-        // find job
+        // restore job
 
         UpdateJob updateJob = jobId == null ? null : UpdateJob.fromJsonObject(jobId);
 

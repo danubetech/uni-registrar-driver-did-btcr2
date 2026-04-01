@@ -56,6 +56,13 @@ public class StateProcessUpdateSignPayload {
         BitcoinConnection bitcoinConnection = bitcoinConnector.getBitcoinConnection(identifierComponents.network());
         if (bitcoinConnection == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_DID, "Unknown network: " + identifierComponents.network());
 
+        // read didSourceDocument and targetVersionId options
+
+        DIDDocument didSourceDocument = updateRequest.getOptions() == null || updateRequest.getOptions().getAdditionalProperty("didSourceDocument") == null ? null : DIDDocument.fromJsonObject((Map<String, Object>) updateRequest.getOptions().getAdditionalProperty("didSourceDocument"));
+        Integer targetVersionId = updateRequest.getOptions() == null ? null : (Integer) updateRequest.getOptions().getAdditionalProperty("targetVersionId");
+        if (didSourceDocument == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'didSourceDocument' option");
+        if (targetVersionId == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'targetVersionId' option");
+
         // read input DID document operations and DID documents
 
         List<String> didDocumentOperations = updateRequest.getDidDocumentOperation() == null ? Collections.emptyList() : updateRequest.getDidDocumentOperation();;
@@ -70,28 +77,24 @@ public class StateProcessUpdateSignPayload {
             if (! "patchDidDocument".equals(didDocumentOperation)) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Unsupported DID document operation: " + didDocumentOperation);
             jsonPatchesObjects.add(didDocument.getJsonObject());
         }
-        JsonPatch jsonPatch = Json.createPatch(Json.createArrayBuilder(jsonPatchesObjects).build());
-
-        // read didSourceDocument and targetVersionId options
-
-        DIDDocument didSourceDocument = updateRequest.getOptions() == null || updateRequest.getOptions().getAdditionalProperty("didSourceDocument") == null ? null : DIDDocument.fromJsonObject((Map<String, Object>) updateRequest.getOptions().getAdditionalProperty("didSourceDocument"));
-        Integer targetVersionId = updateRequest.getOptions() == null ? null : (Integer) updateRequest.getOptions().getAdditionalProperty("targetVersionId");
-        if (didSourceDocument == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'didSourceDocument' option");
-        if (targetVersionId == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'targetVersionId' option");
+        JsonPatch jsonPatches = Json.createPatch(Json.createArrayBuilder(jsonPatchesObjects).build());
 
         // read signing response
 
         RequestSecret requestSecret = updateRequest.getSecret();
         Map<String, SigningResponse> signingResponses = requestSecret == null ? null : requestSecret.getSigningResponse();
         SigningResponse updateSigningResponse = signingResponses == null ? null : signingResponses.get("didUpdate");
-        if (updateSigningResponse == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Signing response 'didUpdate' not found");
+
+        if (updateSigningResponse == null || updateSigningResponse.getKid() == null) {
+            throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Signing response 'didUpdate' not found");
+        }
 
         URI verificationMethodId = URI.create(updateSigningResponse.getKid());
         byte[] updateSigningResponseSignature = Base64.getDecoder().decode(updateSigningResponse.getSignature());
 
         // update()
 
-        UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayloadResult = update.updateProcessUpdateSignPayload(bitcoinConnection, didSourceDocument, jsonPatch, targetVersionId, verificationMethodId, updateSigningResponseSignature, didDocumentMetadata);
+        UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayloadResult = update.updateProcessUpdateSignPayload(bitcoinConnection, didSourceDocument, targetVersionId, jsonPatches, verificationMethodId, updateSigningResponseSignature, didDocumentMetadata);
 
         // next state
 

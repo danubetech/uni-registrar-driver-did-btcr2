@@ -48,7 +48,7 @@ public class TransitionInit {
 
         // REGISTRATION STATE: jobId
 
-        UpdateJob updateJob = new UpdateJob(Base64.getUrlEncoder().encodeToString(updateSignPayload), null);
+        UpdateJob updateJob = new UpdateJob(null, Base64.getUrlEncoder().encodeToString(updateSignPayload), null);
 
         Map<String, Object> jobId = updateJob.toJsonObject();
 

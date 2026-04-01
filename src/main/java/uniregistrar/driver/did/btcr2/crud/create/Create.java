@@ -30,7 +30,7 @@ public class Create {
         this.ipfsConnection = ipfsConnection;
     }
 
-    public DID create(BitcoinConnection bitcoinConnection, byte[] initialKey, DIDDocument genesisDocument, Integer version, Network network, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public CreateInitResult create(BitcoinConnection bitcoinConnection, byte[] initialKey, DIDDocument genesisDocument, Integer version, Network network, Map<String, Object> didDocumentMetadata) throws RegistrationException {
 
         // A did:btcr2 identifier encodes a few pieces of information: an indicator for a specific Bitcoin network and a collection of Genesis Bytes.
 
@@ -60,10 +60,11 @@ public class Create {
         didDocumentMetadata.put("initialKey", initialKey == null ? null : Hex.encodeHexString(initialKey));
         didDocumentMetadata.put("genesisDocument", genesisDocument == null ? null : genesisDocument.toMap());
 
-        // done
+        // result
 
-        if (log.isDebugEnabled()) log.debug("Create: " + did);
-        return did;
+        CreateInitResult createInitResult = new CreateInitResult(did);
+        if (log.isDebugEnabled()) log.debug("Create: " + createInitResult);
+        return createInitResult;
     }
 
     /*

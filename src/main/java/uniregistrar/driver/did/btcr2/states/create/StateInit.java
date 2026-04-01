@@ -5,7 +5,6 @@ import com.danubetech.btc.connection.BitcoinConnector;
 import com.danubetech.btc.connection.Network;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import foundation.identity.did.DID;
 import foundation.identity.did.DIDDocument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,10 +67,10 @@ public class StateInit {
 
         // create()
 
-        DID did = create.create(bitcoinConnection, unassembledInitialKey, unassembledGenesisDocument, version, network, didDocumentMetadata);
+        uniregistrar.driver.did.btcr2.crud.create.CreateInitResult createInitResult = create.create(bitcoinConnection, unassembledInitialKey, unassembledGenesisDocument, version, network, didDocumentMetadata);
 
         // next state
 
-        return TransitionInit.transitionToFinished(bitcoinConnection, did, didRegistrationMetadata, didDocumentMetadata);
+        return TransitionInit.transitionToFinished(bitcoinConnection, createInitResult.did(), didRegistrationMetadata, didDocumentMetadata);
     }
 }
