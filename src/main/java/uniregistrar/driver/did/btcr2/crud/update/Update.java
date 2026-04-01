@@ -14,6 +14,7 @@ import foundation.identity.did.Service;
 import foundation.identity.did.VerificationMethod;
 import foundation.identity.jsonld.JsonLDDereferencer;
 import foundation.identity.jsonld.JsonLDException;
+import foundation.identity.jsonld.JsonLDObject;
 import jakarta.json.JsonPatch;
 import org.apache.commons.codec.binary.Hex;
 import org.bitcoinj.base.Address;
@@ -141,7 +142,8 @@ public class Update {
         // An INVALID_DID_UPDATE error MUST be raised if the didSourceDocument.verificationMethod Set does not contain an id matching verificationMethodId.
         // An INVALID_DID_UPDATE error MUST be raised if the didSourceDocument.capabilityInvocation Set does not contain verificationMethodId.
 
-        VerificationMethod verificationMethod = (VerificationMethod) JsonLDDereferencer.findByIdInJsonLdObject(didSourceDocument, verificationMethodId, didSourceDocument.getId());
+        JsonLDObject verificationMethodJsonLDObject = JsonLDDereferencer.findByIdInJsonLdObject(didSourceDocument, verificationMethodId, didSourceDocument.getId());
+        VerificationMethod verificationMethod = verificationMethodJsonLDObject == null ? null : VerificationMethod.fromJsonObject(verificationMethodJsonLDObject.getJsonObject());
         if (! didSourceDocument.getVerificationMethods().contains(verificationMethod)) {
             throw new RegistrationException("INVALID_DID_UPDATE", "didSourceDocument.verificationMethod does not contain " + verificationMethodId);
         }
@@ -157,7 +159,7 @@ public class Update {
 
         // Fill the Data Integrity [VC-DATA-INTEGRITY] template below with the required template variables.
 
-        cryptosuite.setVerificationMethod(verificationMethod.getId());
+        cryptosuite.setVerificationMethod(verificationMethodJsonLDObject.getId());
         cryptosuite.setProofPurpose("capabilityInvocation");
         cryptosuite.setCapability(URI.create("urn:zcap:root:" + URLEncoder.encode(didSourceDocument.getId().toString(), StandardCharsets.UTF_8)));
         cryptosuite.setCapabilityAction("Write");
@@ -171,7 +173,7 @@ public class Update {
 
             final AtomicReference<byte[]> reference = new AtomicReference<>();
 
-            cryptosuite.setSigner(new ByteSigner(JWSAlgorithm.ES256K) {
+            cryptosuite.setSigner(new ByteSigner(JWSAlgorithm.ES256KS) {
                 @Override
                 protected byte[] sign(byte[] bytes) {
                     if (log.isDebugEnabled()) log.debug("Signing bytes {}", Hex.encodeHexString(bytes));
@@ -234,7 +236,8 @@ public class Update {
         // An INVALID_DID_UPDATE error MUST be raised if the didSourceDocument.verificationMethod Set does not contain an id matching verificationMethodId.
         // An INVALID_DID_UPDATE error MUST be raised if the didSourceDocument.capabilityInvocation Set does not contain verificationMethodId.
 
-        VerificationMethod verificationMethod = (VerificationMethod) JsonLDDereferencer.findByIdInJsonLdObject(didSourceDocument, verificationMethodId, didSourceDocument.getId());
+        JsonLDObject verificationMethodJsonLDObject = JsonLDDereferencer.findByIdInJsonLdObject(didSourceDocument, verificationMethodId, didSourceDocument.getId());
+        VerificationMethod verificationMethod = verificationMethodJsonLDObject == null ? null : VerificationMethod.fromJsonObject(verificationMethodJsonLDObject.getJsonObject());
         if (! didSourceDocument.getVerificationMethods().contains(verificationMethod)) {
             throw new RegistrationException("INVALID_DID_UPDATE", "didSourceDocument.verificationMethod does not contain " + verificationMethodId);
         }
