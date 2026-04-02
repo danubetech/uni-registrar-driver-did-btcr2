@@ -22,9 +22,9 @@ import org.bitcoinj.base.Coin;
 import org.bitcoinj.base.Sha256Hash;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionInput;
-import org.bitcoinj.core.TransactionOutput;
 import org.bitcoinj.crypto.ECKey;
 import org.bitcoinj.crypto.TransactionSignature;
+import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptBuilder;
 import org.bitcoinj.uri.BitcoinURIParseException;
 import org.slf4j.Logger;
@@ -195,7 +195,7 @@ public class Update {
         return updateInitResult;
     }
 
-    public UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayload(BitcoinConnection bitcoinConnection, DIDDocument didSourceDocument, Integer targetVersionId, JsonPatch jsonPatches, URI verificationMethodId, byte[] updateSigningResponseSignature, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayload(BitcoinConnection bitcoinConnection, DIDDocument didSourceDocument, Integer targetVersionId, JsonPatch jsonPatches, URI verificationMethodId, byte[] updateSigningResponseSignature, Map<String, Object> didDocumentMetadata) throws RegistrationException, UpdateActionFundAddressException {
 
         /*
          * Construct BTCR2 Unsigned Update
@@ -263,7 +263,7 @@ public class Update {
 
         try {
 
-            cryptosuite.setSigner(new ByteSigner(JWSAlgorithm.ES256K) {
+            cryptosuite.setSigner(new ByteSigner(JWSAlgorithm.ES256KS) {
                 @Override
                 protected byte[] sign(byte[] bytes) {
                     if (log.isDebugEnabled()) log.debug("Signing bytes {} with signing response signature {}", Hex.encodeHexString(bytes), Hex.encodeHexString(updateSigningResponseSignature));
@@ -299,6 +299,7 @@ public class Update {
         // TODO fix selecting the correct service
         Service beaconService = didSourceDocument.getServices().stream().filter(service -> "SingletonBeacon".equals(service.getType()) && service.getId().toString().endsWith("#initialP2PKH")).findFirst().orElse(null);
         if (beaconService == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_DID_DOCUMENT, "No beacon service found in source DID document: " + didSourceDocument);
+        if (log.isDebugEnabled()) log.debug("beaconService: {}", beaconService);
 
         Address beaconServiceAddress;
         try {
@@ -306,17 +307,25 @@ public class Update {
         } catch (BitcoinURIParseException ex) {
             throw new RegistrationException(RegistrationException.ERROR_INVALID_DID_DOCUMENT, "Invalid beacon service found in source DID document: " + beaconService);
         }
+        if (log.isDebugEnabled()) log.debug("beaconServiceAddress: {}", beaconServiceAddress);
 
         List<TxOut> beaconServiceAddressUtxos = bitcoinConnection.getAddressUtxos(beaconServiceAddress.toString());
+        if (log.isDebugEnabled()) log.debug("beaconServiceAddressUtxos: {}", beaconServiceAddressUtxos);
 
         Transaction bitcoinjTransaction = new Transaction();
         for (TxOut beaconServiceAddressUtxo : beaconServiceAddressUtxos) {
-            TransactionOutput transactionOutput = new TransactionOutput(null, Coin.valueOf(beaconServiceAddressUtxo.value()), beaconServiceAddressUtxo.scriptBytes());
-            bitcoinjTransaction.addInput(transactionOutput);
+            bitcoinjTransaction.addInput(Sha256Hash.of(beaconServiceAddressUtxo.txIdBytes()), beaconServiceAddressUtxo.txOutIndex(), Script.parse(beaconServiceAddressUtxo.scriptBytes()));
         }
-        long totalValue = beaconServiceAddressUtxos.stream().mapToLong(TxOut::value).sum();
-        bitcoinjTransaction.addOutput(Coin.valueOf(totalValue).minus(BITCOIN_FEE), beaconServiceAddress);
+        Coin totalValue = Coin.valueOf(beaconServiceAddressUtxos.stream().mapToLong(TxOut::value).sum());
+        if (log.isDebugEnabled()) log.debug("totalValue: {}", totalValue);
+
+        if (totalValue.compareTo(BITCOIN_FEE) < 0) {
+            throw new UpdateActionFundAddressException(beaconServiceAddress, BITCOIN_FEE.minus(totalValue));
+        }
+
+        bitcoinjTransaction.addOutput(totalValue.minus(BITCOIN_FEE), beaconServiceAddress);
         bitcoinjTransaction.addOutput(Coin.ZERO, ScriptBuilder.createOpReturnScript(btcr2UpdateAnnouncement));
+        if (log.isDebugEnabled()) log.debug("bitcoinjTransaction before signing: {}", bitcoinjTransaction);
 
         // The Beacon Signal is signed by the private key that controls the Beacon Address
 
@@ -355,6 +364,7 @@ public class Update {
         // TODO fix selecting the correct service
         Service beaconService = didSourceDocument.getServices().stream().filter(service -> "SingletonBeacon".equals(service.getType()) && service.getId().toString().endsWith("#initialP2PKH")).findFirst().orElse(null);
         if (beaconService == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_DID_DOCUMENT, "No beacon service found in source DID document: " + didSourceDocument);
+        if (log.isDebugEnabled()) log.debug("beaconService: {}", beaconService);
 
         Address beaconServiceAddress;
         try {
@@ -362,17 +372,20 @@ public class Update {
         } catch (BitcoinURIParseException ex) {
             throw new RegistrationException(RegistrationException.ERROR_INVALID_DID_DOCUMENT, "Invalid beacon service found in source DID document: " + beaconService);
         }
+        if (log.isDebugEnabled()) log.debug("beaconServiceAddress: {}", beaconServiceAddress);
 
         List<TxOut> beaconServiceAddressUtxos = bitcoinConnection.getAddressUtxos(beaconServiceAddress.toString());
+        if (log.isDebugEnabled()) log.debug("beaconServiceAddressUtxos: {}", beaconServiceAddressUtxos);
 
         Transaction bitcoinjTransaction = new Transaction();
         for (TxOut beaconServiceAddressUtxo : beaconServiceAddressUtxos) {
-            TransactionOutput transactionOutput = new TransactionOutput(null, Coin.valueOf(beaconServiceAddressUtxo.value()), beaconServiceAddressUtxo.scriptBytes());
-            bitcoinjTransaction.addInput(transactionOutput);
+            bitcoinjTransaction.addInput(Sha256Hash.of(beaconServiceAddressUtxo.txIdBytes()), beaconServiceAddressUtxo.txOutIndex(), Script.parse(beaconServiceAddressUtxo.scriptBytes()));
         }
         long totalValue = beaconServiceAddressUtxos.stream().mapToLong(TxOut::value).sum();
+        if (log.isDebugEnabled()) log.debug("totalValue: {}", totalValue);
         bitcoinjTransaction.addOutput(Coin.valueOf(totalValue).minus(BITCOIN_FEE), beaconServiceAddress);
         bitcoinjTransaction.addOutput(Coin.ZERO, ScriptBuilder.createOpReturnScript(btcr2UpdateAnnouncement));
+        if (log.isDebugEnabled()) log.debug("bitcoinjTransaction before signing: {}", bitcoinjTransaction);
 
         // The Beacon Signal is signed by the private key that controls the Beacon Address
 
@@ -388,6 +401,7 @@ public class Update {
             TransactionInput signedTransactionInput = transactionInput.withScriptSig(ScriptBuilder.createInputScript(transactionSignature, null /* TODO key */));
             bitcoinjTransaction.getInputs().set(i, signedTransactionInput);
         }
+        if (log.isDebugEnabled()) log.debug("bitcoinjTransaction after signing: {}", bitcoinjTransaction);
 
         // and broadcast to the Bitcoin network.
 

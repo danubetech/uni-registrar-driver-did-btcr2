@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
 import uniregistrar.driver.did.btcr2.crud.update.Update;
+import uniregistrar.driver.did.btcr2.crud.update.UpdateActionFundAddressException;
 import uniregistrar.driver.did.btcr2.crud.update.UpdateProcessUpdateSignPayloadResult;
 import uniregistrar.driver.did.btcr2.job.UpdateJob;
 import uniregistrar.driver.did.btcr2.syntax.DidBtcr2IdentifierDecoding;
@@ -39,6 +40,11 @@ public class StateProcessUpdateSignPayload {
 
         Map<String, Object> didRegistrationMetadata = new LinkedHashMap<>();
         Map<String, Object> didDocumentMetadata = new LinkedHashMap<>();
+
+        // read job
+
+        byte[] updateSignPayload = updateJob.updateSignPayload() == null ? null : Base64.getDecoder().decode(updateJob.updateSignPayload());
+        if (updateSignPayload == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'btcr2UpdateAnnouncement' in jobId");
 
         // read input DID
 
@@ -83,10 +89,10 @@ public class StateProcessUpdateSignPayload {
 
         RequestSecret requestSecret = updateRequest.getSecret();
         Map<String, SigningResponse> signingResponses = requestSecret == null ? null : requestSecret.getSigningResponse();
-        SigningResponse updateSigningResponse = signingResponses == null ? null : signingResponses.get("didUpdate");
+        SigningResponse updateSigningResponse = signingResponses == null ? null : signingResponses.get("btcr2Update");
 
         if (updateSigningResponse == null || updateSigningResponse.getKid() == null) {
-            throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Signing response 'didUpdate' not found");
+            throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Signing response 'btcr2Update' not found");
         }
 
         URI verificationMethodId = URI.create(updateSigningResponse.getKid());
@@ -94,7 +100,14 @@ public class StateProcessUpdateSignPayload {
 
         // update()
 
-        UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayloadResult = update.updateProcessUpdateSignPayload(bitcoinConnection, didSourceDocument, targetVersionId, jsonPatches, verificationMethodId, updateSigningResponseSignature, didDocumentMetadata);
+        UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayloadResult;
+
+        try {
+            updateProcessUpdateSignPayloadResult = update.updateProcessUpdateSignPayload(bitcoinConnection, didSourceDocument, targetVersionId, jsonPatches, verificationMethodId, updateSigningResponseSignature, didDocumentMetadata);
+        } catch (UpdateActionFundAddressException ex) {
+            // next state
+            return TransitionProcessUpdateSignPayload.transitionToUpdateSignPayloadFundAddress(bitcoinConnection, updateSignPayload, ex.getAddress(), ex.getMinimumValue(), didRegistrationMetadata, didDocumentMetadata);
+        }
 
         // next state
 

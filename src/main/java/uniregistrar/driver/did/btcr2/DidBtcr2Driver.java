@@ -67,7 +67,7 @@ public class DidBtcr2Driver implements Driver {
 
         // read input fields
 
-        Map<String, Object> jobId = (Map<String, Object>) updateRequest.getJobId();
+        Map<String, Object> jobId = updateRequest.getJobId() == null ? null : (updateRequest.getJobId().getMap() == null ? null : updateRequest.getJobId().getMap());
         Boolean clientSecretMode = updateRequest.getOptions() == null ? null : updateRequest.getOptions().getClientSecretMode();
 
         // check client-managed secret mode

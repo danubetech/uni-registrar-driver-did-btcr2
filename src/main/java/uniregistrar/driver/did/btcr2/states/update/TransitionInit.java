@@ -1,6 +1,7 @@
 package uniregistrar.driver.did.btcr2.states.update;
 
 import com.danubetech.btc.connection.BitcoinConnection;
+import com.danubetech.keyformats.jose.JWSAlgorithm;
 import uniregistrar.RegistrationException;
 import uniregistrar.driver.did.btcr2.job.UpdateJob;
 import uniregistrar.openapi.model.*;
@@ -48,7 +49,7 @@ public class TransitionInit {
 
         // REGISTRATION STATE: jobId
 
-        UpdateJob updateJob = new UpdateJob(null, Base64.getUrlEncoder().encodeToString(updateSignPayload), null);
+        UpdateJob updateJob = new UpdateJob(Base64.getEncoder().encodeToString(updateSignPayload), null, null);
 
         Map<String, Object> jobId = updateJob.toJsonObject();
 
@@ -56,8 +57,9 @@ public class TransitionInit {
 
         SigningRequest didUpdateSigningRequest = new SigningRequest()
                 .kid(verificationMethodId.toString())
+                .alg(JWSAlgorithm.ES256K)
                 .purpose("capabilityInvocation")
-                .serializedPayload(Base64.getUrlEncoder().encodeToString(updateSignPayload));
+                .serializedPayload(Base64.getEncoder().encodeToString(updateSignPayload));
 
         // REGISTRATION STATE: didState.state="action"
 

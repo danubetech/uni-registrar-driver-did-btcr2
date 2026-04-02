@@ -39,6 +39,11 @@ public class StateProcessUtxoSignPayloads {
         Map<String, Object> didRegistrationMetadata = new LinkedHashMap<>();
         Map<String, Object> didDocumentMetadata = new LinkedHashMap<>();
 
+        // read job
+
+        byte[] btcr2UpdateAnnouncement = updateJob.btcr2UpdateAnnouncement() == null ? null : Base64.getDecoder().decode(updateJob.btcr2UpdateAnnouncement());
+        if (btcr2UpdateAnnouncement == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'btcr2UpdateAnnouncement' in jobId");
+
         // read input DID
 
         DID did;
@@ -82,17 +87,13 @@ public class StateProcessUtxoSignPayloads {
 
         RequestSecret requestSecret = updateRequest.getSecret();
         Map<String, SigningResponse> signingResponses = requestSecret == null ? null : requestSecret.getSigningResponse();
-        List<SigningResponse> utxoSigningResponses = signingResponses == null ? null : signingResponses.entrySet().stream().filter(signingResponseEntry -> signingResponseEntry.getKey().startsWith("utxo")).map(Map.Entry::getValue).toList();
+        List<SigningResponse> utxoSigningResponses = signingResponses == null ? null : signingResponses.entrySet().stream().filter(signingResponseEntry -> signingResponseEntry.getKey().startsWith("btcr2Utxo")).map(Map.Entry::getValue).toList();
 
         if (utxoSigningResponses == null) {
             throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Signing responses 'utxo*' not found");
         }
 
         List<byte[]> utxoSigningResponseSignatures = utxoSigningResponses.stream().map(SigningResponse::getSignature).map(signature -> Base64.getDecoder().decode(signature)).toList();
-
-        // read
-
-        byte[] btcr2UpdateAnnouncement = Base64.getDecoder().decode(updateJob.btcr2UpdateAnnouncement());
 
         // update()
 

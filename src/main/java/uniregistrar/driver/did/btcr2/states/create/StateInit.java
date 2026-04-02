@@ -55,9 +55,7 @@ public class StateInit {
 
         byte[] unassembledInitialKey = DidDocUnAssembler.unassembleInitialKey(didDocument);
         if (unassembledInitialKey == null) {
-
             // next state
-
             return TransitionInit.transitionToInitGetVerificationMethod(bitcoinConnection, didRegistrationMetadata, didDocumentMetadata);
         }
 

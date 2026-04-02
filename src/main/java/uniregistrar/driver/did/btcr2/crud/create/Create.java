@@ -37,14 +37,12 @@ public class Create {
         byte[] genesisBytes;
         GenesisBytesType genesisBytesType;
 
-        if (initialKey != null && genesisDocument == null) {
+        if (genesisDocument == null) {
             genesisBytes = this.secp256k1PublicKey(initialKey);
             genesisBytesType = GenesisBytesType.SECP256K1PUBLICKEY;
-        } else if (genesisDocument != null) {
+        } else {
             genesisBytes = this.genesisDocumentHash(genesisDocument);
             genesisBytesType = GenesisBytesType.SHA256HASH;
-        } else {
-            throw new IllegalArgumentException("Incompatible 'initialKey' and 'genesisDocument' state.");
         }
 
         // A specification version number is also included.
