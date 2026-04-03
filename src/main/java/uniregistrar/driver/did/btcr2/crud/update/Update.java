@@ -261,8 +261,8 @@ public class Update {
         // A BTCR2 Update Announcement for a Singleton Beacon is the BTCR2 Signed Update
         // hashed with the JSON Document Hashing algorithm.
 
-        byte[] btcr2UpdateAnnouncement = JSONDocumentHashing.jsonDocumentHashing(btcr2Update);
-        if (log.isDebugEnabled()) log.debug("btcr2UpdateAnnouncement: " + Hex.encodeHexString(btcr2UpdateAnnouncement));
+        byte[] updateAnnouncement = JSONDocumentHashing.jsonDocumentHashing(btcr2Update);
+        if (log.isDebugEnabled()) log.debug("updateAnnouncement: " + Hex.encodeHexString(updateAnnouncement));
 
         // This 32-byte SHA-256 hash is used as the Signal Bytes when constructing a Beacon Signal Bitcoin transaction.
 
@@ -288,20 +288,20 @@ public class Update {
             throw new UpdateActionFundAddressException(beaconServiceAddress, BITCOIN_FEE.minus(totalValue));
         }
 
-        Transaction bitcoinjTransaction = new Transaction();
+        Transaction btcr2Transaction = new Transaction();
         for (TxOut beaconServiceAddressUtxo : beaconServiceAddressUtxos) {
-            bitcoinjTransaction.addInput(Sha256Hash.wrap(beaconServiceAddressUtxo.txIdBytes()), beaconServiceAddressUtxo.txOutIndex(), Script.parse(beaconServiceAddressUtxo.scriptBytes()));
+            btcr2Transaction.addInput(Sha256Hash.wrap(beaconServiceAddressUtxo.txIdBytes()), beaconServiceAddressUtxo.txOutIndex(), Script.parse(beaconServiceAddressUtxo.scriptBytes()));
         }
-        bitcoinjTransaction.addOutput(totalValue.minus(BITCOIN_FEE), beaconServiceAddress);
-        bitcoinjTransaction.addOutput(Coin.ZERO, ScriptBuilder.createOpReturnScript(btcr2UpdateAnnouncement));
-        if (log.isDebugEnabled()) log.debug("bitcoinjTransaction before signing: {}", bitcoinjTransaction);
+        btcr2Transaction.addOutput(totalValue.minus(BITCOIN_FEE), beaconServiceAddress);
+        btcr2Transaction.addOutput(Coin.ZERO, ScriptBuilder.createOpReturnScript(updateAnnouncement));
+        if (log.isDebugEnabled()) log.debug("btcr2Transaction before signing: {}", btcr2Transaction);
 
         // The Beacon Signal is signed by the private key that controls the Beacon Address
 
-        List<byte[]> utxoSignPayloads = IntStream.range(0, bitcoinjTransaction.getInputs().size())
-                .mapToObj(i -> bitcoinjTransaction.hashForSignature(
+        List<byte[]> utxoSignPayloads = IntStream.range(0, btcr2Transaction.getInputs().size())
+                .mapToObj(i -> btcr2Transaction.hashForSignature(
                         i,
-                        bitcoinjTransaction.getInput(i).getScriptBytes(),
+                        btcr2Transaction.getInput(i).getScriptBytes(),
                         Transaction.SigHash.ALL,
                         false))
                 .map(Sha256Hash::getBytes)
@@ -309,61 +309,17 @@ public class Update {
 
         // result
 
-        UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayloadResult = new UpdateProcessUpdateSignPayloadResult(btcr2UpdateAnnouncement, utxoSignPayloads);
+        UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayloadResult = new UpdateProcessUpdateSignPayloadResult(btcr2Transaction, utxoSignPayloads);
         if (log.isDebugEnabled()) log.debug("Update: " + updateProcessUpdateSignPayloadResult);
         return updateProcessUpdateSignPayloadResult;
     }
 
-    public UpdateProcessUtxoSignPayloadsResult updateProcessUtxoSignPayloads(BitcoinConnection bitcoinConnection, DIDDocument didSourceDocument, Integer targetVersionId, JsonPatch jsonPatches, byte[] btcr2UpdateAnnouncement, ECKey updateECKey, List<byte[]> utxoSigningResponseSignatures, Map<String, Object> didDocumentMetadata) throws RegistrationException {
-
-        /*
-         * Announce DID Update
-         * See https://dcdpr.github.io/did-btcr2/operations/update.html#announce-did-update
-         */
-
-        // BTCR2 Signed Updates are announced to the Bitcoin blockchain depending on the Beacon Type.
-
-        /*
-         * Announcing to a Singleton Beacon
-         * See https://dcdpr.github.io/did-btcr2/operations/update.html#announcing-to-a-singleton-beacon
-         */
-
-        // This 32-byte SHA-256 hash is used as the Signal Bytes when constructing a Beacon Signal Bitcoin transaction.
-
-        // TODO fix selecting the correct service
-        Service beaconService = didSourceDocument.getServices().stream().filter(service -> "SingletonBeacon".equals(service.getType()) && service.getId().toString().endsWith("#initialP2PKH")).findFirst().orElse(null);
-        if (beaconService == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_DID_DOCUMENT, "No beacon service found in source DID document: " + didSourceDocument);
-        if (log.isDebugEnabled()) log.debug("beaconService: {}", beaconService);
-
-        Address beaconServiceAddress;
-        try {
-            beaconServiceAddress = AddressUtil.bitcoinUriToBitcoinjAddress((URI) beaconService.getServiceEndpoint());
-        } catch (BitcoinURIParseException ex) {
-            throw new RegistrationException(RegistrationException.ERROR_INVALID_DID_DOCUMENT, "Invalid beacon service found in source DID document: " + beaconService);
-        }
-        if (log.isDebugEnabled()) log.debug("beaconServiceAddress: {}", beaconServiceAddress);
-
-        List<TxOut> beaconServiceAddressUtxos = bitcoinConnection.getAddressUtxos(beaconServiceAddress.toString());
-        if (log.isDebugEnabled()) log.debug("beaconServiceAddressUtxos: {}", beaconServiceAddressUtxos);
-
-        Coin totalValue = Coin.valueOf(beaconServiceAddressUtxos.stream().mapToLong(TxOut::value).sum());
-        if (log.isDebugEnabled()) log.debug("totalValue: {}", totalValue);
-        if (totalValue.compareTo(BITCOIN_FEE) < 0) {
-            throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Insufficient funds on " + beaconServiceAddress + ": " + totalValue + "/" + BITCOIN_FEE);
-        }
-
-        Transaction bitcoinjTransaction = new Transaction();
-        for (TxOut beaconServiceAddressUtxo : beaconServiceAddressUtxos) {
-            bitcoinjTransaction.addInput(Sha256Hash.wrap(beaconServiceAddressUtxo.txIdBytes()), beaconServiceAddressUtxo.txOutIndex(), Script.parse(beaconServiceAddressUtxo.scriptBytes()));
-        }
-        bitcoinjTransaction.addOutput(totalValue.minus(BITCOIN_FEE), beaconServiceAddress);
-        bitcoinjTransaction.addOutput(Coin.ZERO, ScriptBuilder.createOpReturnScript(btcr2UpdateAnnouncement));
-        if (log.isDebugEnabled()) log.debug("bitcoinjTransaction before signing: {}", bitcoinjTransaction);
+    public UpdateProcessUtxoSignPayloadsResult updateProcessUtxoSignPayloads(BitcoinConnection bitcoinConnection, DIDDocument didSourceDocument, Integer targetVersionId, JsonPatch jsonPatches, Transaction btcr2Transaction, ECKey updateECKey, List<byte[]> utxoSigningResponseSignatures, Map<String, Object> didDocumentMetadata) throws RegistrationException {
 
         // The Beacon Signal is signed by the private key that controls the Beacon Address
 
-        for (int i=0; i<bitcoinjTransaction.getInputs().size(); i++) {
-            TransactionInput transactionInput = bitcoinjTransaction.getInput(i);
+        for (int i=0; i<btcr2Transaction.getInputs().size(); i++) {
+            TransactionInput transactionInput = btcr2Transaction.getInput(i);
             byte[] utxoSigningResponseSignature = utxoSigningResponseSignatures.get(i);
             byte[] r = new byte[32];
             byte[] s = new byte[32];
@@ -372,13 +328,13 @@ public class Update {
             ECKey.ECDSASignature signature = new ECKey.ECDSASignature(new BigInteger(1, r), new BigInteger(1, s));
             TransactionSignature transactionSignature = new TransactionSignature(signature, Transaction.SigHash.ALL, false);
             TransactionInput signedTransactionInput = transactionInput.withScriptSig(ScriptBuilder.createInputScript(transactionSignature, updateECKey));
-            bitcoinjTransaction.replaceInput(i, signedTransactionInput);
+            btcr2Transaction.replaceInput(i, signedTransactionInput);
         }
-        if (log.isDebugEnabled()) log.debug("bitcoinjTransaction after signing: {}", bitcoinjTransaction);
+        if (log.isDebugEnabled()) log.debug("btcr2Transaction after signing: {}", btcr2Transaction);
 
         // and broadcast to the Bitcoin network.
 
-        byte[] beaconSignal = bitcoinjTransaction.serialize();
+        byte[] beaconSignal = btcr2Transaction.serialize();
         if (log.isDebugEnabled()) log.debug("Broadcasting beacon signal: " + Hex.encodeHexString(beaconSignal));
         bitcoinConnection.broadcastRawTransaction(beaconSignal);
 

@@ -114,6 +114,6 @@ public class StateProcessUpdateSignPayload {
 
         // next state
 
-        return TransitionProcessUpdateSignPayload.transitionToUtxoSignPayloads(bitcoinConnection, btcr2Update, updateProcessUpdateSignPayloadResult.btcr2UpdateAnnouncement(), updateProcessUpdateSignPayloadResult.utxoSignPayloads(), didRegistrationMetadata, didDocumentMetadata);
+        return TransitionProcessUpdateSignPayload.transitionToUtxoSignPayloads(bitcoinConnection, btcr2Update, updateProcessUpdateSignPayloadResult.btcr2Transaction(), updateProcessUpdateSignPayloadResult.utxoSignPayloads(), didRegistrationMetadata, didDocumentMetadata);
     }
 }

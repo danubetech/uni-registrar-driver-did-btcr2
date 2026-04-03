@@ -14,6 +14,7 @@ import foundation.identity.did.parser.ParserException;
 import io.ipfs.multibase.Multibase;
 import jakarta.json.Json;
 import jakarta.json.JsonPatch;
+import org.bitcoinj.core.Transaction;
 import org.bitcoinj.crypto.ECKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +27,7 @@ import uniregistrar.driver.did.btcr2.syntax.DidBtcr2IdentifierDecoding;
 import uniregistrar.driver.did.btcr2.util.MultiCodecUtil;
 import uniregistrar.openapi.model.*;
 
+import java.nio.ByteBuffer;
 import java.util.*;
 
 public class StateProcessUtxoSignPayloads {
@@ -48,8 +50,8 @@ public class StateProcessUtxoSignPayloads {
         BTCR2Update btcr2Update = updateJob.btcr2Update() == null ? null : BTCR2Update.fromJson(updateJob.btcr2Update());
         if (btcr2Update == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'btcr2Update' in jobId");
 
-        byte[] btcr2UpdateAnnouncement = updateJob.btcr2UpdateAnnouncement() == null ? null : Base64.getDecoder().decode(updateJob.btcr2UpdateAnnouncement());
-        if (btcr2UpdateAnnouncement == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'btcr2UpdateAnnouncement' in jobId");
+        Transaction btcr2Transaction = updateJob.btcr2Transaction() == null ? null : Transaction.read(ByteBuffer.wrap(Base64.getDecoder().decode(updateJob.btcr2Transaction())));
+        if (btcr2Transaction == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'btcr2Transaction' in jobId");
 
         // read input DID
 
@@ -128,7 +130,7 @@ public class StateProcessUtxoSignPayloads {
 
         // update()
 
-        UpdateProcessUtxoSignPayloadsResult updateProcessUtxoSignPayloadsResult = update.updateProcessUtxoSignPayloads(bitcoinConnection, didSourceDocument, targetVersionId, jsonPatches, btcr2UpdateAnnouncement, updateECKey, utxoSigningResponseSignatures, didDocumentMetadata);
+        UpdateProcessUtxoSignPayloadsResult updateProcessUtxoSignPayloadsResult = update.updateProcessUtxoSignPayloads(bitcoinConnection, didSourceDocument, targetVersionId, jsonPatches, btcr2Transaction, updateECKey, utxoSigningResponseSignatures, didDocumentMetadata);
 
         // next state
 

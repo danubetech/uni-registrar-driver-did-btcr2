@@ -4,6 +4,7 @@ import com.danubetech.btc.connection.BitcoinConnection;
 import com.danubetech.keyformats.jose.JWSAlgorithm;
 import org.bitcoinj.base.Address;
 import org.bitcoinj.base.Coin;
+import org.bitcoinj.core.Transaction;
 import uniregistrar.RegistrationException;
 import uniregistrar.driver.did.btcr2.data.jsonld.BTCR2Update;
 import uniregistrar.driver.did.btcr2.job.UpdateJob;
@@ -52,11 +53,11 @@ public class TransitionProcessUpdateSignPayload {
         return updateState;
     }
 
-    public static UpdateState transitionToUtxoSignPayloads(BitcoinConnection bitcoinConnection, BTCR2Update btcr2Update, byte[] btcr2UpdateAnnouncement, List<byte[]> utxoSignPayloads, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public static UpdateState transitionToUtxoSignPayloads(BitcoinConnection bitcoinConnection, BTCR2Update btcr2Update, Transaction btcr2Transaction, List<byte[]> utxoSignPayloads, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
 
         // REGISTRATION STATE: jobId
 
-        UpdateJob updateJob = new UpdateJob(btcr2Update.toJson(), null, Base64.getEncoder().encodeToString(btcr2UpdateAnnouncement), utxoSignPayloads.stream().map(x -> Base64.getEncoder().encodeToString(x)).toList());
+        UpdateJob updateJob = new UpdateJob(btcr2Update.toJson(), null, Base64.getEncoder().encodeToString(btcr2Transaction.serialize()), utxoSignPayloads.stream().map(x -> Base64.getEncoder().encodeToString(x)).toList());
 
         Map<String, Object> jobId = updateJob.toJsonObject();
 
