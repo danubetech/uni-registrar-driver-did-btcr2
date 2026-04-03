@@ -5,6 +5,7 @@ import com.danubetech.keyformats.jose.JWSAlgorithm;
 import org.bitcoinj.base.Address;
 import org.bitcoinj.base.Coin;
 import uniregistrar.RegistrationException;
+import uniregistrar.driver.did.btcr2.data.jsonld.BTCR2Update;
 import uniregistrar.driver.did.btcr2.job.UpdateJob;
 import uniregistrar.openapi.model.DidStateAction;
 import uniregistrar.openapi.model.RegistrarStateJobId;
@@ -18,11 +19,11 @@ import java.util.Map;
 
 public class TransitionProcessUpdateSignPayload {
 
-    public static UpdateState transitionToUpdateSignPayloadFundAddress(BitcoinConnection bitcoinConnection, byte[] updateSignPayload, Address address, Coin minimumValue, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public static UpdateState transitionToUpdateSignPayloadFundAddress(BitcoinConnection bitcoinConnection, Address address, Coin minimumValue, BTCR2Update btcr2Update, byte[] updateSignPayload, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
 
         // REGISTRATION STATE: jobId
 
-        UpdateJob updateJob = new UpdateJob(Base64.getEncoder().encodeToString(updateSignPayload), null, null);
+        UpdateJob updateJob = new UpdateJob(btcr2Update.toJson(), Base64.getEncoder().encodeToString(updateSignPayload), null, null);
 
         Map<String, Object> jobId = updateJob.toJsonObject();
 
@@ -51,11 +52,11 @@ public class TransitionProcessUpdateSignPayload {
         return updateState;
     }
 
-    public static UpdateState transitionToUtxoSignPayloads(BitcoinConnection bitcoinConnection, byte[] btcr2UpdateAnnouncement, List<byte[]> utxoSignPayloads, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public static UpdateState transitionToUtxoSignPayloads(BitcoinConnection bitcoinConnection, BTCR2Update btcr2Update, byte[] btcr2UpdateAnnouncement, List<byte[]> utxoSignPayloads, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
 
         // REGISTRATION STATE: jobId
 
-        UpdateJob updateJob = new UpdateJob(null, Base64.getEncoder().encodeToString(btcr2UpdateAnnouncement), utxoSignPayloads.stream().map(x -> Base64.getEncoder().encodeToString(x)).toList());
+        UpdateJob updateJob = new UpdateJob(btcr2Update.toJson(), null, Base64.getEncoder().encodeToString(btcr2UpdateAnnouncement), utxoSignPayloads.stream().map(x -> Base64.getEncoder().encodeToString(x)).toList());
 
         Map<String, Object> jobId = updateJob.toJsonObject();
 
@@ -68,7 +69,7 @@ public class TransitionProcessUpdateSignPayload {
                 .toList();
         Map<String, SigningRequest> utxoSigningRequestsMap = new LinkedHashMap<>();
         for (int i=0; i<utxoSigningRequests.size(); i++) {
-            utxoSigningRequestsMap.put("btcr2Utxo" + i, utxoSigningRequests.get(i));
+            utxoSigningRequestsMap.put("utxo" + i, utxoSigningRequests.get(i));
         }
 
         // REGISTRATION STATE: didState.state="action"

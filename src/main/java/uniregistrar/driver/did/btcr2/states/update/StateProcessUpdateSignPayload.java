@@ -16,6 +16,7 @@ import uniregistrar.RegistrationException;
 import uniregistrar.driver.did.btcr2.crud.update.Update;
 import uniregistrar.driver.did.btcr2.crud.update.UpdateActionFundAddressException;
 import uniregistrar.driver.did.btcr2.crud.update.UpdateProcessUpdateSignPayloadResult;
+import uniregistrar.driver.did.btcr2.data.jsonld.BTCR2Update;
 import uniregistrar.driver.did.btcr2.job.UpdateJob;
 import uniregistrar.driver.did.btcr2.syntax.DidBtcr2IdentifierDecoding;
 import uniregistrar.openapi.model.RequestSecret;
@@ -43,8 +44,11 @@ public class StateProcessUpdateSignPayload {
 
         // read job
 
+        BTCR2Update btcr2Update = updateJob.btcr2Update() == null ? null : BTCR2Update.fromJson(updateJob.btcr2Update());
+        if (btcr2Update == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'btcr2Update' in jobId");
+
         byte[] updateSignPayload = updateJob.updateSignPayload() == null ? null : Base64.getDecoder().decode(updateJob.updateSignPayload());
-        if (updateSignPayload == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'btcr2UpdateAnnouncement' in jobId");
+        if (updateSignPayload == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'updateSignPayload' in jobId");
 
         // read input DID
 
@@ -89,10 +93,10 @@ public class StateProcessUpdateSignPayload {
 
         RequestSecret requestSecret = updateRequest.getSecret();
         Map<String, SigningResponse> signingResponses = requestSecret == null ? null : requestSecret.getSigningResponse();
-        SigningResponse updateSigningResponse = signingResponses == null ? null : signingResponses.get("btcr2Update");
+        SigningResponse updateSigningResponse = signingResponses == null ? null : signingResponses.get("update");
 
         if (updateSigningResponse == null || updateSigningResponse.getKid() == null) {
-            throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Signing response 'btcr2Update' not found");
+            throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Signing response 'update' not found");
         }
 
         URI verificationMethodId = URI.create(updateSigningResponse.getKid());
@@ -101,16 +105,15 @@ public class StateProcessUpdateSignPayload {
         // update()
 
         UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayloadResult;
-
         try {
-            updateProcessUpdateSignPayloadResult = update.updateProcessUpdateSignPayload(bitcoinConnection, didSourceDocument, targetVersionId, jsonPatches, verificationMethodId, updateSigningResponseSignature, didDocumentMetadata);
+            updateProcessUpdateSignPayloadResult = update.updateProcessUpdateSignPayload(bitcoinConnection, didSourceDocument, targetVersionId, jsonPatches, btcr2Update, verificationMethodId, updateSigningResponseSignature, didDocumentMetadata);
         } catch (UpdateActionFundAddressException ex) {
             // next state
-            return TransitionProcessUpdateSignPayload.transitionToUpdateSignPayloadFundAddress(bitcoinConnection, updateSignPayload, ex.getAddress(), ex.getMinimumValue(), didRegistrationMetadata, didDocumentMetadata);
+            return TransitionProcessUpdateSignPayload.transitionToUpdateSignPayloadFundAddress(bitcoinConnection, ex.getAddress(), ex.getMinimumValue(), btcr2Update, updateSignPayload, didRegistrationMetadata, didDocumentMetadata);
         }
 
         // next state
 
-        return TransitionProcessUpdateSignPayload.transitionToUtxoSignPayloads(bitcoinConnection, updateProcessUpdateSignPayloadResult.btcr2UpdateAnnouncement(), updateProcessUpdateSignPayloadResult.utxoSignPayloads(), didRegistrationMetadata, didDocumentMetadata);
+        return TransitionProcessUpdateSignPayload.transitionToUtxoSignPayloads(bitcoinConnection, btcr2Update, updateProcessUpdateSignPayloadResult.btcr2UpdateAnnouncement(), updateProcessUpdateSignPayloadResult.utxoSignPayloads(), didRegistrationMetadata, didDocumentMetadata);
     }
 }

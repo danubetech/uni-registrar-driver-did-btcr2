@@ -9,6 +9,6 @@ import uniregistrar.driver.did.btcr2.job.UpdateJob;
 import java.util.List;
 import java.util.stream.IntStream;
 
-public record UpdateProcessUtxoSignPayloadsResult(DID did) {
+public record UpdateProcessUtxoSignPayloadsResult() {
 
 }

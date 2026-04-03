@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
 import uniregistrar.driver.did.btcr2.crud.update.Update;
+import uniregistrar.driver.did.btcr2.crud.update.UpdateActionGetVerificationMethodException;
 import uniregistrar.driver.did.btcr2.crud.update.UpdateInitResult;
 import uniregistrar.driver.did.btcr2.job.UpdateJob;
 import uniregistrar.driver.did.btcr2.syntax.DidBtcr2IdentifierDecoding;
@@ -82,19 +83,20 @@ public class StateInit {
         List<RequestSecretVerificationMethodInner> requestSecretVerificationMethodInners = requestSecret == null ? null : requestSecret.getVerificationMethod();
         VerificationMethodPublicData updateVerificationMethodPublicData = requestSecretVerificationMethodInners == null ? null : requestSecretVerificationMethodInners.getFirst().getVerificationMethodPublicData();
 
-        if (updateVerificationMethodPublicData == null || updateVerificationMethodPublicData.getId() == null) {
+        URI verificationMethodId = (updateVerificationMethodPublicData == null || updateVerificationMethodPublicData.getId() == null) ? null : URI.create(updateVerificationMethodPublicData.getId());
+
+        // update()
+
+        UpdateInitResult updateInitResult;
+        try {
+            updateInitResult = update.updateInit(bitcoinConnection, didSourceDocument, targetVersionId, jsonPatches, verificationMethodId, didDocumentMetadata);
+        } catch (UpdateActionGetVerificationMethodException ex) {
             // next state
             return TransitionInit.transitionToInitGetVerificationMethod(bitcoinConnection, didRegistrationMetadata, didDocumentMetadata);
         }
 
-        URI verificationMethodId = URI.create(updateVerificationMethodPublicData.getId());
-
-        // update()
-
-        UpdateInitResult updateInitResult = update.updateInit(bitcoinConnection, didSourceDocument, targetVersionId, jsonPatches, verificationMethodId, didDocumentMetadata);
-
         // next state
 
-        return TransitionInit.transitionToUpdateSignPayload(bitcoinConnection, updateInitResult.verificationMethodId(), updateInitResult.updateSignPayload(), didRegistrationMetadata, didDocumentMetadata);
+        return TransitionInit.transitionToUpdateSignPayload(bitcoinConnection, updateInitResult.verificationMethodId(), updateInitResult.btcr2Update(), updateInitResult.updateSignPayload(), didRegistrationMetadata, didDocumentMetadata);
     }
 }

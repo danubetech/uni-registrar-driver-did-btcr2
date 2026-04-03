@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
 import uniregistrar.driver.did.btcr2.crud.update.Update;
 import uniregistrar.driver.did.btcr2.crud.update.UpdateProcessUtxoSignPayloadsResult;
+import uniregistrar.driver.did.btcr2.data.jsonld.BTCR2Update;
 import uniregistrar.driver.did.btcr2.job.UpdateJob;
 import uniregistrar.driver.did.btcr2.syntax.DidBtcr2IdentifierDecoding;
 import uniregistrar.driver.did.btcr2.util.MultiCodecUtil;
@@ -43,6 +44,9 @@ public class StateProcessUtxoSignPayloads {
         Map<String, Object> didDocumentMetadata = new LinkedHashMap<>();
 
         // read job
+
+        BTCR2Update btcr2Update = updateJob.btcr2Update() == null ? null : BTCR2Update.fromJson(updateJob.btcr2Update());
+        if (btcr2Update == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'btcr2Update' in jobId");
 
         byte[] btcr2UpdateAnnouncement = updateJob.btcr2UpdateAnnouncement() == null ? null : Base64.getDecoder().decode(updateJob.btcr2UpdateAnnouncement());
         if (btcr2UpdateAnnouncement == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'btcr2UpdateAnnouncement' in jobId");
@@ -114,7 +118,7 @@ public class StateProcessUtxoSignPayloads {
         // read signing responses
 
         Map<String, SigningResponse> signingResponses = requestSecret == null ? null : requestSecret.getSigningResponse();
-        List<SigningResponse> utxoSigningResponses = signingResponses == null ? null : signingResponses.entrySet().stream().filter(signingResponseEntry -> signingResponseEntry.getKey().startsWith("btcr2Utxo")).map(Map.Entry::getValue).toList();
+        List<SigningResponse> utxoSigningResponses = signingResponses == null ? null : signingResponses.entrySet().stream().filter(signingResponseEntry -> signingResponseEntry.getKey().startsWith("utxo")).map(Map.Entry::getValue).toList();
 
         if (utxoSigningResponses == null) {
             throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Signing responses 'utxo*' not found");
@@ -124,10 +128,10 @@ public class StateProcessUtxoSignPayloads {
 
         // update()
 
-        UpdateProcessUtxoSignPayloadsResult updateProcessUtxoSignPayloadsResult = update.updateProcessUtxoSignPayloads(bitcoinConnection, did, didSourceDocument, targetVersionId, jsonPatches, btcr2UpdateAnnouncement, updateECKey, utxoSigningResponseSignatures, didDocumentMetadata);
+        UpdateProcessUtxoSignPayloadsResult updateProcessUtxoSignPayloadsResult = update.updateProcessUtxoSignPayloads(bitcoinConnection, didSourceDocument, targetVersionId, jsonPatches, btcr2UpdateAnnouncement, updateECKey, utxoSigningResponseSignatures, didDocumentMetadata);
 
         // next state
 
-        return TransitionProcessUtxoSignPayloads.transitionToFinished(bitcoinConnection, updateProcessUtxoSignPayloadsResult.did(), didRegistrationMetadata, didDocumentMetadata);
+        return TransitionProcessUtxoSignPayloads.transitionToFinished(bitcoinConnection, btcr2Update, didRegistrationMetadata, didDocumentMetadata);
     }
 }

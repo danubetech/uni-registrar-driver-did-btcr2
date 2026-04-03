@@ -3,6 +3,7 @@ package uniregistrar.driver.did.btcr2.states.update;
 import com.danubetech.btc.connection.BitcoinConnection;
 import com.danubetech.keyformats.jose.JWSAlgorithm;
 import uniregistrar.RegistrationException;
+import uniregistrar.driver.did.btcr2.data.jsonld.BTCR2Update;
 import uniregistrar.driver.did.btcr2.job.UpdateJob;
 import uniregistrar.openapi.model.*;
 
@@ -45,17 +46,17 @@ public class TransitionInit {
         return updateState;
     }
 
-    public static UpdateState transitionToUpdateSignPayload(BitcoinConnection bitcoinConnection, URI verificationMethodId, byte[] updateSignPayload, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public static UpdateState transitionToUpdateSignPayload(BitcoinConnection bitcoinConnection, URI verificationMethodId, BTCR2Update btcr2Update, byte[] updateSignPayload, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
 
         // REGISTRATION STATE: jobId
 
-        UpdateJob updateJob = new UpdateJob(Base64.getEncoder().encodeToString(updateSignPayload), null, null);
+        UpdateJob updateJob = new UpdateJob(btcr2Update.toJson(), Base64.getEncoder().encodeToString(updateSignPayload), null, null);
 
         Map<String, Object> jobId = updateJob.toJsonObject();
 
         // REGISTRATION STATE: signing request
 
-        SigningRequest didUpdateSigningRequest = new SigningRequest()
+        SigningRequest updateSigningRequest = new SigningRequest()
                 .kid(verificationMethodId.toString())
                 .alg(JWSAlgorithm.ES256KS)
                 .purpose("capabilityInvocation")
@@ -66,7 +67,7 @@ public class TransitionInit {
         DidStateAction didStateAction = new DidStateAction();
         didStateAction.setState("action");
         didStateAction.setAction("signPayload");
-        didStateAction.setSigningRequest(Map.of("btcr2Update", didUpdateSigningRequest));
+        didStateAction.setSigningRequest(Map.of("update", updateSigningRequest));
 
         // REGISTRATION STATE: didRegistrationMetadata
 
