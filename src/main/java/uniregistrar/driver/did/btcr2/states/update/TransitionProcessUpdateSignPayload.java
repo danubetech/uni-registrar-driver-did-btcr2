@@ -62,7 +62,7 @@ public class TransitionProcessUpdateSignPayload {
         // REGISTRATION STATE: signing request
 
         List<SigningRequest> utxoSigningRequests = utxoSignPayloads.stream().map( x -> new SigningRequest()
-                        .alg(JWSAlgorithm.ES256KS)
+                        .alg(JWSAlgorithm.ES256KRR)
                         .purpose("capabilityInvocation")
                         .serializedPayload(Base64.getEncoder().encodeToString(x)))
                 .toList();

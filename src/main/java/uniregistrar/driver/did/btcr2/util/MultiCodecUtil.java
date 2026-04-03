@@ -2,7 +2,7 @@ package uniregistrar.driver.did.btcr2.util;
 
 import org.apache.commons.codec.binary.Hex;
 
-public class MulticodecUtil {
+public class MultiCodecUtil {
 
     public static final byte[] MULTICODEC_SECP256K1_PUB = new byte[] { (byte)0xe7, (byte)0x01 };    //  0xe7
 

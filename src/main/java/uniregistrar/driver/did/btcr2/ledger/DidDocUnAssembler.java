@@ -14,7 +14,7 @@ import fr.acinq.secp256k1.Hex;
 import io.ipfs.multibase.Multibase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uniregistrar.driver.did.btcr2.util.MulticodecUtil;
+import uniregistrar.driver.did.btcr2.util.MultiCodecUtil;
 
 import java.net.URI;
 import java.util.List;
@@ -46,7 +46,7 @@ public class DidDocUnAssembler {
         }
 
         String unassembledInitialKeyString = verificationMethodInitialKey.getPublicKeyMultibase();
-        byte[] unassembledInitialKey = MulticodecUtil.removeMulticodec(Multibase.decode(unassembledInitialKeyString), MulticodecUtil.MULTICODEC_SECP256K1_PUB);
+        byte[] unassembledInitialKey = MultiCodecUtil.removeMulticodec(Multibase.decode(unassembledInitialKeyString), MultiCodecUtil.MULTICODEC_SECP256K1_PUB);
 
         // done
 

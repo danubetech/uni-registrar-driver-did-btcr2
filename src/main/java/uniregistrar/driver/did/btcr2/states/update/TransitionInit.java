@@ -57,7 +57,7 @@ public class TransitionInit {
 
         SigningRequest didUpdateSigningRequest = new SigningRequest()
                 .kid(verificationMethodId.toString())
-                .alg(JWSAlgorithm.ES256K)
+                .alg(JWSAlgorithm.ES256KS)
                 .purpose("capabilityInvocation")
                 .serializedPayload(Base64.getEncoder().encodeToString(updateSignPayload));
 

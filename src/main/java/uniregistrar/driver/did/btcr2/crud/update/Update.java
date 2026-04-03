@@ -88,7 +88,7 @@ public class Update {
                 }
             """;
 
-    private static final Coin BITCOIN_FEE = Coin.valueOf(10);
+    private static final Coin BITCOIN_FEE = Coin.valueOf(100);
 
     private static final Logger log = LoggerFactory.getLogger(Update.class);
 
@@ -312,17 +312,16 @@ public class Update {
         List<TxOut> beaconServiceAddressUtxos = bitcoinConnection.getAddressUtxos(beaconServiceAddress.toString());
         if (log.isDebugEnabled()) log.debug("beaconServiceAddressUtxos: {}", beaconServiceAddressUtxos);
 
-        Transaction bitcoinjTransaction = new Transaction();
-        for (TxOut beaconServiceAddressUtxo : beaconServiceAddressUtxos) {
-            bitcoinjTransaction.addInput(Sha256Hash.of(beaconServiceAddressUtxo.txIdBytes()), beaconServiceAddressUtxo.txOutIndex(), Script.parse(beaconServiceAddressUtxo.scriptBytes()));
-        }
         Coin totalValue = Coin.valueOf(beaconServiceAddressUtxos.stream().mapToLong(TxOut::value).sum());
         if (log.isDebugEnabled()) log.debug("totalValue: {}", totalValue);
-
         if (totalValue.compareTo(BITCOIN_FEE) < 0) {
             throw new UpdateActionFundAddressException(beaconServiceAddress, BITCOIN_FEE.minus(totalValue));
         }
 
+        Transaction bitcoinjTransaction = new Transaction();
+        for (TxOut beaconServiceAddressUtxo : beaconServiceAddressUtxos) {
+            bitcoinjTransaction.addInput(Sha256Hash.wrap(beaconServiceAddressUtxo.txIdBytes()), beaconServiceAddressUtxo.txOutIndex(), Script.parse(beaconServiceAddressUtxo.scriptBytes()));
+        }
         bitcoinjTransaction.addOutput(totalValue.minus(BITCOIN_FEE), beaconServiceAddress);
         bitcoinjTransaction.addOutput(Coin.ZERO, ScriptBuilder.createOpReturnScript(btcr2UpdateAnnouncement));
         if (log.isDebugEnabled()) log.debug("bitcoinjTransaction before signing: {}", bitcoinjTransaction);
@@ -345,7 +344,7 @@ public class Update {
         return updateProcessUpdateSignPayloadResult;
     }
 
-    public UpdateProcessUtxoSignPayloadsResult updateProcessUtxoSignPayloads(BitcoinConnection bitcoinConnection, DID did, DIDDocument didSourceDocument, Integer targetVersionId, JsonPatch jsonPatches, byte[] btcr2UpdateAnnouncement, List<byte[]> utxoSigningResponseSignatures, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public UpdateProcessUtxoSignPayloadsResult updateProcessUtxoSignPayloads(BitcoinConnection bitcoinConnection, DID did, DIDDocument didSourceDocument, Integer targetVersionId, JsonPatch jsonPatches, byte[] btcr2UpdateAnnouncement, ECKey updateECKey, List<byte[]> utxoSigningResponseSignatures, Map<String, Object> didDocumentMetadata) throws RegistrationException {
 
         /*
          * Announce DID Update
@@ -377,13 +376,17 @@ public class Update {
         List<TxOut> beaconServiceAddressUtxos = bitcoinConnection.getAddressUtxos(beaconServiceAddress.toString());
         if (log.isDebugEnabled()) log.debug("beaconServiceAddressUtxos: {}", beaconServiceAddressUtxos);
 
+        Coin totalValue = Coin.valueOf(beaconServiceAddressUtxos.stream().mapToLong(TxOut::value).sum());
+        if (log.isDebugEnabled()) log.debug("totalValue: {}", totalValue);
+        if (totalValue.compareTo(BITCOIN_FEE) < 0) {
+            throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Insufficient funds on " + beaconServiceAddress + ": " + totalValue + "/" + BITCOIN_FEE);
+        }
+
         Transaction bitcoinjTransaction = new Transaction();
         for (TxOut beaconServiceAddressUtxo : beaconServiceAddressUtxos) {
-            bitcoinjTransaction.addInput(Sha256Hash.of(beaconServiceAddressUtxo.txIdBytes()), beaconServiceAddressUtxo.txOutIndex(), Script.parse(beaconServiceAddressUtxo.scriptBytes()));
+            bitcoinjTransaction.addInput(Sha256Hash.wrap(beaconServiceAddressUtxo.txIdBytes()), beaconServiceAddressUtxo.txOutIndex(), Script.parse(beaconServiceAddressUtxo.scriptBytes()));
         }
-        long totalValue = beaconServiceAddressUtxos.stream().mapToLong(TxOut::value).sum();
-        if (log.isDebugEnabled()) log.debug("totalValue: {}", totalValue);
-        bitcoinjTransaction.addOutput(Coin.valueOf(totalValue).minus(BITCOIN_FEE), beaconServiceAddress);
+        bitcoinjTransaction.addOutput(totalValue.minus(BITCOIN_FEE), beaconServiceAddress);
         bitcoinjTransaction.addOutput(Coin.ZERO, ScriptBuilder.createOpReturnScript(btcr2UpdateAnnouncement));
         if (log.isDebugEnabled()) log.debug("bitcoinjTransaction before signing: {}", bitcoinjTransaction);
 
@@ -398,8 +401,8 @@ public class Update {
             System.arraycopy(utxoSigningResponseSignature, 32, s, 0, s.length);
             ECKey.ECDSASignature signature = new ECKey.ECDSASignature(new BigInteger(1, r), new BigInteger(1, s));
             TransactionSignature transactionSignature = new TransactionSignature(signature, Transaction.SigHash.ALL, false);
-            TransactionInput signedTransactionInput = transactionInput.withScriptSig(ScriptBuilder.createInputScript(transactionSignature, null /* TODO key */));
-            bitcoinjTransaction.getInputs().set(i, signedTransactionInput);
+            TransactionInput signedTransactionInput = transactionInput.withScriptSig(ScriptBuilder.createInputScript(transactionSignature, updateECKey));
+            bitcoinjTransaction.replaceInput(i, signedTransactionInput);
         }
         if (log.isDebugEnabled()) log.debug("bitcoinjTransaction after signing: {}", bitcoinjTransaction);
 
