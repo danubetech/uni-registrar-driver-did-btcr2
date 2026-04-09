@@ -118,8 +118,8 @@ public class Update {
 
         String updateString = BTCR2_UNSIGNED_UPDATE_TEMPLATE
                 .replace("{{array-of-patches}}", jsonPatches.toJsonArray().toString())
-                .replace("{{source-hash}}", Base64.getUrlEncoder().encodeToString(JSONDocumentHashing.jsonDocumentHashing(didSourceDocument)))
-                .replace("{{target-hash}}", Base64.getUrlEncoder().encodeToString(JSONDocumentHashing.jsonDocumentHashing(didTargetDocument)))
+                .replace("{{source-hash}}", Base64.getUrlEncoder().withoutPadding().encodeToString(JSONDocumentHashing.jsonDocumentHashing(didSourceDocument)))
+                .replace("{{target-hash}}", Base64.getUrlEncoder().withoutPadding().encodeToString(JSONDocumentHashing.jsonDocumentHashing(didTargetDocument)))
                 .replace("{{target-version-id}}", targetVersionId.toString());
         if (log.isDebugEnabled()) log.debug("updateString: " + updateString);
 
