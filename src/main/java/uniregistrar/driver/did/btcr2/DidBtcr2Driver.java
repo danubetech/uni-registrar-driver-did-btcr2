@@ -1,6 +1,8 @@
 package uniregistrar.driver.did.btcr2;
 
 import com.danubetech.btc.connection.BitcoinConnector;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
@@ -11,16 +13,15 @@ import uniregistrar.driver.did.btcr2.crud.deactivate.Deactivate;
 import uniregistrar.driver.did.btcr2.crud.update.Update;
 import uniregistrar.driver.did.btcr2.job.CreateJob;
 import uniregistrar.driver.did.btcr2.job.UpdateJob;
-import uniregistrar.openapi.model.CreateRequest;
-import uniregistrar.openapi.model.CreateState;
-import uniregistrar.openapi.model.UpdateRequest;
-import uniregistrar.openapi.model.UpdateState;
+import uniregistrar.openapi.model.*;
 
 import java.util.Map;
 
 public class DidBtcr2Driver implements Driver {
 
 	private static final Logger log = LoggerFactory.getLogger(DidBtcr2Driver.class);
+
+    private static final JsonMapper jsonMapper = JsonMapper.builder().build();
 
 	private Map<String, Object> properties;
 
@@ -55,6 +56,8 @@ public class DidBtcr2Driver implements Driver {
 
         CreateJob createJob = jobId == null ? null : CreateJob.fromJsonObject(jobId);
 
+        // execute operation
+
         if (createJob == null) {
             return uniregistrar.driver.did.btcr2.states.create.StateInit.create(createJob, createRequest, this.getCreate(), this.getBitcoinConnector());
         } else {
@@ -80,6 +83,8 @@ public class DidBtcr2Driver implements Driver {
 
         UpdateJob updateJob = jobId == null ? null : UpdateJob.fromJsonObject(jobId);
 
+        // execute operation
+
         if (updateJob == null || (updateJob.updateSignPayload() == null && updateJob.utxoSignPayloads() == null)) {
             return uniregistrar.driver.did.btcr2.states.update.StateInit.update(updateJob, updateRequest, this.getUpdate(), this.getBitcoinConnector());
         } else if (updateJob.updateSignPayload() != null && updateJob.utxoSignPayloads() == null) {
@@ -89,6 +94,45 @@ public class DidBtcr2Driver implements Driver {
         } else {
             throw new RegistrationException("Invalid state for job " + updateJob);
         }
+    }
+
+    @Override
+    public DeactivateState deactivate(DeactivateRequest deactivateRequest) throws RegistrationException {
+
+        // treat deactivate() request like a special type of update() request
+
+        UpdateRequest updateRequest;
+
+        try {
+            updateRequest = jsonMapper.readValue(jsonMapper.writeValueAsString(deactivateRequest), UpdateRequest.class);
+        } catch (JsonProcessingException ex) {
+            throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Cannot convert deactivate() request to update() request.");
+        }
+
+        final String didDocumentOperation = "addToDidDocument";
+        final DidDocument didDocument = new DidDocument();
+        didDocument.putAdditionalProperty("deactivated", Boolean.TRUE);
+
+        updateRequest.addDidDocumentOperationItem(didDocumentOperation);
+        updateRequest.addDidDocumentItem(didDocument);
+
+        // call update()
+
+        UpdateState updateState = this.update(updateRequest);
+
+        // treat update() state like a special type of deactivate() state
+
+        DeactivateState deactivateState;
+
+        try {
+            deactivateState = jsonMapper.readValue(jsonMapper.writeValueAsString(updateState), DeactivateState.class);
+        } catch (JsonProcessingException ex) {
+            throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Cannot convert update() state to deactivate() state.");
+        }
+
+        // done
+
+        return deactivateState;
     }
 
 	@Override
