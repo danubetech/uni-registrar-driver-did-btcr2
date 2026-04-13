@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import uniregistrar.driver.did.btcr2.util.MultiCodecUtil;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -61,34 +62,40 @@ public class DidDocUnAssembler {
         DIDDocument testDidDocument = DIDDocument.fromJson(didDocument.toJson());
 
         List<String> contexts = JsonLDUtils.jsonLdGetStringList(testDidDocument.getJsonObject(), Keywords.CONTEXT);
-        if (contexts != null) {
-            contexts.removeIf(DidDocUnAssembler::removeContext);
-            if (contexts.isEmpty()) JsonLDUtils.jsonLdRemove(testDidDocument, Keywords.CONTEXT);
+        List<String> testContexts = contexts == null ? null : new ArrayList<>(contexts);
+        if (testContexts != null) {
+            testContexts.removeIf(DidDocUnAssembler::removeContext);
+            if (testContexts.isEmpty()) JsonLDUtils.jsonLdRemove(testDidDocument, Keywords.CONTEXT);
         }
         List<Object> verificationMethods = JsonLDUtils.jsonLdGetJsonArray(testDidDocument.getJsonObject(), DIDKeywords.JSONLD_TERM_VERIFICATIONMETHOD);
-        if (verificationMethods != null) {
-            verificationMethods.removeIf(DidDocUnAssembler::removeVerificationMethod);
-            if (verificationMethods.isEmpty()) JsonLDUtils.jsonLdRemove(testDidDocument, DIDKeywords.JSONLD_TERM_VERIFICATIONMETHOD);
+        List<Object> testVerificationMethods = contexts == null ? null : new ArrayList<>(verificationMethods);
+        if (testVerificationMethods != null) {
+            testVerificationMethods.removeIf(DidDocUnAssembler::removeVerificationMethod);
+            if (testVerificationMethods.isEmpty()) JsonLDUtils.jsonLdRemove(testDidDocument, DIDKeywords.JSONLD_TERM_VERIFICATIONMETHOD);
         }
         List<Object> authenticationVerificationMethods = JsonLDUtils.jsonLdGetJsonArray(testDidDocument.getJsonObject(), DIDKeywords.JSONLD_TERM_AUTHENTICATION);
-        if (authenticationVerificationMethods != null) {
-            authenticationVerificationMethods.removeIf(DidDocUnAssembler::removeVerificationMethod);
-            if (authenticationVerificationMethods.isEmpty()) JsonLDUtils.jsonLdRemove(testDidDocument, DIDKeywords.JSONLD_TERM_AUTHENTICATION);
+        List<Object> testAuthenticationVerificationMethods = authenticationVerificationMethods == null ? null : new ArrayList<>(authenticationVerificationMethods);
+        if (testAuthenticationVerificationMethods != null) {
+            testAuthenticationVerificationMethods.removeIf(DidDocUnAssembler::removeVerificationMethod);
+            if (testAuthenticationVerificationMethods.isEmpty()) JsonLDUtils.jsonLdRemove(testDidDocument, DIDKeywords.JSONLD_TERM_AUTHENTICATION);
         }
         List<Object> assertionMethodVerificationMethods = JsonLDUtils.jsonLdGetJsonArray(testDidDocument.getJsonObject(), DIDKeywords.JSONLD_TERM_ASSERTIONMETHOD);
-        if (assertionMethodVerificationMethods != null) {
-            assertionMethodVerificationMethods.removeIf(DidDocUnAssembler::removeVerificationMethod);
-            if (assertionMethodVerificationMethods.isEmpty()) JsonLDUtils.jsonLdRemove(testDidDocument, DIDKeywords.JSONLD_TERM_ASSERTIONMETHOD);
+        List<Object> testAssertionMethodVerificationMethods = assertionMethodVerificationMethods == null ? null : new ArrayList<>(assertionMethodVerificationMethods);
+        if (testAssertionMethodVerificationMethods != null) {
+            testAssertionMethodVerificationMethods.removeIf(DidDocUnAssembler::removeVerificationMethod);
+            if (testAssertionMethodVerificationMethods.isEmpty()) JsonLDUtils.jsonLdRemove(testDidDocument, DIDKeywords.JSONLD_TERM_ASSERTIONMETHOD);
         }
         List<Object> capabilityInvocationVerificationMethods = JsonLDUtils.jsonLdGetJsonArray(testDidDocument.getJsonObject(), DIDKeywords.JSONLD_TERM_CAPABILITYINVOCATION);
-        if (capabilityInvocationVerificationMethods != null) {
-            capabilityInvocationVerificationMethods.removeIf(DidDocUnAssembler::removeVerificationMethod);
-            if (capabilityInvocationVerificationMethods.isEmpty()) JsonLDUtils.jsonLdRemove(testDidDocument, DIDKeywords.JSONLD_TERM_CAPABILITYINVOCATION);
+        List<Object> testCapabilityInvocationVerificationMethods = capabilityInvocationVerificationMethods == null ? null : new ArrayList<>(capabilityInvocationVerificationMethods);
+        if (testCapabilityInvocationVerificationMethods != null) {
+            testCapabilityInvocationVerificationMethods.removeIf(DidDocUnAssembler::removeVerificationMethod);
+            if (testCapabilityInvocationVerificationMethods.isEmpty()) JsonLDUtils.jsonLdRemove(testDidDocument, DIDKeywords.JSONLD_TERM_CAPABILITYINVOCATION);
         }
         List<Object> capabilityDelegationVerificationMethods = JsonLDUtils.jsonLdGetJsonArray(testDidDocument.getJsonObject(), DIDKeywords.JSONLD_TERM_CAPABILITYDELEGATION);
-        if (capabilityDelegationVerificationMethods != null) {
-            capabilityDelegationVerificationMethods.removeIf(DidDocUnAssembler::removeVerificationMethod);
-            if (capabilityDelegationVerificationMethods.isEmpty()) JsonLDUtils.jsonLdRemove(testDidDocument, DIDKeywords.JSONLD_TERM_CAPABILITYDELEGATION);
+        List<Object> testCapabilityDelegationVerificationMethods = capabilityDelegationVerificationMethods == null ? null : new ArrayList<>(capabilityDelegationVerificationMethods);
+        if (testCapabilityDelegationVerificationMethods != null) {
+            testCapabilityDelegationVerificationMethods.removeIf(DidDocUnAssembler::removeVerificationMethod);
+            if (testCapabilityDelegationVerificationMethods.isEmpty()) JsonLDUtils.jsonLdRemove(testDidDocument, DIDKeywords.JSONLD_TERM_CAPABILITYDELEGATION);
         }
 
         if (log.isDebugEnabled()) log.debug("testDidDocument: " + testDidDocument);
