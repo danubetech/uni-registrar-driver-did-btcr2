@@ -24,6 +24,7 @@ import java.util.Map;
 public class DidDocUnAssembler {
 
     public static final List<URI> DIDDOCUMENT_CONTEXTS = List.of(
+            DIDContexts.JSONLD_CONTEXT_W3_NS_DID_V1,
             DIDContexts.JSONLD_CONTEXT_W3_NS_DID_V1_1,
             URI.create("https://btcr2.dev/context/v1")
     );
@@ -101,10 +102,10 @@ public class DidDocUnAssembler {
         if (log.isDebugEnabled()) log.debug("testDidDocument: " + testDidDocument);
         if (testDidDocument.getJsonObject().isEmpty()) return null;
 
-        DIDDocumentV1_1 genesisDocument = DIDDocumentV1_1.builder().base(didDocument).defaultContexts(false).contexts(DIDDOCUMENT_CONTEXTS).id(GENESIS_DID).build();
-        if (log.isDebugEnabled()) log.debug("genesisDocument: " + genesisDocument);
+        DIDDocumentV1_1 unassembledGenesisDocument = DIDDocumentV1_1.builder().base(didDocument).defaultContexts(false).contexts(DIDDOCUMENT_CONTEXTS).id(GENESIS_DID).build();
+        if (log.isDebugEnabled()) log.debug("unassembledGenesisDocument: " + unassembledGenesisDocument);
 
-        return genesisDocument;
+        return unassembledGenesisDocument;
     }
 
     private static boolean removeContext(String context) {
