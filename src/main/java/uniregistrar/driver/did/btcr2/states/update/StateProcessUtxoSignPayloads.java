@@ -72,7 +72,7 @@ public class StateProcessUtxoSignPayloads {
         // read didSourceDocument and targetVersionId options
 
         DIDDocument didSourceDocument = updateRequest.getOptions() == null || updateRequest.getOptions().getAdditionalProperty("didSourceDocument") == null ? null : DIDDocument.fromJsonObject((Map<String, Object>) updateRequest.getOptions().getAdditionalProperty("didSourceDocument"));
-        Integer targetVersionId = updateRequest.getOptions() == null ? null : (Integer) updateRequest.getOptions().getAdditionalProperty("targetVersionId");
+        Integer targetVersionId = updateRequest.getOptions() == null ? null : (updateRequest.getOptions().getAdditionalProperty("targetVersionId") instanceof String targetVersionIdString ? Integer.parseInt(targetVersionIdString) : (Integer) updateRequest.getOptions().getAdditionalProperty("targetVersionId"));
         if (didSourceDocument == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'didSourceDocument' option");
         if (targetVersionId == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'targetVersionId' option");
 
