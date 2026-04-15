@@ -60,8 +60,8 @@ public class Update {
                   "@context": [
                     "https://btcr2.dev/context/v1",
                     "https://w3id.org/json-ld-patch/v1",
-                    "https://w3id.org/security/data-integrity/v2",
-                    "https://w3id.org/zcap/v1"
+                    "https://w3id.org/zcap/v1",
+                    "https://w3id.org/security/data-integrity/v2"
                   ],
                   "patch": {{array-of-patches}},
                   "sourceHash": "{{source-hash}}",
@@ -76,8 +76,8 @@ public class Update {
                   "@context": [
                     "https://btcr2.dev/context/v1",
                     "https://w3id.org/json-ld-patch/v1",
-                    "https://w3id.org/security/data-integrity/v2",
-                    "https://w3id.org/zcap/v1"
+                    "https://w3id.org/zcap/v1",
+                    "https://w3id.org/security/data-integrity/v2"
                   ],
                   "type": "DataIntegrityProof",
                   "cryptosuite": "bip340-jcs-2025",
