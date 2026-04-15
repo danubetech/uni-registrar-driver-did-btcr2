@@ -14,7 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
 import uniregistrar.driver.did.btcr2.crud.update.Update;
-import uniregistrar.driver.did.btcr2.crud.update.UpdateActionFundAddressException;
 import uniregistrar.driver.did.btcr2.crud.update.UpdateProcessUpdateSignPayloadResult;
 import uniregistrar.driver.did.btcr2.data.jsonld.BTCR2Update;
 import uniregistrar.driver.did.btcr2.job.UpdateJob;
@@ -104,13 +103,7 @@ public class StateProcessUpdateSignPayload {
 
         // update()
 
-        UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayloadResult;
-        try {
-            updateProcessUpdateSignPayloadResult = update.updateProcessUpdateSignPayload(bitcoinConnection, didSourceDocument, targetVersionId, jsonPatches, btcr2Update, verificationMethodId, updateSigningResponseSignature, didDocumentMetadata);
-        } catch (UpdateActionFundAddressException ex) {
-            // next state
-            return TransitionProcessUpdateSignPayload.transitionToUpdateSignPayloadFundAddress(bitcoinConnection, ex.getAddress(), ex.getMinimumValue(), btcr2Update, updateSignPayload, didRegistrationMetadata, didDocumentMetadata);
-        }
+        UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayloadResult = update.updateProcessUpdateSignPayload(bitcoinConnection, didSourceDocument, targetVersionId, jsonPatches, btcr2Update, verificationMethodId, updateSigningResponseSignature, didDocumentMetadata);
 
         // next state
 
