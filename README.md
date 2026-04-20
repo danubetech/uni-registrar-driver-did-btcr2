@@ -79,6 +79,16 @@ The driver recognizes the following environment variables:
 * Specifies the server TLS certificates of the Bitcoin connections.
 * Default value: ``
 
+### `uniregistrar_driver_did_btcr2_genesisHashes`
+
+* Specifies genesis hashes associated with the Bitcoin connections.
+* Default value: ``
+
+### `uniregistrar_driver_did_btcr2_ipfs`
+
+* Specifies a MultiAddress of an IPFS connection to be used as CAS.
+* Default value: `/ip4/127.0.0.1/tcp/5001`
+
 ## Driver Input Options
 
 ```
