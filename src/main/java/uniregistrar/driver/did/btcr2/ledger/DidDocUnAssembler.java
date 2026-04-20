@@ -102,7 +102,7 @@ public class DidDocUnAssembler {
         if (log.isDebugEnabled()) log.debug("testDidDocument: " + testDidDocument);
         if (testDidDocument.getJsonObject().isEmpty()) return null;
 
-        DIDDocumentV1_1 unassembledGenesisDocument = DIDDocumentV1_1.builder().base(didDocument).defaultContexts(false).contexts(DIDDOCUMENT_CONTEXTS).id(GENESIS_DID).build();
+        DIDDocumentV1_1 unassembledGenesisDocument = DIDDocumentV1_1.builder().base(didDocument).defaultContexts(false).id(GENESIS_DID).build();
         if (log.isDebugEnabled()) log.debug("unassembledGenesisDocument: " + unassembledGenesisDocument);
 
         return unassembledGenesisDocument;
