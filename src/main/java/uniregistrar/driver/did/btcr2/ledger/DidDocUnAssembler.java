@@ -23,10 +23,12 @@ import java.util.Map;
 
 public class DidDocUnAssembler {
 
+    public static final URI JSONLD_CONTEXT_BTCR2_V1 = URI.create("https://btcr2.dev/context/v1");
+
     public static final List<URI> DIDDOCUMENT_CONTEXTS = List.of(
             DIDContexts.JSONLD_CONTEXT_W3_NS_DID_V1,
             DIDContexts.JSONLD_CONTEXT_W3_NS_DID_V1_1,
-            URI.create("https://btcr2.dev/context/v1")
+            JSONLD_CONTEXT_BTCR2_V1
     );
 
     private static final URI GENESIS_DID = URI.create("did:btcr2:_");
@@ -103,6 +105,9 @@ public class DidDocUnAssembler {
         if (testDidDocument.getJsonObject().isEmpty()) return null;
 
         DIDDocumentV1_1 unassembledGenesisDocument = DIDDocumentV1_1.builder().base(didDocument).defaultContexts(false).id(GENESIS_DID).build();
+        if (! unassembledGenesisDocument.getContexts().contains(JSONLD_CONTEXT_BTCR2_V1)) {
+            JsonLDUtils.jsonLdAdd(unassembledGenesisDocument, Keywords.CONTEXT, JsonLDUtils.uriToString(JSONLD_CONTEXT_BTCR2_V1));
+        }
         if (log.isDebugEnabled()) log.debug("unassembledGenesisDocument: " + unassembledGenesisDocument);
 
         return unassembledGenesisDocument;
