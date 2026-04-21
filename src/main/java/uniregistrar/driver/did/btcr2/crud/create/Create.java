@@ -53,11 +53,6 @@ public class Create {
 
         DID did = DidBtcr2IdentifierEncoding.didBtcr2IdentifierEncoding(version, network, genesisBytes, genesisBytesType);
 
-        // DID DOCUMENT METADATA
-
-        didDocumentMetadata.put("initialKey", initialKey == null ? null : Hex.encodeHexString(initialKey));
-        didDocumentMetadata.put("genesisDocument", genesisDocument == null ? null : genesisDocument.toMap());
-
         // result
 
         CreateInitResult createInitResult = new CreateInitResult(did);

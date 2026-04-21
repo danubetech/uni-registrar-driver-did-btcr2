@@ -2,6 +2,8 @@ package uniregistrar.driver.did.btcr2.states.create;
 
 import com.danubetech.btc.connection.BitcoinConnection;
 import foundation.identity.did.DID;
+import foundation.identity.did.DIDDocument;
+import org.apache.commons.codec.binary.Hex;
 import uniregistrar.RegistrationException;
 import uniregistrar.openapi.model.*;
 
@@ -45,7 +47,7 @@ public class TransitionInit {
         return createState;
     }
 
-    public static CreateState transitionToFinished(BitcoinConnection bitcoinConnection, DID did, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
+    public static CreateState transitionToFinished(BitcoinConnection bitcoinConnection, byte[] initialKey, DIDDocument genesisDocument, DID did, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
 
         // REGISTRATION STATE: jobId
 
@@ -83,6 +85,11 @@ public class TransitionInit {
         // REGISTRATION STATE: didRegistrationMetadata
 
         didRegistrationMetadata.putAll(bitcoinConnection.getMetadata());
+
+        // REGISTRATION STATE: didDocumentMetadata
+
+        didDocumentMetadata.put("initialKey", initialKey == null ? null : Hex.encodeHexString(initialKey));
+        didDocumentMetadata.put("genesisDocument", genesisDocument == null ? null : genesisDocument.toMap());
 
         // create() state
 

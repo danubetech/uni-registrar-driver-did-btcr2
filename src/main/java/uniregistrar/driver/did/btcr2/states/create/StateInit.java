@@ -112,6 +112,6 @@ public class StateInit {
 
         // next state
 
-        return TransitionInit.transitionToFinished(bitcoinConnection, createInitResult.did(), didRegistrationMetadata, didDocumentMetadata);
+        return TransitionInit.transitionToFinished(bitcoinConnection, unassembledInitialKey, unassembledGenesisDocument, createInitResult.did(), didRegistrationMetadata, didDocumentMetadata);
     }
 }
