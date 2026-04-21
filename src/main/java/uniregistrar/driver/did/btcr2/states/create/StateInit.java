@@ -47,14 +47,16 @@ public class StateInit {
 
         DIDDocument didDocument = jsonMapper.convertValue(createRequest.getDidDocument(), DIDDocument.class);
 
-        // read version and network and standardBeacons options
+        // read version and network and standardInitialKey and standardBeacons options
 
         Integer version = createRequest.getOptions() == null ? null : (createRequest.getOptions().getAdditionalProperty("version") == null ? null : ((Number) createRequest.getOptions().getAdditionalProperty("version")).intValue());
         Network network = createRequest.getOptions() == null ? null : (createRequest.getOptions().getAdditionalProperty("network") == null ? null : Network.valueOf((String) createRequest.getOptions().getAdditionalProperty("network")));
+        Boolean standardInitialKey = createRequest.getOptions() == null ? null : (createRequest.getOptions().getAdditionalProperty("standardInitialKey") == null ? null : (Boolean) createRequest.getOptions().getAdditionalProperty("standardInitialKey"));
         Boolean standardBeacons = createRequest.getOptions() == null ? null : (createRequest.getOptions().getAdditionalProperty("standardBeacons") == null ? null : (Boolean) createRequest.getOptions().getAdditionalProperty("standardBeacons"));
         if (version == null) version = 1;
         if (network == null) network = Network.bitcoin;
-        if (standardBeacons == null) standardBeacons = Boolean.FALSE;
+        if (standardInitialKey == null) standardInitialKey = Boolean.TRUE;
+        if (standardBeacons == null) standardBeacons = Boolean.TRUE;
 
         // find Bitcoin connection
 
@@ -64,7 +66,7 @@ public class StateInit {
         // unassemble initialKey
 
         byte[] unassembledInitialKey = DidDocUnAssembler.unassembleInitialKey(didDocument);
-        if (unassembledInitialKey == null) {
+        if (unassembledInitialKey == null && standardInitialKey) {
             // next state
             return TransitionInit.transitionToInitGetVerificationMethod(bitcoinConnection, didRegistrationMetadata, didDocumentMetadata);
         }
