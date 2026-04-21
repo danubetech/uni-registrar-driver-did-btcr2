@@ -286,7 +286,7 @@ public class Update {
         if (log.isDebugEnabled()) log.debug("totalValue: {}", totalValue);
         if (totalValue.compareTo(BITCOIN_FEE) < 0) {
             Coin minimumValue = BITCOIN_FEE.minus(totalValue);
-            throw new RegistrationException("FUND_ADDRESS", "", Map.of("address", beaconServiceAddress.toString(), "minimumValue", minimumValue.getValue()));
+            throw new RegistrationException("FUND_ADDRESS", "Missing funds on address " + beaconServiceAddress + ": " + minimumValue.getValue(), Map.of("address", beaconServiceAddress.toString(), "minimumValue", minimumValue.getValue()));
         }
 
         Transaction btcr2Transaction = new Transaction();
