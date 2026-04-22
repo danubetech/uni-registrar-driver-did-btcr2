@@ -123,7 +123,7 @@ public class StateInit {
         // publish to IPFS?
 
         MerkleNode merkleNode = null;
-        if (publishToIpfs && ipfsConnection != null) {
+        if (publishToIpfs && ipfsConnection != null && createInitResult.genesisDocument() != null) {
             try {
                 byte[] ipfsPayload = createInitResult.genesisDocument().toString().getBytes(StandardCharsets.UTF_8);
                 merkleNode = ipfsConnection.getIpfs().add(new NamedStreamable.ByteArrayWrapper(ipfsPayload)).getFirst();

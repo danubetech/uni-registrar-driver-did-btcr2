@@ -142,7 +142,7 @@ public class StateProcessUtxoSignPayloads {
         // publish to IPFS?
 
         MerkleNode merkleNode = null;
-        if (publishToIpfs && ipfsConnection != null) {
+        if (publishToIpfs && ipfsConnection != null && updateProcessUtxoSignPayloadsResult.btcr2Update() != null) {
             try {
                 byte[] ipfsPayload = updateProcessUtxoSignPayloadsResult.btcr2Update().toString().getBytes(StandardCharsets.UTF_8);
                 merkleNode = ipfsConnection.getIpfs().add(new NamedStreamable.ByteArrayWrapper(ipfsPayload)).getFirst();
