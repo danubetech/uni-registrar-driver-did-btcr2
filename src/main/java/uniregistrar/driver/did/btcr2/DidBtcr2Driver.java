@@ -101,10 +101,8 @@ public class DidBtcr2Driver implements Driver {
     private static final String PATCH_DEACTIVATE = """
       {
         "op": "add",
-        "path": "/",
-        "value": {
-          "deactivated": true
-        }
+        "path": "/deactivated",
+        "value": true
       }
     """;
 
