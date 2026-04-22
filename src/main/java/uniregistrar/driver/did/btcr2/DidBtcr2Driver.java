@@ -98,6 +98,16 @@ public class DidBtcr2Driver implements Driver {
         }
     }
 
+    private static final String PATCH_DEACTIVATE = """
+      {
+        "op": "add",
+        "path": "/",
+        "value": {
+          "deactivated": true
+        }
+      }
+    """;
+
     @Override
     public DeactivateState deactivate(DeactivateRequest deactivateRequest) throws RegistrationException {
 
@@ -107,16 +117,11 @@ public class DidBtcr2Driver implements Driver {
 
         try {
             updateRequest = jsonMapper.readValue(jsonMapper.writeValueAsString(deactivateRequest), UpdateRequest.class);
+            updateRequest.addDidDocumentOperationItem("patchDidDocument");
+            updateRequest.addDidDocumentItem(jsonMapper.readValue(PATCH_DEACTIVATE, DidDocument.class));
         } catch (JsonProcessingException ex) {
             throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Cannot convert deactivate() request to update() request.");
         }
-
-        final String didDocumentOperation = "addToDidDocument";
-        final DidDocument didDocument = new DidDocument();
-        didDocument.putAdditionalProperty("deactivated", Boolean.TRUE);
-
-        updateRequest.addDidDocumentOperationItem(didDocumentOperation);
-        updateRequest.addDidDocumentItem(didDocument);
 
         // call update()
 
