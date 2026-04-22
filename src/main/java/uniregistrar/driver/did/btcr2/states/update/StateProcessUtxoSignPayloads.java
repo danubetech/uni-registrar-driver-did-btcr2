@@ -21,6 +21,7 @@ import org.bitcoinj.crypto.ECKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
+import uniregistrar.driver.did.btcr2.algorithms.JSONDocumentHashing;
 import uniregistrar.driver.did.btcr2.crud.update.Update;
 import uniregistrar.driver.did.btcr2.crud.update.UpdateProcessUtxoSignPayloadsResult;
 import uniregistrar.driver.did.btcr2.data.jsonld.BTCR2Update;
@@ -144,7 +145,7 @@ public class StateProcessUtxoSignPayloads {
         MerkleNode merkleNode = null;
         if (publishToIpfs && ipfsConnection != null && updateProcessUtxoSignPayloadsResult.btcr2Update() != null) {
             try {
-                byte[] ipfsPayload = updateProcessUtxoSignPayloadsResult.btcr2Update().toString().getBytes(StandardCharsets.UTF_8);
+                byte[] ipfsPayload = JSONDocumentHashing.jsonDocumentCanonicalizing(updateProcessUtxoSignPayloadsResult.btcr2Update().toJson()).getBytes(StandardCharsets.UTF_8);
                 merkleNode = ipfsConnection.getIpfs().add(new NamedStreamable.ByteArrayWrapper(ipfsPayload)).getFirst();
             } catch (IOException ex) {
                 throw new RegistrationException(RegistrationException.ERROR_INTERNAL_ERROR, "Cannot publish to IPFS: " + ex.getMessage(), ex);

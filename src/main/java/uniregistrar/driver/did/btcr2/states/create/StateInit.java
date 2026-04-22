@@ -17,6 +17,7 @@ import org.bitcoinj.uri.BitcoinURI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
+import uniregistrar.driver.did.btcr2.algorithms.JSONDocumentHashing;
 import uniregistrar.driver.did.btcr2.crud.create.Create;
 import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.driver.did.btcr2.ipfs.IPFSPublishService;
@@ -125,7 +126,7 @@ public class StateInit {
         MerkleNode merkleNode = null;
         if (publishToIpfs && ipfsConnection != null && createInitResult.genesisDocument() != null) {
             try {
-                byte[] ipfsPayload = createInitResult.genesisDocument().toString().getBytes(StandardCharsets.UTF_8);
+                byte[] ipfsPayload = JSONDocumentHashing.jsonDocumentCanonicalizing(createInitResult.genesisDocument().toJson()).getBytes(StandardCharsets.UTF_8);
                 merkleNode = ipfsConnection.getIpfs().add(new NamedStreamable.ByteArrayWrapper(ipfsPayload)).getFirst();
             } catch (IOException ex) {
                 throw new RegistrationException(RegistrationException.ERROR_INTERNAL_ERROR, "Cannot publish to IPFS: " + ex.getMessage(), ex);

@@ -23,14 +23,20 @@ public class JSONDocumentHashing {
 
     private static final JsonMapper jsonMapper = JsonMapper.builder().build();
 
-    public static byte[] jsonDocumentHashing(String json) {
-        String encodedString;
+    public static String jsonDocumentCanonicalizing(String json) {
+        String canonicalized;
         try {
-            encodedString = new JsonCanonicalizer(json).getEncodedString();
+            canonicalized = new JsonCanonicalizer(json).getEncodedString();
         } catch (IOException ex) {
             throw new IllegalArgumentException(ex.getMessage(), ex);
         }
-        byte[] hash = SHA256Util.sha256(encodedString.getBytes(StandardCharsets.UTF_8));
+        if (log.isDebugEnabled()) log.debug("jsonDocumentCanonicalizing for " + json + ": " + canonicalized);
+        return canonicalized;
+    }
+
+    public static byte[] jsonDocumentHashing(String json) {
+        String canonicalized = jsonDocumentCanonicalizing(json);
+        byte[] hash = SHA256Util.sha256(canonicalized.getBytes(StandardCharsets.UTF_8));
         if (log.isDebugEnabled()) log.debug("jsonCanonicalizationAndHash for " + json + ": " + Hex.encodeHexString(hash));
         return hash;
     }
