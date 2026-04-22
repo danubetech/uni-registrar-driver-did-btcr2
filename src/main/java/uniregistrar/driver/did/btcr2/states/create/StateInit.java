@@ -10,6 +10,7 @@ import foundation.identity.did.DIDDocumentV1_1;
 import foundation.identity.did.Service;
 import fr.acinq.bitcoin.BlockHash;
 import fr.acinq.bitcoin.PublicKey;
+import io.ipfs.api.AddArgs;
 import io.ipfs.api.MerkleNode;
 import io.ipfs.api.NamedStreamable;
 import org.bitcoinj.base.AddressParser;
@@ -127,7 +128,8 @@ public class StateInit {
         if (publishToIpfs && ipfsConnection != null && createInitResult.genesisDocument() != null) {
             try {
                 byte[] ipfsPayload = JSONDocumentHashing.jsonDocumentCanonicalizing(createInitResult.genesisDocument().toJson()).getBytes(StandardCharsets.UTF_8);
-                merkleNode = ipfsConnection.getIpfs().add(new NamedStreamable.ByteArrayWrapper(ipfsPayload)).getFirst();
+                AddArgs addArgs = AddArgs.Builder.newInstance().setCidVersion(1).setRawLeaves().setHash("sha2-256").setPin().build();
+                merkleNode = ipfsConnection.getIpfs().add(new NamedStreamable.ByteArrayWrapper(ipfsPayload), addArgs).getFirst();
             } catch (IOException ex) {
                 throw new RegistrationException(RegistrationException.ERROR_INTERNAL_ERROR, "Cannot publish to IPFS: " + ex.getMessage(), ex);
             }
