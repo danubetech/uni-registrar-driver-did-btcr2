@@ -11,6 +11,7 @@ import uniregistrar.driver.did.btcr2.config.Configuration;
 import uniregistrar.driver.did.btcr2.crud.create.Create;
 import uniregistrar.driver.did.btcr2.crud.deactivate.Deactivate;
 import uniregistrar.driver.did.btcr2.crud.update.Update;
+import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.driver.did.btcr2.job.CreateJob;
 import uniregistrar.driver.did.btcr2.job.UpdateJob;
 import uniregistrar.openapi.model.*;
@@ -29,6 +30,7 @@ public class DidBtcr2Driver implements Driver {
     private Update update;
     private Deactivate deactivate;
     private BitcoinConnector bitcoinConnector;
+    private IPFSConnection ipfsConnection;
 
 	public DidBtcr2Driver() {
 		this(Configuration.getPropertiesFromEnvironment());
@@ -59,7 +61,7 @@ public class DidBtcr2Driver implements Driver {
         // execute operation
 
         if (createJob == null) {
-            return uniregistrar.driver.did.btcr2.states.create.StateInit.create(createJob, createRequest, this.getCreate(), this.getBitcoinConnector());
+            return uniregistrar.driver.did.btcr2.states.create.StateInit.create(createJob, createRequest, this.getCreate(), this.getBitcoinConnector(), this.getIpfsConnection());
         } else {
             throw new RegistrationException("Invalid state for job " + createJob);
         }
@@ -86,11 +88,11 @@ public class DidBtcr2Driver implements Driver {
         // execute operation
 
         if (updateJob == null || (updateJob.updateSignPayload() == null && updateJob.utxoSignPayloads() == null)) {
-            return uniregistrar.driver.did.btcr2.states.update.StateInit.update(updateJob, updateRequest, this.getUpdate(), this.getBitcoinConnector());
+            return uniregistrar.driver.did.btcr2.states.update.StateInit.update(updateJob, updateRequest, this.getUpdate(), this.getBitcoinConnector(), this.getIpfsConnection());
         } else if (updateJob.updateSignPayload() != null && updateJob.utxoSignPayloads() == null) {
-            return uniregistrar.driver.did.btcr2.states.update.StateProcessUpdateSignPayload.update(updateJob, updateRequest, this.getUpdate(), this.getBitcoinConnector());
+            return uniregistrar.driver.did.btcr2.states.update.StateProcessUpdateSignPayload.update(updateJob, updateRequest, this.getUpdate(), this.getBitcoinConnector(), this.getIpfsConnection());
         } else if (updateJob.updateSignPayload() == null && updateJob.utxoSignPayloads() != null) {
-            return uniregistrar.driver.did.btcr2.states.update.StateProcessUtxoSignPayloads.update(updateJob, updateRequest, this.getUpdate(), this.getBitcoinConnector());
+            return uniregistrar.driver.did.btcr2.states.update.StateProcessUtxoSignPayloads.update(updateJob, updateRequest, this.getUpdate(), this.getBitcoinConnector(), this.getIpfsConnection());
         } else {
             throw new RegistrationException("Invalid state for job " + updateJob);
         }
@@ -183,5 +185,13 @@ public class DidBtcr2Driver implements Driver {
 
     public void setBitcoinConnector(BitcoinConnector bitcoinConnector) {
         this.bitcoinConnector = bitcoinConnector;
+    }
+
+    public IPFSConnection getIpfsConnection() {
+        return ipfsConnection;
+    }
+
+    public void setIpfsConnection(IPFSConnection ipfsConnection) {
+        this.ipfsConnection = ipfsConnection;
     }
 }

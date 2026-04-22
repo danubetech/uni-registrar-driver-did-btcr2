@@ -59,7 +59,11 @@ public class Configuration {
 
             String prop_ipfs = (String) properties.get("ipfs");
 
-            ipfsConnection = IPFSConnection.create(prop_ipfs);
+            if (prop_ipfs == null || prop_ipfs.isBlank()) {
+                ipfsConnection = null;
+            } else {
+                ipfsConnection = IPFSConnection.create(prop_ipfs);
+            }
 
             // parse bitcoinConnection
 
@@ -108,6 +112,7 @@ public class Configuration {
             didBtcr2Driver.setUpdate(new Update(ipfsConnection));
             didBtcr2Driver.setDeactivate(new Deactivate(bitcoinConnector, ipfsConnection));
             didBtcr2Driver.setBitcoinConnector(bitcoinConnector);
+            didBtcr2Driver.setIpfsConnection(ipfsConnection);
         } catch (IllegalArgumentException ex) {
             throw ex;
         } catch (Exception ex) {

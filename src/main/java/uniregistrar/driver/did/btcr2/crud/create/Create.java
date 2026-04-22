@@ -55,7 +55,7 @@ public class Create {
 
         // result
 
-        CreateInitResult createInitResult = new CreateInitResult(did);
+        CreateInitResult createInitResult = new CreateInitResult(initialKey, genesisDocument, did);
         if (log.isDebugEnabled()) log.debug("Create: " + createInitResult);
         return createInitResult;
     }

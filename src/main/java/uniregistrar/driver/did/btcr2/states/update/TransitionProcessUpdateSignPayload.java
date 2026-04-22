@@ -5,6 +5,7 @@ import com.danubetech.keyformats.jose.JWSAlgorithm;
 import org.bitcoinj.core.Transaction;
 import uniregistrar.RegistrationException;
 import uniregistrar.driver.did.btcr2.data.jsonld.BTCR2Update;
+import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.driver.did.btcr2.job.UpdateJob;
 import uniregistrar.openapi.model.DidStateAction;
 import uniregistrar.openapi.model.RegistrarStateJobId;
@@ -18,7 +19,7 @@ import java.util.Map;
 
 public class TransitionProcessUpdateSignPayload {
 
-    public static UpdateState transitionToUtxoSignPayloads(BitcoinConnection bitcoinConnection, BTCR2Update btcr2Update, Transaction btcr2Transaction, List<byte[]> utxoSignPayloads, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public static UpdateState transitionToUtxoSignPayloads(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, BTCR2Update btcr2Update, Transaction btcr2Transaction, List<byte[]> utxoSignPayloads, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
 
         // REGISTRATION STATE: jobId
 
@@ -47,7 +48,8 @@ public class TransitionProcessUpdateSignPayload {
 
         // REGISTRATION STATE: didRegistrationMetadata
 
-        didRegistrationMetadata.putAll(bitcoinConnection.getMetadata());
+        if (bitcoinConnection != null) didRegistrationMetadata.putAll(bitcoinConnection.getMetadata());
+        if (ipfsConnection != null) didRegistrationMetadata.putAll(ipfsConnection.getMetadata());
 
         // REGISTRATION STATE: update()
 

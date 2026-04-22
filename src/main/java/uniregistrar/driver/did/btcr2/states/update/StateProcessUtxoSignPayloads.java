@@ -11,6 +11,8 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import foundation.identity.did.DID;
 import foundation.identity.did.DIDDocument;
 import foundation.identity.did.parser.ParserException;
+import io.ipfs.api.MerkleNode;
+import io.ipfs.api.NamedStreamable;
 import io.ipfs.multibase.Multibase;
 import jakarta.json.Json;
 import jakarta.json.JsonPatch;
@@ -22,12 +24,15 @@ import uniregistrar.RegistrationException;
 import uniregistrar.driver.did.btcr2.crud.update.Update;
 import uniregistrar.driver.did.btcr2.crud.update.UpdateProcessUtxoSignPayloadsResult;
 import uniregistrar.driver.did.btcr2.data.jsonld.BTCR2Update;
+import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.driver.did.btcr2.job.UpdateJob;
 import uniregistrar.driver.did.btcr2.syntax.DidBtcr2IdentifierDecoding;
 import uniregistrar.driver.did.btcr2.util.MultiCodecUtil;
 import uniregistrar.openapi.model.*;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class StateProcessUtxoSignPayloads {
@@ -38,7 +43,7 @@ public class StateProcessUtxoSignPayloads {
             .defaultPropertyInclusion(JsonInclude.Value.ALL_NON_NULL)
             .build();
 
-    public static UpdateState update(UpdateJob updateJob, UpdateRequest updateRequest, Update update, BitcoinConnector bitcoinConnector) throws RegistrationException {
+    public static UpdateState update(UpdateJob updateJob, UpdateRequest updateRequest, Update update, BitcoinConnector bitcoinConnector, IPFSConnection ipfsConnection) throws RegistrationException {
 
         // prepare didRegistrationMetadata and didDocumentMetadata
 
@@ -69,12 +74,14 @@ public class StateProcessUtxoSignPayloads {
         BitcoinConnection bitcoinConnection = bitcoinConnector.getBitcoinConnection(identifierComponents.network());
         if (bitcoinConnection == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_DID, "Unknown network: " + identifierComponents.network());
 
-        // read didSourceDocument and targetVersionId options
+        // read didSourceDocument and targetVersionId and publishToIpfs options
 
         DIDDocument didSourceDocument = updateRequest.getOptions() == null || updateRequest.getOptions().getAdditionalProperty("didSourceDocument") == null ? null : DIDDocument.fromJsonObject((Map<String, Object>) updateRequest.getOptions().getAdditionalProperty("didSourceDocument"));
         Integer targetVersionId = updateRequest.getOptions() == null ? null : (updateRequest.getOptions().getAdditionalProperty("targetVersionId") instanceof String targetVersionIdString ? Integer.parseInt(targetVersionIdString) : (Integer) updateRequest.getOptions().getAdditionalProperty("targetVersionId"));
+        Boolean publishToIpfs = updateRequest.getOptions() == null ? null : (updateRequest.getOptions().getAdditionalProperty("publishToIpfs") == null ? null : (Boolean) updateRequest.getOptions().getAdditionalProperty("publishToIpfs"));
         if (didSourceDocument == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'didSourceDocument' option");
         if (targetVersionId == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'targetVersionId' option");
+        if (publishToIpfs == null) publishToIpfs = Boolean.TRUE;
 
         // read input DID document operations and DID documents
 
@@ -130,10 +137,23 @@ public class StateProcessUtxoSignPayloads {
 
         // update()
 
-        UpdateProcessUtxoSignPayloadsResult updateProcessUtxoSignPayloadsResult = update.updateProcessUtxoSignPayloads(bitcoinConnection, didSourceDocument, targetVersionId, jsonPatches, btcr2Transaction, updateECKey, utxoSigningResponseSignatures, didDocumentMetadata);
+        UpdateProcessUtxoSignPayloadsResult updateProcessUtxoSignPayloadsResult = update.updateProcessUtxoSignPayloads(bitcoinConnection, didSourceDocument, targetVersionId, jsonPatches, btcr2Update, btcr2Transaction, updateECKey, utxoSigningResponseSignatures, didDocumentMetadata);
+
+        // publish to IPFS?
+
+        MerkleNode merkleNode = null;
+        if (publishToIpfs && ipfsConnection != null) {
+            try {
+                byte[] ipfsPayload = updateProcessUtxoSignPayloadsResult.btcr2Update().toString().getBytes(StandardCharsets.UTF_8);
+                merkleNode = ipfsConnection.getIpfs().add(new NamedStreamable.ByteArrayWrapper(ipfsPayload)).getFirst();
+            } catch (IOException ex) {
+                throw new RegistrationException(RegistrationException.ERROR_INTERNAL_ERROR, "Cannot publish to IPFS: " + ex.getMessage(), ex);
+            }
+            if (log.isDebugEnabled()) log.debug("Published btcr2Update to IPFS: " + merkleNode.hash);
+        }
 
         // next state
 
-        return TransitionProcessUtxoSignPayloads.transitionToFinished(bitcoinConnection, btcr2Update, didRegistrationMetadata, didDocumentMetadata);
+        return TransitionProcessUtxoSignPayloads.transitionToFinished(bitcoinConnection, ipfsConnection, updateProcessUtxoSignPayloadsResult.btcr2Update(), merkleNode, didRegistrationMetadata, didDocumentMetadata);
     }
 }

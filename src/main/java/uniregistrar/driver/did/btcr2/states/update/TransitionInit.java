@@ -4,6 +4,7 @@ import com.danubetech.btc.connection.BitcoinConnection;
 import com.danubetech.keyformats.jose.JWSAlgorithm;
 import uniregistrar.RegistrationException;
 import uniregistrar.driver.did.btcr2.data.jsonld.BTCR2Update;
+import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.driver.did.btcr2.job.UpdateJob;
 import uniregistrar.openapi.model.*;
 
@@ -15,7 +16,7 @@ import java.util.Map;
 
 public class TransitionInit {
 
-    public static UpdateState transitionToInitGetVerificationMethod(BitcoinConnection bitcoinConnection, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public static UpdateState transitionToInitGetVerificationMethod(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
 
         // REGISTRATION STATE: verification method template
 
@@ -32,7 +33,8 @@ public class TransitionInit {
 
         // REGISTRATION STATE: didRegistrationMetadata
 
-        didRegistrationMetadata.putAll(bitcoinConnection.getMetadata());
+        if (bitcoinConnection != null) didRegistrationMetadata.putAll(bitcoinConnection.getMetadata());
+        if (ipfsConnection != null) didRegistrationMetadata.putAll(ipfsConnection.getMetadata());
 
         // REGISTRATION STATE: update()
 
@@ -46,7 +48,7 @@ public class TransitionInit {
         return updateState;
     }
 
-    public static UpdateState transitionToUpdateSignPayload(BitcoinConnection bitcoinConnection, URI verificationMethodId, BTCR2Update btcr2Update, byte[] updateSignPayload, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public static UpdateState transitionToUpdateSignPayload(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, URI verificationMethodId, BTCR2Update btcr2Update, byte[] updateSignPayload, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
 
         // REGISTRATION STATE: jobId
 
@@ -71,7 +73,8 @@ public class TransitionInit {
 
         // REGISTRATION STATE: didRegistrationMetadata
 
-        didRegistrationMetadata.putAll(bitcoinConnection.getMetadata());
+        if (bitcoinConnection != null) didRegistrationMetadata.putAll(bitcoinConnection.getMetadata());
+        if (ipfsConnection != null) didRegistrationMetadata.putAll(ipfsConnection.getMetadata());
 
         // REGISTRATION STATE: update()
 

@@ -310,12 +310,12 @@ public class Update {
 
         // result
 
-        UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayloadResult = new UpdateProcessUpdateSignPayloadResult(btcr2Transaction, utxoSignPayloads);
+        UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayloadResult = new UpdateProcessUpdateSignPayloadResult(btcr2Update, btcr2Transaction, utxoSignPayloads);
         if (log.isDebugEnabled()) log.debug("Update: " + updateProcessUpdateSignPayloadResult);
         return updateProcessUpdateSignPayloadResult;
     }
 
-    public UpdateProcessUtxoSignPayloadsResult updateProcessUtxoSignPayloads(BitcoinConnection bitcoinConnection, DIDDocument didSourceDocument, Integer targetVersionId, JsonPatch jsonPatches, Transaction btcr2Transaction, ECKey updateECKey, List<byte[]> utxoSigningResponseSignatures, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public UpdateProcessUtxoSignPayloadsResult updateProcessUtxoSignPayloads(BitcoinConnection bitcoinConnection, DIDDocument didSourceDocument, Integer targetVersionId, JsonPatch jsonPatches, BTCR2Update btcr2Update, Transaction btcr2Transaction, ECKey updateECKey, List<byte[]> utxoSigningResponseSignatures, Map<String, Object> didDocumentMetadata) throws RegistrationException {
 
         // The Beacon Signal is signed by the private key that controls the Beacon Address
 
@@ -346,7 +346,7 @@ public class Update {
 
         // result
 
-        UpdateProcessUtxoSignPayloadsResult updateProcessUtxoSignPayloadsResult = new UpdateProcessUtxoSignPayloadsResult();
+        UpdateProcessUtxoSignPayloadsResult updateProcessUtxoSignPayloadsResult = new UpdateProcessUtxoSignPayloadsResult(btcr2Update);
         if (log.isDebugEnabled()) log.debug("Update: " + updateProcessUtxoSignPayloadsResult);
         return updateProcessUtxoSignPayloadsResult;
     }

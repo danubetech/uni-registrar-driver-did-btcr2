@@ -1,5 +1,6 @@
 package uniregistrar.driver.did.btcr2.crud.update;
 
-public record UpdateProcessUtxoSignPayloadsResult() {
+import uniregistrar.driver.did.btcr2.data.jsonld.BTCR2Update;
 
+public record UpdateProcessUtxoSignPayloadsResult(BTCR2Update btcr2Update) {
 }

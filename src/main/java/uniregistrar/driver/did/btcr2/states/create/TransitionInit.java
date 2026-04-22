@@ -3,8 +3,10 @@ package uniregistrar.driver.did.btcr2.states.create;
 import com.danubetech.btc.connection.BitcoinConnection;
 import foundation.identity.did.DID;
 import foundation.identity.did.DIDDocument;
+import io.ipfs.api.MerkleNode;
 import org.apache.commons.codec.binary.Hex;
 import uniregistrar.RegistrationException;
+import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.openapi.model.*;
 
 import java.util.Collections;
@@ -13,7 +15,7 @@ import java.util.Map;
 
 public class TransitionInit {
 
-    public static CreateState transitionToInitGetVerificationMethod(BitcoinConnection bitcoinConnection, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public static CreateState transitionToInitGetVerificationMethod(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
 
         // REGISTRATION STATE: verification method template
 
@@ -33,7 +35,8 @@ public class TransitionInit {
 
         // REGISTRATION STATE: didRegistrationMetadata
 
-        didRegistrationMetadata.putAll(bitcoinConnection.getMetadata());
+        if (bitcoinConnection != null) didRegistrationMetadata.putAll(bitcoinConnection.getMetadata());
+        if (ipfsConnection != null) didRegistrationMetadata.putAll(ipfsConnection.getMetadata());
 
         // create() state
 
@@ -47,7 +50,7 @@ public class TransitionInit {
         return createState;
     }
 
-    public static CreateState transitionToFinished(BitcoinConnection bitcoinConnection, byte[] initialKey, DIDDocument genesisDocument, DID did, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
+    public static CreateState transitionToFinished(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, byte[] initialKey, DIDDocument genesisDocument, DID did, MerkleNode merkleNode, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
 
         // REGISTRATION STATE: jobId
 
@@ -84,11 +87,13 @@ public class TransitionInit {
 
         // REGISTRATION STATE: didRegistrationMetadata
 
-        didRegistrationMetadata.putAll(bitcoinConnection.getMetadata());
+        if (bitcoinConnection != null) didRegistrationMetadata.putAll(bitcoinConnection.getMetadata());
+        if (ipfsConnection != null) didRegistrationMetadata.putAll(ipfsConnection.getMetadata());
 
         // REGISTRATION STATE: didDocumentMetadata
 
-        didDocumentMetadata.put("initialKey", initialKey == null ? null : Hex.encodeHexString(initialKey));
+        if (initialKey != null) didDocumentMetadata.put("initialKey", Hex.encodeHexString(initialKey));
+        if (genesisDocument != null) didDocumentMetadata.put("genesisDocument", genesisDocument.toMap());
         didDocumentMetadata.put("genesisDocument", genesisDocument == null ? null : genesisDocument.toMap());
 
         // create() state
