@@ -26,7 +26,7 @@ public class TransitionProcessUtxoSignPayloads {
         // REGISTRATION STATE: didDocumentMetadata
 
         if (btcr2Update != null) didDocumentMetadata.put("btcr2Update", btcr2Update.getJsonObject());
-        if (merkleNode != null) didDocumentMetadata.put("btcr2UpdateIpfs", merkleNode.hash.toString());
+        if (merkleNode != null) didDocumentMetadata.put("btcr2UpdateCid", merkleNode.hash.toString());
 
         // update state
 
