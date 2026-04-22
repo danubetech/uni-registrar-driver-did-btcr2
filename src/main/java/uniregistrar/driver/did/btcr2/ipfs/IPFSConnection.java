@@ -27,7 +27,7 @@ public class IPFSConnection {
 
 	public IPFS getIpfs() {
 		if (this.ipfs == null) this.ipfs = new IPFS(this.getIpfsMultiaddr());
-		if (log.isDebugEnabled()) log.debug("getIpfs: " + this.ipfs);
+		if (log.isDebugEnabled()) log.debug("getIpfs: " + this.ipfs.protocol + " " + this.ipfs.host + ":" + this.ipfs.port);
 		return this.ipfs;
 	}
 

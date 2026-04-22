@@ -15,7 +15,7 @@ import java.util.Map;
 
 public class TransitionInit {
 
-    public static CreateState transitionToInitGetVerificationMethod(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public static CreateState transitionToInitGetVerificationMethod(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
 
         // REGISTRATION STATE: verification method template
 
@@ -94,7 +94,7 @@ public class TransitionInit {
 
         if (initialKey != null) didDocumentMetadata.put("initialKey", Hex.encodeHexString(initialKey));
         if (genesisDocument != null) didDocumentMetadata.put("genesisDocument", genesisDocument.toMap());
-        didDocumentMetadata.put("genesisDocument", genesisDocument == null ? null : genesisDocument.toMap());
+        if (merkleNode != null) didDocumentMetadata.put("genesisDocumentIpfs", merkleNode.hash.toString());
 
         // create() state
 
