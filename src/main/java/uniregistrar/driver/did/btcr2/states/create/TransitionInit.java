@@ -94,7 +94,7 @@ public class TransitionInit {
 
         if (initialKey != null) didDocumentMetadata.put("initialKey", Hex.encodeHexString(initialKey));
         if (genesisDocument != null) didDocumentMetadata.put("genesisDocument", genesisDocument.toMap());
-        if (merkleNode != null) didDocumentMetadata.put("genesisDocumentIpfs", merkleNode.hash.toString());
+        if (merkleNode != null) didDocumentMetadata.put("genesisDocumentCid", merkleNode.hash.toString());
 
         // create() state
 
