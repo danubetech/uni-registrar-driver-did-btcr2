@@ -250,7 +250,7 @@ public class Update {
          * See https://dcdpr.github.io/did-btcr2/operations/update.html#announce-did-update
          */
 
-        UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayloadResult;
+        UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayloadResult = null;
 
         // BTCR2 Signed Updates are announced to the Bitcoin blockchain depending on the Beacon Type.
 
@@ -263,8 +263,10 @@ public class Update {
         }
         Service beaconService = serviceStream.findFirst().orElse(null);
         if (beaconService == null) beaconService = didSourceDocument.getServices() == null || didSourceDocument.getServices().isEmpty() ? null : didSourceDocument.getServices().getFirst();
-        if (beaconService == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_DID_DOCUMENT, "No beacon service found in source DID document: " + didSourceDocument);
         if (log.isDebugEnabled()) log.debug("beaconService: {}", beaconService);
+
+        if (beaconService == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_DID_DOCUMENT, "No beacon service found in source DID document: " + didSourceDocument);
+        if (! BeaconType.isValid(beaconService)) throw new RegistrationException("INVALID_DID_UPDATE", "Invalid beacon service: " + beaconService);
 
         /*
          * Announcing to a Singleton Beacon
@@ -317,6 +319,10 @@ public class Update {
                             false))
                     .map(Sha256Hash::getBytes)
                     .toList();
+
+            // result
+
+            updateProcessUpdateSignPayloadResult = new UpdateProcessUpdateSignPayloadResult(btcr2Update, btcr2Transaction, utxoSignPayloads);
         }
 
         /*
@@ -327,11 +333,23 @@ public class Update {
         if (BeaconType.CAS.getServiceType().equals(beaconService.getType())) {
 
             // Aggregating and announcing updates for multiple did:btcr2 identifiers is the responsibility of the Aggregation Service.
+
+            // result
+
+            updateProcessUpdateSignPayloadResult = new UpdateProcessUpdateSignPayloadResult(btcr2Update, null, null);
+        }
+
+        if (BeaconType.SMT.getServiceType().equals(beaconService.getType())) {
+
+            // Aggregating and announcing updates for multiple did:btcr2 identifiers is the responsibility of the Aggregation Service.
+
+            // result
+
+            updateProcessUpdateSignPayloadResult = new UpdateProcessUpdateSignPayloadResult(btcr2Update, null, null);
         }
 
         // result
 
-        UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayloadResult = new UpdateProcessUpdateSignPayloadResult(btcr2Update, btcr2Transaction, utxoSignPayloads);
         if (log.isDebugEnabled()) log.debug("Update: " + updateProcessUpdateSignPayloadResult);
         return updateProcessUpdateSignPayloadResult;
     }
