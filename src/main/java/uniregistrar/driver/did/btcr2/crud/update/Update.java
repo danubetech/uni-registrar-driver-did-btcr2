@@ -319,8 +319,14 @@ public class Update {
                     .toList();
         }
 
+        /*
+         * Announcing to an Aggregate Beacon
+         * See https://dcdpr.github.io/did-btcr2/operations/update.html#announcing-to-an-aggregate-beacon
+         */
+
         if (BeaconType.CAS.getServiceType().equals(beaconService.getType())) {
-            
+
+            // Aggregating and announcing updates for multiple did:btcr2 identifiers is the responsibility of the Aggregation Service.
         }
 
         // result
