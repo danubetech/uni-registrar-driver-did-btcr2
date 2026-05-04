@@ -195,7 +195,7 @@ public class Update {
         return updateInitResult;
     }
 
-    public UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayload(BitcoinConnection bitcoinConnection, DIDDocument didSourceDocument, Integer targetVersionId, JsonPatch jsonPatches, BTCR2Update btcr2Update, URI verificationMethodId, byte[] updateSigningResponseSignature, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayload(BitcoinConnection bitcoinConnection, DIDDocument didSourceDocument, Integer targetVersionId, JsonPatch jsonPatches, BTCR2Update btcr2Update, URI verificationMethodId, byte[] updateSigningResponseSignature, Map<String, Object> didDocumentMetadata) throws RegistrationException, UpdateActionFundAddressException {
 
         /*
          * Construct BTCR2 Signed Update
@@ -286,7 +286,7 @@ public class Update {
         if (log.isDebugEnabled()) log.debug("totalValue: {}", totalValue);
         if (totalValue.compareTo(BITCOIN_FEE) < 0) {
             Coin minimumValue = BITCOIN_FEE.minus(totalValue);
-            throw new RegistrationException("FUND_ADDRESS", "Missing funds on address " + beaconServiceAddress + ": " + minimumValue.getValue(), Map.of("address", beaconServiceAddress.toString(), "minimumValue", minimumValue.getValue()));
+            throw new UpdateActionFundAddressException(beaconServiceAddress, minimumValue);
         }
 
         Transaction btcr2Transaction = new Transaction();

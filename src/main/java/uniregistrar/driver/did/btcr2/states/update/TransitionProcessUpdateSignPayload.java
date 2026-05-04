@@ -2,6 +2,8 @@ package uniregistrar.driver.did.btcr2.states.update;
 
 import com.danubetech.btc.connection.BitcoinConnection;
 import com.danubetech.keyformats.jose.JWSAlgorithm;
+import org.bitcoinj.base.Address;
+import org.bitcoinj.base.Coin;
 import org.bitcoinj.core.Transaction;
 import uniregistrar.RegistrationException;
 import uniregistrar.driver.did.btcr2.data.jsonld.BTCR2Update;
@@ -18,6 +20,39 @@ import java.util.List;
 import java.util.Map;
 
 public class TransitionProcessUpdateSignPayload {
+
+    public static UpdateState transitionToUpdateSignPayloadFundAddress(BitcoinConnection bitcoinConnection, Address address, Coin minimumValue, BTCR2Update btcr2Update, byte[] updateSignPayload, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+
+        // REGISTRATION STATE: jobId
+
+        UpdateJob updateJob = new UpdateJob(btcr2Update.toJson(), Base64.getEncoder().encodeToString(updateSignPayload), null, null);
+
+        Map<String, Object> jobId = updateJob.toJsonObject();
+
+        // REGISTRATION STATE: didState.state="action"
+
+        DidStateAction didStateAction = new DidStateAction();
+        didStateAction.setState("action");
+        didStateAction.setAction("fundAddress");
+        didStateAction.putAdditionalProperty("address", address.toString());
+        didStateAction.putAdditionalProperty("minimumValue", minimumValue.getValue());
+
+        // REGISTRATION STATE: didRegistrationMetadata
+
+        didRegistrationMetadata.putAll(bitcoinConnection.getMetadata());
+
+        // REGISTRATION STATE: update()
+
+        UpdateState updateState = new UpdateState();
+        updateState.setJobId(new RegistrarStateJobId(jobId));
+        updateState.setDidState(didStateAction);
+        updateState.setDidRegistrationMetadata(didRegistrationMetadata);
+        updateState.setDidDocumentMetadata(didDocumentMetadata);
+
+        // done
+
+        return updateState;
+    }
 
     public static UpdateState transitionToUtxoSignPayloads(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, BTCR2Update btcr2Update, Transaction btcr2Transaction, List<byte[]> utxoSignPayloads, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
 
