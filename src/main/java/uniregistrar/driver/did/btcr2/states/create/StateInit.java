@@ -155,7 +155,7 @@ public class StateInit {
             }
 
             AggregationCohort aggregationCohort = AggregationService.getAggregationCohort(generateAggregateBeacon);
-            if (aggregationCohort == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Unknown aggregation cohort: " + aggregationCohort);
+            if (aggregationCohort == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Unknown aggregation cohort: " + generateAggregateBeacon);
 
             // DID controllers that wish to join an Aggregation Cohort and become an Aggregation Participant would need to provide the Aggregation Service with a Schnorr public key.
 
