@@ -24,6 +24,7 @@ import uniregistrar.driver.did.btcr2.beacons.BeaconType;
 import uniregistrar.driver.did.btcr2.data.json.SMTProof;
 
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -49,7 +50,7 @@ public class AggregationCohort {
                 this.scriptType = scriptType;
         }
 
-        private List<byte[]> participantPublicKeys = new ArrayList<>();
+        private List<ByteBuffer> participantPublicKeys = new ArrayList<>();
         private Address beaconAddress;
 
         // For a CAS Beacon:
@@ -58,8 +59,8 @@ public class AggregationCohort {
 
         // For an SMT Beacon:
 
-        private Map<byte[], byte[]> smtUpdateHashes = new HashMap<>();
-        private Map<byte[], String> smtNonces = new HashMap<>();
+        private Map<ByteBuffer, byte[]> smtUpdateHashes = new HashMap<>();
+        private Map<ByteBuffer, String> smtNonces = new HashMap<>();
 
         // For a CAS Beacon:
         // For an SMT Beacon:
@@ -72,7 +73,7 @@ public class AggregationCohort {
 
         // For an SMT Beacon, the request signal confirmation message contains:
 
-        private Map<byte[], SMTProof> smtProof = new HashMap<>();
+        private Map<ByteBuffer, SMTProof> smtProof = new HashMap<>();
 
         // For a CAS Beacon, the request signal confirmation message contains:
         // For an SMT Beacon, the request signal confirmation message contains:
@@ -85,14 +86,14 @@ public class AggregationCohort {
         }
 
         public boolean containsParticipantPublicKey(byte[] participantPublicKey) {
-                boolean containsParticipantPublicKey = this.getParticipantPublicKeys().contains(participantPublicKey);
+                boolean containsParticipantPublicKey = this.getParticipantPublicKeys().contains(ByteBuffer.wrap(participantPublicKey));
                 if (log.isDebugEnabled()) log.debug("Contains participant public key " + Hex.encodeHexString(participantPublicKey) + " in " + this.getParticipantPublicKeys().stream().map(Hex::encodeHexString).toList() + ": " + containsParticipantPublicKey);
                 return containsParticipantPublicKey;
         }
 
         public void addParticipantPublicKey(byte[] participantPublicKey) {
                 if (isCompletedCohort()) throw new IllegalStateException("Aggregation cohort " + this.getId() + " already completed.");
-                this.getParticipantPublicKeys().add(participantPublicKey);
+                this.getParticipantPublicKeys().add(ByteBuffer.wrap(participantPublicKey));
                 if (log.isDebugEnabled()) log.debug("Added participant public key: " + Hex.encodeHexString(participantPublicKey) + " (size now " + this.size() + ")");
         }
 
@@ -105,19 +106,19 @@ public class AggregationCohort {
                 if (! isCompletedCohort()) throw new IllegalStateException("Aggregation cohort " + this.getId() + " not yet completed.");
                 this.beaconAddress = switch (this.getScriptType()) {
                         case P2SH -> {
-                                List<ECKey> publicKeys = new ArrayList<>(this.getParticipantPublicKeys().stream().map(ECKey::fromPublicOnly).toList());
+                                List<ECKey> publicKeys = new ArrayList<>(this.getParticipantPublicKeys().stream().map(ByteBuffer::array).map(ECKey::fromPublicOnly).toList());
                                 publicKeys.sort(ECKey.PUBKEY_COMPARATOR);
                                 Script script = ScriptBuilder.createRedeemScript(this.getParticipantPublicKeys().size(), publicKeys);
                                 yield LegacyAddress.fromScriptHash(this.getNetwork().toBitcoinjNetwork(), ScriptPattern.extractHashFromP2SH(script));
                         }
                         case P2WSH -> {
-                                List<ECKey> publicKeys = new ArrayList<>(this.getParticipantPublicKeys().stream().map(ECKey::fromPublicOnly).toList());
+                                List<ECKey> publicKeys = new ArrayList<>(this.getParticipantPublicKeys().stream().map(ByteBuffer::array).map(ECKey::fromPublicOnly).toList());
                                 publicKeys.sort(ECKey.PUBKEY_COMPARATOR);
                                 Script script = ScriptBuilder.createRedeemScript(this.getParticipantPublicKeys().size(), publicKeys);
                                 yield LegacyAddress.fromScriptHash(this.getNetwork().toBitcoinjNetwork(), ScriptPattern.extractHashFromP2PKH(script));
                         }
                         case P2TR -> {
-                                List<PublicKey> publicKeys = this.getParticipantPublicKeys().stream().map(PublicKey::parse).toList();
+                                List<PublicKey> publicKeys = this.getParticipantPublicKeys().stream().map(ByteBuffer::array).map(PublicKey::parse).toList();
                                 XonlyPublicKey aggregatePublicKey = Musig2.aggregateKeys(publicKeys);
                                 aggregatePublicKey.tweak(Crypto.TaprootTweak.KeyPathTweak.INSTANCE);
                                 yield AddressParser.getDefault().parseAddress(aggregatePublicKey.p2trAddress(new BlockHash(bitcoinConnector.getGensisHash(this.getNetwork()))));
@@ -176,7 +177,7 @@ public class AggregationCohort {
                 return scriptType;
         }
 
-        public List<byte[]> getParticipantPublicKeys() {
+        public List<ByteBuffer> getParticipantPublicKeys() {
                 return participantPublicKeys;
         }
 
@@ -188,11 +189,11 @@ public class AggregationCohort {
                 return casUpdateHashes;
         }
 
-        public Map<byte[], byte[]> getSmtUpdateHashes() {
+        public Map<ByteBuffer, byte[]> getSmtUpdateHashes() {
                 return smtUpdateHashes;
         }
 
-        public Map<byte[], String> getSmtNonces() {
+        public Map<ByteBuffer, String> getSmtNonces() {
                 return smtNonces;
         }
 
@@ -204,7 +205,7 @@ public class AggregationCohort {
                 return beaconAnnouncementMap;
         }
 
-        public Map<byte[], SMTProof> getSmtProof() {
+        public Map<ByteBuffer, SMTProof> getSmtProof() {
                 return smtProof;
         }
 
