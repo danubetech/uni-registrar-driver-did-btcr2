@@ -74,7 +74,8 @@ public class StateInit {
         if (network == null) network = Network.bitcoin;
         if (publishToIpfs == null) publishToIpfs = Boolean.TRUE;
         if (generateInitialKey == null) generateInitialKey = Boolean.TRUE;
-        if (generateStandardBeacons == null) generateStandardBeacons = Boolean.TRUE;
+        if (generateStandardBeacons == null) generateStandardBeacons = Boolean.FALSE;
+        if (generateAggregateBeacon == null || generateAggregateBeacon.isBlank()) generateAggregateBeacon = null;
 
         // find Bitcoin connection
 

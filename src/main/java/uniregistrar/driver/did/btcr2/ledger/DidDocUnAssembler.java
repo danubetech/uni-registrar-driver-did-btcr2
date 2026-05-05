@@ -102,14 +102,19 @@ public class DidDocUnAssembler {
         }
 
         if (log.isDebugEnabled()) log.debug("testDidDocument: " + testDidDocument);
-        if (testDidDocument.getJsonObject().isEmpty()) return null;
 
-        DIDDocumentV1_1 unassembledGenesisDocument = DIDDocumentV1_1.builder().base(didDocument).defaultContexts(false).id(GENESIS_DID).build();
-        if (! unassembledGenesisDocument.getContexts().contains(JSONLD_CONTEXT_BTCR2_V1)) {
-            JsonLDUtils.jsonLdAdd(unassembledGenesisDocument, Keywords.CONTEXT, JsonLDUtils.uriToString(JSONLD_CONTEXT_BTCR2_V1));
+        DIDDocumentV1_1 unassembledGenesisDocument;
+
+        if (testDidDocument.getJsonObject().isEmpty()) {
+            unassembledGenesisDocument = null;
+        } else {
+            unassembledGenesisDocument = DIDDocumentV1_1.builder().base(didDocument).defaultContexts(false).id(GENESIS_DID).build();
+            if (! unassembledGenesisDocument.getContexts().contains(JSONLD_CONTEXT_BTCR2_V1)) {
+                JsonLDUtils.jsonLdAdd(unassembledGenesisDocument, Keywords.CONTEXT, JsonLDUtils.uriToString(JSONLD_CONTEXT_BTCR2_V1));
+            }
         }
-        if (log.isDebugEnabled()) log.debug("unassembledGenesisDocument: " + unassembledGenesisDocument);
 
+        if (log.isDebugEnabled()) log.debug("unassembledGenesisDocument: " + unassembledGenesisDocument);
         return unassembledGenesisDocument;
     }
 
