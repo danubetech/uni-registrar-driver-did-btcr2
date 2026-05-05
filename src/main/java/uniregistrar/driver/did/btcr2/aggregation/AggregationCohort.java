@@ -8,6 +8,7 @@ import fr.acinq.bitcoin.Crypto;
 import fr.acinq.bitcoin.PublicKey;
 import fr.acinq.bitcoin.XonlyPublicKey;
 import fr.acinq.bitcoin.crypto.musig2.Musig2;
+import org.apache.commons.codec.binary.Hex;
 import org.bitcoinj.base.Address;
 import org.bitcoinj.base.AddressParser;
 import org.bitcoinj.base.LegacyAddress;
@@ -90,6 +91,7 @@ public class AggregationCohort {
         public void addParticipantPublicKey(byte[] participantPublicKey) {
                 if (isCompletedCohort()) throw new IllegalStateException("Aggregation cohort " + this.getId() + " already completed.");
                 this.getParticipantPublicKeys().add(participantPublicKey);
+                if (log.isDebugEnabled()) log.debug("Added participant public key: " + Hex.encodeHexString(participantPublicKey) + " (size now " + this.size() + ")");
         }
 
         public boolean isCompletedCohort() {

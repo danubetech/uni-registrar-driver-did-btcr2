@@ -13,6 +13,7 @@ import fr.acinq.bitcoin.PublicKey;
 import io.ipfs.api.AddArgs;
 import io.ipfs.api.MerkleNode;
 import io.ipfs.api.NamedStreamable;
+import org.apache.commons.codec.binary.Hex;
 import org.bitcoinj.base.AddressParser;
 import org.bitcoinj.uri.BitcoinURI;
 import org.slf4j.Logger;
@@ -91,6 +92,8 @@ public class StateInit {
                 // next state
                 return TransitionInit.transitionToInitGetVerificationMethod(bitcoinConnection, ipfsConnection, didRegistrationMetadata, didDocumentMetadata);
             }
+
+            if (log.isDebugEnabled()) log.debug("Generated initial key: " + Hex.encodeHexString(unassembledInitialKey));
         }
 
         // generate standard beacons?
@@ -133,6 +136,8 @@ public class StateInit {
                                     .serviceEndpoint(p2trServiceEndpoint)
                                     .build()))
                     .build();
+
+            if (log.isDebugEnabled()) log.debug("Generated standard beacons: " + unassembledGenesisDocument);
         }
 
         // generate aggregate beacon?
@@ -186,6 +191,8 @@ public class StateInit {
                                     .serviceEndpoint(aggregateServiceEndpoint)
                                     .build()))
                     .build();
+
+            if (log.isDebugEnabled()) log.debug("Generated aggregate beacon: " + unassembledGenesisDocument);
         }
 
         // create()
