@@ -31,8 +31,8 @@ public class DidDocUnAssembler {
             JSONLD_CONTEXT_BTCR2_V1
     );
 
-    private static final URI GENESIS_DID = URI.create("did:btcr2:_");
-    private static final URI GENESIS_ID_VERIFICATIONMETHOD = URI.create("#initialKey");
+    public static final URI GENESIS_DID = URI.create("did:btcr2:_");
+    public static final URI GENESIS_ID_VERIFICATIONMETHOD = URI.create("#initialKey");
 
     private static final Logger log = LoggerFactory.getLogger(DidDocUnAssembler.class);
 

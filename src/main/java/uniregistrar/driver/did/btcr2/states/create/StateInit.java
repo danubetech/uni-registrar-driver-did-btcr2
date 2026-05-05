@@ -1,5 +1,6 @@
 package uniregistrar.driver.did.btcr2.states.create;
 
+import com.apicatalog.jsonld.lang.Keywords;
 import com.danubetech.btc.connection.BitcoinConnection;
 import com.danubetech.btc.connection.BitcoinConnector;
 import com.danubetech.btc.connection.Network;
@@ -8,6 +9,7 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import foundation.identity.did.DIDDocument;
 import foundation.identity.did.DIDDocumentV1_1;
 import foundation.identity.did.Service;
+import foundation.identity.jsonld.JsonLDUtils;
 import fr.acinq.bitcoin.BlockHash;
 import fr.acinq.bitcoin.PublicKey;
 import io.ipfs.api.AddArgs;
@@ -35,6 +37,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import static uniregistrar.driver.did.btcr2.ledger.DidDocUnAssembler.GENESIS_DID;
+import static uniregistrar.driver.did.btcr2.ledger.DidDocUnAssembler.JSONLD_CONTEXT_BTCR2_V1;
 
 public class StateInit {
 
@@ -106,7 +111,7 @@ public class StateInit {
             }
 
             if (unassembledGenesisDocument == null) {
-                unassembledGenesisDocument = DIDDocumentV1_1.builder().build();
+                unassembledGenesisDocument = DIDDocumentV1_1.builder().defaultContexts(true).context(JSONLD_CONTEXT_BTCR2_V1).id(GENESIS_DID).build();
             }
 
             AddressParser addressParser = AddressParser.getDefault();
