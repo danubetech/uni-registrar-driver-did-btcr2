@@ -1,6 +1,5 @@
 package uniregistrar.driver.did.btcr2.crud.deactivate;
 
-import com.danubetech.btc.connection.BitcoinConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
@@ -12,7 +11,7 @@ public class Deactivate {
 
     private static final Logger log = LoggerFactory.getLogger(Deactivate.class);
 
-    public Deactivate(BitcoinConnector bitcoinConnector, IPFSConnection ipfsConnection) {
+    public Deactivate(IPFSConnection ipfsConnection) {
     }
 
     /*

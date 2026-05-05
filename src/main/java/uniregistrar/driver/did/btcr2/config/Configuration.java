@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import uniregistrar.driver.did.btcr2.DidBtcr2Driver;
 import uniregistrar.driver.did.btcr2.crud.create.Create;
 import uniregistrar.driver.did.btcr2.crud.deactivate.Deactivate;
+import uniregistrar.driver.did.btcr2.crud.execute.Execute;
 import uniregistrar.driver.did.btcr2.crud.update.Update;
 import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 
@@ -110,7 +111,8 @@ public class Configuration {
 
             didBtcr2Driver.setCreate(new Create(ipfsConnection));
             didBtcr2Driver.setUpdate(new Update(ipfsConnection));
-            didBtcr2Driver.setDeactivate(new Deactivate(bitcoinConnector, ipfsConnection));
+            didBtcr2Driver.setDeactivate(new Deactivate(ipfsConnection));
+            didBtcr2Driver.setExecute(new Execute(ipfsConnection));
             didBtcr2Driver.setBitcoinConnector(bitcoinConnector);
             didBtcr2Driver.setIpfsConnection(ipfsConnection);
         } catch (IllegalArgumentException ex) {

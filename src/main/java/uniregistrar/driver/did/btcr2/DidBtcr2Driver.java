@@ -10,6 +10,7 @@ import uniregistrar.driver.Driver;
 import uniregistrar.driver.did.btcr2.config.Configuration;
 import uniregistrar.driver.did.btcr2.crud.create.Create;
 import uniregistrar.driver.did.btcr2.crud.deactivate.Deactivate;
+import uniregistrar.driver.did.btcr2.crud.execute.Execute;
 import uniregistrar.driver.did.btcr2.crud.update.Update;
 import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.driver.did.btcr2.job.CreateJob;
@@ -29,6 +30,7 @@ public class DidBtcr2Driver implements Driver {
     private Create create;
     private Update update;
     private Deactivate deactivate;
+    private Execute execute;
     private BitcoinConnector bitcoinConnector;
     private IPFSConnection ipfsConnection;
 
@@ -180,6 +182,14 @@ public class DidBtcr2Driver implements Driver {
 
     public void setDeactivate(Deactivate deactivate) {
         this.deactivate = deactivate;
+    }
+
+    public Execute getExecute() {
+        return this.execute;
+    }
+
+    public void setExecute(Execute execute) {
+        this.execute = execute;
     }
 
     public BitcoinConnector getBitcoinConnector() {
