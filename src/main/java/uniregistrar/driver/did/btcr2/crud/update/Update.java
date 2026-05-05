@@ -7,7 +7,6 @@ import com.danubetech.dataintegrity.jsonld.DataIntegrityKeywords;
 import com.danubetech.dataintegrity.signer.DataIntegrityProofLdSigner;
 import com.danubetech.keyformats.crypto.ByteSigner;
 import com.danubetech.keyformats.jose.JWSAlgorithm;
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import foundation.identity.did.DIDDocument;
 import foundation.identity.did.Service;
 import foundation.identity.did.VerificationMethod;
@@ -31,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
 import uniregistrar.driver.did.btcr2.algorithms.JSONDocumentHashing;
+import uniregistrar.driver.did.btcr2.beacons.BeaconType;
 import uniregistrar.driver.did.btcr2.data.jsonld.BTCR2Update;
 import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.driver.did.btcr2.util.JSONPatchUtil;
@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /*
  * Update
@@ -92,16 +93,13 @@ public class Update {
 
     private static final Logger log = LoggerFactory.getLogger(Update.class);
 
-    private static final JsonMapper jsonMapper = JsonMapper.builder()
-            .build();
-
     private IPFSConnection ipfsConnection;
 
     public Update(IPFSConnection ipfsConnection) {
         this.ipfsConnection = ipfsConnection;
     }
 
-    public UpdateInitResult updateInit(BitcoinConnection bitcoinConnection, DIDDocument didSourceDocument, Integer targetVersionId, JsonPatch jsonPatches, URI verificationMethodId, Map<String, Object> didDocumentMetadata) throws RegistrationException, UpdateActionGetVerificationMethodException {
+    public UpdateInitResult updateInit(BitcoinConnection bitcoinConnection, DIDDocument didSourceDocument, Integer targetVersionId, JsonPatch jsonPatches, URI verificationMethodId, Map<String, Object> didDocumentMetadata) throws RegistrationException {
 
         /*
          * Construct BTCR2 Unsigned Update
@@ -135,10 +133,6 @@ public class Update {
 
         // An INVALID_DID_UPDATE error MUST be raised if the didSourceDocument.verificationMethod Set does not contain an id matching verificationMethodId.
         // An INVALID_DID_UPDATE error MUST be raised if the didSourceDocument.capabilityInvocation Set does not contain verificationMethodId.
-
-        if (verificationMethodId == null) {
-            throw new UpdateActionGetVerificationMethodException();
-        }
 
         JsonLDObject verificationMethodJsonLDObject = JsonLDDereferencer.findByIdInJsonLdObject(didSourceDocument, verificationMethodId, didSourceDocument.getId());
         VerificationMethod verificationMethod = verificationMethodJsonLDObject == null ? null : VerificationMethod.fromJsonObject(verificationMethodJsonLDObject.getJsonObject());
@@ -195,7 +189,7 @@ public class Update {
         return updateInitResult;
     }
 
-    public UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayload(BitcoinConnection bitcoinConnection, DIDDocument didSourceDocument, Integer targetVersionId, JsonPatch jsonPatches, BTCR2Update btcr2Update, URI verificationMethodId, byte[] updateSigningResponseSignature, Map<String, Object> didDocumentMetadata) throws RegistrationException, UpdateActionFundAddressException {
+    public UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayload(BitcoinConnection bitcoinConnection, DIDDocument didSourceDocument, Integer targetVersionId, URI beaconServiceId, String beaconServiceType, JsonPatch jsonPatches, BTCR2Update btcr2Update, URI verificationMethodId, byte[] updateSigningResponseSignature, Map<String, Object> didDocumentMetadata) throws RegistrationException, UpdateActionFundAddressException {
 
         /*
          * Construct BTCR2 Signed Update
@@ -253,10 +247,74 @@ public class Update {
 
         // BTCR2 Signed Updates are announced to the Bitcoin blockchain depending on the Beacon Type.
 
+        Stream<Service> serviceStream = didSourceDocument.getServices().stream();
+        if (beaconServiceId != null) {
+            serviceStream = serviceStream.filter(service -> JsonLDDereferencer.findByIdInJsonLdObject(didSourceDocument, service.getId(), didSourceDocument.getId()) != null);
+        }
+        if (beaconServiceType != null) {
+            serviceStream = serviceStream.filter(service -> beaconServiceType.equals(service.getType()));
+        }
+        Service beaconService = serviceStream.findFirst().orElse(null);
+        if (beaconService == null) beaconService = didSourceDocument.getServices() == null || didSourceDocument.getServices().isEmpty() ? null : didSourceDocument.getServices().getFirst();
+        if (log.isDebugEnabled()) log.debug("beaconService: {}", beaconService);
+
+        if (beaconService == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_DID_DOCUMENT, "No beacon service found in source DID document: " + didSourceDocument);
+        if (! BeaconType.isValid(beaconService)) throw new RegistrationException("INVALID_DID_UPDATE", "Invalid beacon service: " + beaconService);
+
+        UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayloadResult = switch (BeaconType.fromServiceType(beaconService.getType())) {
+            case SINGLETON -> announceToSingletonBeacon(bitcoinConnection, btcr2Update, beaconService);
+            case CAS -> announceToAggregateBeaconCAS(bitcoinConnection, btcr2Update, beaconService);
+            case SMT -> announceToAggregateBeaconSMT(bitcoinConnection, btcr2Update, beaconService);
+        };
+
+        // result
+
+        if (log.isDebugEnabled()) log.debug("Update: " + updateProcessUpdateSignPayloadResult);
+        return updateProcessUpdateSignPayloadResult;
+    }
+
+    public UpdateProcessUtxoSignPayloadsResult updateProcessUtxoSignPayloads(BitcoinConnection bitcoinConnection, DIDDocument didSourceDocument, Integer targetVersionId, JsonPatch jsonPatches, BTCR2Update btcr2Update, Transaction btcr2Transaction, ECKey updateECKey, List<byte[]> utxoSigningResponseSignatures, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+
+        // The Beacon Signal is signed by the private key that controls the Beacon Address
+
+        for (int i=0; i<btcr2Transaction.getInputs().size(); i++) {
+            TransactionInput transactionInput = btcr2Transaction.getInput(i);
+            byte[] utxoSigningResponseSignature = utxoSigningResponseSignatures.get(i);
+            byte[] r = new byte[32];
+            byte[] s = new byte[32];
+            System.arraycopy(utxoSigningResponseSignature, 0, r, 0, r.length);
+            System.arraycopy(utxoSigningResponseSignature, 32, s, 0, s.length);
+            ECKey.ECDSASignature signature = new ECKey.ECDSASignature(new BigInteger(1, r), new BigInteger(1, s));
+            TransactionSignature transactionSignature = new TransactionSignature(signature, Transaction.SigHash.ALL, false);
+            TransactionInput signedTransactionInput = transactionInput.withScriptSig(ScriptBuilder.createInputScript(transactionSignature, updateECKey));
+            btcr2Transaction.replaceInput(i, signedTransactionInput);
+        }
+        if (log.isDebugEnabled()) log.debug("btcr2Transaction after signing: {}", btcr2Transaction);
+
+        // and broadcast to the Bitcoin network.
+
+        byte[] beaconSignal = btcr2Transaction.serialize();
+        if (log.isDebugEnabled()) log.debug("Broadcasting beacon signal: " + Hex.encodeHexString(beaconSignal));
+        bitcoinConnection.broadcastRawTransaction(beaconSignal);
+
         /*
-         * Announcing to a Singleton Beacon
-         * See https://dcdpr.github.io/did-btcr2/operations/update.html#announcing-to-a-singleton-beacon
+         * Announcing to an Aggregate Beacon
+         * See https://dcdpr.github.io/did-btcr2/operations/update.html#announcing-to-an-aggregate-beacon
          */
+
+        // result
+
+        UpdateProcessUtxoSignPayloadsResult updateProcessUtxoSignPayloadsResult = new UpdateProcessUtxoSignPayloadsResult(btcr2Update);
+        if (log.isDebugEnabled()) log.debug("Update: " + updateProcessUtxoSignPayloadsResult);
+        return updateProcessUtxoSignPayloadsResult;
+    }
+
+    /*
+     * Announcing to a Singleton Beacon
+     * See https://dcdpr.github.io/did-btcr2/operations/update.html#announcing-to-a-singleton-beacon
+     */
+
+    public static UpdateProcessUpdateSignPayloadResult announceToSingletonBeacon(BitcoinConnection bitcoinConnection, BTCR2Update btcr2Update, Service beaconService) throws RegistrationException, UpdateActionFundAddressException {
 
         // A BTCR2 Update Announcement for a Singleton Beacon is the BTCR2 Signed Update
         // hashed with the JSON Document Hashing algorithm.
@@ -265,11 +323,6 @@ public class Update {
         if (log.isDebugEnabled()) log.debug("updateAnnouncement: " + Hex.encodeHexString(updateAnnouncement));
 
         // This 32-byte SHA-256 hash is used as the Signal Bytes when constructing a Beacon Signal Bitcoin transaction.
-
-        // TODO fix selecting the correct service
-        Service beaconService = didSourceDocument.getServices().stream().filter(service -> "SingletonBeacon".equals(service.getType()) && service.getId().toString().endsWith("#initialP2PKH")).findFirst().orElse(null);
-        if (beaconService == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_DID_DOCUMENT, "No beacon service found in source DID document: " + didSourceDocument);
-        if (log.isDebugEnabled()) log.debug("beaconService: {}", beaconService);
 
         Address beaconServiceAddress;
         try {
@@ -310,45 +363,26 @@ public class Update {
 
         // result
 
-        UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayloadResult = new UpdateProcessUpdateSignPayloadResult(btcr2Update, btcr2Transaction, utxoSignPayloads);
-        if (log.isDebugEnabled()) log.debug("Update: " + updateProcessUpdateSignPayloadResult);
-        return updateProcessUpdateSignPayloadResult;
+        return new UpdateProcessUpdateSignPayloadResult(btcr2Update, btcr2Transaction, utxoSignPayloads);
     }
 
-    public UpdateProcessUtxoSignPayloadsResult updateProcessUtxoSignPayloads(BitcoinConnection bitcoinConnection, DIDDocument didSourceDocument, Integer targetVersionId, JsonPatch jsonPatches, BTCR2Update btcr2Update, Transaction btcr2Transaction, ECKey updateECKey, List<byte[]> utxoSigningResponseSignatures, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    /*
+     * Announcing to an Aggregate Beacon
+     * See https://dcdpr.github.io/did-btcr2/operations/update.html#announcing-to-an-aggregate-beacon
+     */
 
-        // The Beacon Signal is signed by the private key that controls the Beacon Address
-
-        for (int i=0; i<btcr2Transaction.getInputs().size(); i++) {
-            TransactionInput transactionInput = btcr2Transaction.getInput(i);
-            byte[] utxoSigningResponseSignature = utxoSigningResponseSignatures.get(i);
-            byte[] r = new byte[32];
-            byte[] s = new byte[32];
-            System.arraycopy(utxoSigningResponseSignature, 0, r, 0, r.length);
-            System.arraycopy(utxoSigningResponseSignature, 32, s, 0, s.length);
-            ECKey.ECDSASignature signature = new ECKey.ECDSASignature(new BigInteger(1, r), new BigInteger(1, s));
-            TransactionSignature transactionSignature = new TransactionSignature(signature, Transaction.SigHash.ALL, false);
-            TransactionInput signedTransactionInput = transactionInput.withScriptSig(ScriptBuilder.createInputScript(transactionSignature, updateECKey));
-            btcr2Transaction.replaceInput(i, signedTransactionInput);
-        }
-        if (log.isDebugEnabled()) log.debug("btcr2Transaction after signing: {}", btcr2Transaction);
-
-        // and broadcast to the Bitcoin network.
-
-        byte[] beaconSignal = btcr2Transaction.serialize();
-        if (log.isDebugEnabled()) log.debug("Broadcasting beacon signal: " + Hex.encodeHexString(beaconSignal));
-        bitcoinConnection.broadcastRawTransaction(beaconSignal);
-
-        /*
-         * Announcing to an Aggregate Beacon
-         * See https://dcdpr.github.io/did-btcr2/operations/update.html#announcing-to-an-aggregate-beacon
-         */
+    public static UpdateProcessUpdateSignPayloadResult announceToAggregateBeaconCAS(BitcoinConnection bitcoinConnection, BTCR2Update btcr2Update, Service beaconService) throws RegistrationException, UpdateActionFundAddressException {
 
         // result
 
-        UpdateProcessUtxoSignPayloadsResult updateProcessUtxoSignPayloadsResult = new UpdateProcessUtxoSignPayloadsResult(btcr2Update);
-        if (log.isDebugEnabled()) log.debug("Update: " + updateProcessUtxoSignPayloadsResult);
-        return updateProcessUtxoSignPayloadsResult;
+        return new UpdateProcessUpdateSignPayloadResult(btcr2Update, null, null);
+    }
+
+    public static UpdateProcessUpdateSignPayloadResult announceToAggregateBeaconSMT(BitcoinConnection bitcoinConnection, BTCR2Update btcr2Update, Service beaconService) throws RegistrationException, UpdateActionFundAddressException {
+
+        // result
+
+        return new UpdateProcessUpdateSignPayloadResult(btcr2Update, null, null);
     }
 
     /*

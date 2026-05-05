@@ -5,7 +5,7 @@ import foundation.identity.did.DID;
 import foundation.identity.did.DIDDocument;
 import io.ipfs.api.MerkleNode;
 import org.apache.commons.codec.binary.Hex;
-import uniregistrar.RegistrationException;
+import uniregistrar.driver.did.btcr2.aggregation.AggregationCohort;
 import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.openapi.model.*;
 
@@ -32,6 +32,39 @@ public class TransitionInit {
         didStateAction.setState("action");
         didStateAction.setAction("getVerificationMethod");
         didStateAction.setVerificationMethodTemplate(Collections.singletonList(initialVerificationMethodTemplate));
+
+        // REGISTRATION STATE: didRegistrationMetadata
+
+        if (bitcoinConnection != null) didRegistrationMetadata.putAll(bitcoinConnection.getMetadata());
+        if (ipfsConnection != null) didRegistrationMetadata.putAll(ipfsConnection.getMetadata());
+
+        // create() state
+
+        CreateState createState = new CreateState();
+        createState.setDidState(didStateAction);
+        createState.setDidRegistrationMetadata(didRegistrationMetadata);
+        createState.setDidDocumentMetadata(didDocumentMetadata);
+
+        // done
+
+        return createState;
+    }
+
+    public static CreateState transitionToInitCompleteAggregationCohort(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, AggregationCohort aggregationCohort, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
+
+        // REGISTRATION STATE: didState.state="action"
+
+        DidStateAction didStateAction = new DidStateAction();
+        didStateAction.setState("action");
+        didStateAction.setAction("completeAggregationCohort");
+        didStateAction.putAdditionalProperty("aggregationCohort", Map.of(
+                "id", aggregationCohort.getId(),
+                "network", aggregationCohort.getNetwork().toString(),
+                "maxSize", aggregationCohort.getMaxSize(),
+                "beaconType", aggregationCohort.getBeaconType().toString(),
+                "scriptType", aggregationCohort.getScriptType().toString(),
+                "participantPublicKeys", aggregationCohort.getParticipantPublicKeys().stream().map(Hex::encodeHexString).toList())
+        );
 
         // REGISTRATION STATE: didRegistrationMetadata
 

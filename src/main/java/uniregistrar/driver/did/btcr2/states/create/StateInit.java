@@ -13,15 +13,17 @@ import fr.acinq.bitcoin.PublicKey;
 import io.ipfs.api.AddArgs;
 import io.ipfs.api.MerkleNode;
 import io.ipfs.api.NamedStreamable;
+import org.apache.commons.codec.binary.Hex;
 import org.bitcoinj.base.AddressParser;
 import org.bitcoinj.uri.BitcoinURI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
+import uniregistrar.driver.did.btcr2.aggregation.AggregationCohort;
+import uniregistrar.driver.did.btcr2.aggregation.AggregationService;
 import uniregistrar.driver.did.btcr2.algorithms.JSONDocumentHashing;
 import uniregistrar.driver.did.btcr2.crud.create.Create;
 import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
-import uniregistrar.driver.did.btcr2.ipfs.IPFSPublishService;
 import uniregistrar.driver.did.btcr2.job.CreateJob;
 import uniregistrar.driver.did.btcr2.ledger.DidDocUnAssembler;
 import uniregistrar.openapi.model.CreateRequest;
@@ -55,18 +57,19 @@ public class StateInit {
 
         DIDDocument didDocument = jsonMapper.convertValue(createRequest.getDidDocument(), DIDDocument.class);
 
-        // read version and network and publishToIpfs and genesisInitialKey and genesisStandardBeacons options
+        // read version and network and publishToIpfs and generateInitialKey and generateStandardBeacons options
 
         Integer version = createRequest.getOptions() == null ? null : (createRequest.getOptions().getAdditionalProperty("version") == null ? null : ((Number) createRequest.getOptions().getAdditionalProperty("version")).intValue());
         Network network = createRequest.getOptions() == null ? null : (createRequest.getOptions().getAdditionalProperty("network") == null ? null : Network.valueOf((String) createRequest.getOptions().getAdditionalProperty("network")));
         Boolean publishToIpfs = createRequest.getOptions() == null ? null : (createRequest.getOptions().getAdditionalProperty("publishToIpfs") == null ? null : (Boolean) createRequest.getOptions().getAdditionalProperty("publishToIpfs"));
-        Boolean genesisInitialKey = createRequest.getOptions() == null ? null : (createRequest.getOptions().getAdditionalProperty("genesisInitialKey") == null ? null : (Boolean) createRequest.getOptions().getAdditionalProperty("genesisInitialKey"));
-        Boolean genesisStandardBeacons = createRequest.getOptions() == null ? null : (createRequest.getOptions().getAdditionalProperty("genesisStandardBeacons") == null ? null : (Boolean) createRequest.getOptions().getAdditionalProperty("genesisStandardBeacons"));
+        Boolean generateInitialKey = createRequest.getOptions() == null ? null : (createRequest.getOptions().getAdditionalProperty("generateInitialKey") == null ? null : (Boolean) createRequest.getOptions().getAdditionalProperty("generateInitialKey"));
+        Boolean generateStandardBeacons = createRequest.getOptions() == null ? null : (createRequest.getOptions().getAdditionalProperty("generateStandardBeacons") == null ? null : (Boolean) createRequest.getOptions().getAdditionalProperty("generateStandardBeacons"));
+        String generateAggregateBeacon = createRequest.getOptions() == null ? null : (createRequest.getOptions().getAdditionalProperty("generateAggregateBeacon") == null ? null : (String) createRequest.getOptions().getAdditionalProperty("generateAggregateBeacon"));
         if (version == null) version = 1;
         if (network == null) network = Network.bitcoin;
         if (publishToIpfs == null) publishToIpfs = Boolean.TRUE;
-        if (genesisInitialKey == null) genesisInitialKey = Boolean.TRUE;
-        if (genesisStandardBeacons == null) genesisStandardBeacons = Boolean.TRUE;
+        if (generateInitialKey == null) generateInitialKey = Boolean.TRUE;
+        if (generateStandardBeacons == null) generateStandardBeacons = Boolean.TRUE;
 
         // find Bitcoin connection
 
@@ -76,25 +79,42 @@ public class StateInit {
         // unassemble initialKey
 
         byte[] unassembledInitialKey = DidDocUnAssembler.unassembleInitialKey(didDocument);
-        if (unassembledInitialKey == null && genesisInitialKey) {
-            // next state
-            return TransitionInit.transitionToInitGetVerificationMethod(bitcoinConnection, ipfsConnection, didRegistrationMetadata, didDocumentMetadata);
-        }
 
         // unassemble genesisDocument
 
         DIDDocumentV1_1 unassembledGenesisDocument = DidDocUnAssembler.unassembleGenesisDocument(didDocument);
 
-        // add standard beacons?
+        // generate initial key?
 
-        if (unassembledInitialKey != null && unassembledGenesisDocument != null && genesisStandardBeacons) {
+        if (generateInitialKey) {
+
+            if (unassembledInitialKey == null) {
+                // next state
+                return TransitionInit.transitionToInitGetVerificationMethod(bitcoinConnection, ipfsConnection, didRegistrationMetadata, didDocumentMetadata);
+            }
+
+            if (log.isDebugEnabled()) log.debug("Generated initial key: " + Hex.encodeHexString(unassembledInitialKey));
+        }
+
+        // generate standard beacons?
+
+        if (generateStandardBeacons) {
+
+            if (unassembledInitialKey == null) {
+                // next state
+                return TransitionInit.transitionToInitGetVerificationMethod(bitcoinConnection, ipfsConnection, didRegistrationMetadata, didDocumentMetadata);
+            }
+
+            if (unassembledGenesisDocument == null) {
+                unassembledGenesisDocument = DIDDocumentV1_1.builder().build();
+            }
 
             AddressParser addressParser = AddressParser.getDefault();
             PublicKey initialPublicKey = PublicKey.parse(unassembledInitialKey);
 
-            String p2pkh_bitcoin_address = BitcoinURI.convertToBitcoinURI(network.toBitcoinjNetwork(), addressParser.parseAddress(initialPublicKey.p2pkhAddress(new BlockHash(bitcoinConnector.getGensisHash(network)))).toString(), null, null, null);
-            String p2wpkh_bitcoin_address = BitcoinURI.convertToBitcoinURI(network.toBitcoinjNetwork(), addressParser.parseAddress(initialPublicKey.p2wpkhAddress(new BlockHash(bitcoinConnector.getGensisHash(network)))).toString(), null, null, null);
-            String p2tr_bitcoin_address = BitcoinURI.convertToBitcoinURI(network.toBitcoinjNetwork(), addressParser.parseAddress(initialPublicKey.p2trAddress(new BlockHash(bitcoinConnector.getGensisHash(network)))).toString(), null, null, null);
+            URI p2pkhServiceEndpoint = URI.create(BitcoinURI.convertToBitcoinURI(addressParser.parseAddress(initialPublicKey.p2pkhAddress(new BlockHash(bitcoinConnector.getGensisHash(network)))), null, null, null));
+            URI p2wpkhServiceEndpoint = URI.create(BitcoinURI.convertToBitcoinURI(addressParser.parseAddress(initialPublicKey.p2wpkhAddress(new BlockHash(bitcoinConnector.getGensisHash(network)))), null, null, null));
+            URI p2trServiceEndpoint = URI.create(BitcoinURI.convertToBitcoinURI(addressParser.parseAddress(initialPublicKey.p2trAddress(new BlockHash(bitcoinConnector.getGensisHash(network)))), null, null, null));
 
             unassembledGenesisDocument = DIDDocumentV1_1.builder()
                     .base(unassembledGenesisDocument)
@@ -103,24 +123,81 @@ public class StateInit {
                             Service.builder()
                                     .id(URI.create("#initialP2PKH"))
                                     .type("SingletonBeacon")
-                                    .serviceEndpoint(URI.create(p2pkh_bitcoin_address))
+                                    .serviceEndpoint(p2pkhServiceEndpoint)
                                     .build(),
                             Service.builder()
                                     .id(URI.create("#initialP2WPKH"))
                                     .type("SingletonBeacon")
-                                    .serviceEndpoint(URI.create(p2wpkh_bitcoin_address))
+                                    .serviceEndpoint(p2wpkhServiceEndpoint)
                                     .build(),
                             Service.builder()
                                     .id(URI.create("#initialP2TR"))
                                     .type("SingletonBeacon")
-                                    .serviceEndpoint(URI.create(p2tr_bitcoin_address))
+                                    .serviceEndpoint(p2trServiceEndpoint)
                                     .build()))
                     .build();
+
+            if (log.isDebugEnabled()) log.debug("Generated standard beacons: " + unassembledGenesisDocument);
+        }
+
+        // generate aggregate beacon?
+
+        if (generateAggregateBeacon != null) {
+
+            if (unassembledInitialKey == null) {
+                // next state
+                return TransitionInit.transitionToInitGetVerificationMethod(bitcoinConnection, ipfsConnection, didRegistrationMetadata, didDocumentMetadata);
+            }
+
+            if (unassembledGenesisDocument == null) {
+                unassembledGenesisDocument = DIDDocumentV1_1.builder().build();
+            }
+
+            AggregationCohort aggregationCohort = AggregationService.getAggregationCohort(generateAggregateBeacon);
+            if (aggregationCohort == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Unknown aggregation cohort: " + aggregationCohort);
+
+            // DID controllers that wish to join an Aggregation Cohort and become an Aggregation Participant would need to provide the Aggregation Service with a Schnorr public key.
+
+            if (! aggregationCohort.containsParticipantPublicKey(unassembledInitialKey)) {
+                aggregationCohort.addParticipantPublicKey(unassembledInitialKey);
+            }
+
+            // The Aggregation Service decides when to finalize the membership of the Aggregation Cohort.
+
+            if (! aggregationCohort.isCompletedCohort()) {
+                // next state
+                return TransitionInit.transitionToInitCompleteAggregationCohort(bitcoinConnection, ipfsConnection, aggregationCohort, didRegistrationMetadata, didDocumentMetadata);
+            }
+
+            if (! aggregationCohort.isFinalizedCohort()) {
+                aggregationCohort.finalizeCohort(bitcoinConnector);
+            }
+
+            // This Beacon Address must be sent to all Aggregation Participants with the set of keys used to construct it.
+
+            URI aggregateServiceId = aggregationCohort.toAggregateServiceId();
+            String aggregateServiceType = aggregationCohort.toAggregateServiceType();
+            URI aggregateServiceEndpoint = aggregationCohort.toAggregateServiceEndpoint();
+
+            // Once the Aggregation Participants have verified the newly formed Beacon Address, they can construct the service object that can be included within their DID document’s service array.
+
+            unassembledGenesisDocument = DIDDocumentV1_1.builder()
+                    .base(unassembledGenesisDocument)
+                    .defaultContexts(false)
+                    .services(List.of(
+                            Service.builder()
+                                    .id(aggregateServiceId)
+                                    .type(aggregateServiceType)
+                                    .serviceEndpoint(aggregateServiceEndpoint)
+                                    .build()))
+                    .build();
+
+            if (log.isDebugEnabled()) log.debug("Generated aggregate beacon: " + unassembledGenesisDocument);
         }
 
         // create()
 
-        uniregistrar.driver.did.btcr2.crud.create.CreateInitResult createInitResult = create.create(bitcoinConnection, unassembledInitialKey, unassembledGenesisDocument, version, network, didDocumentMetadata);
+        uniregistrar.driver.did.btcr2.crud.create.CreateInitResult createInitResult = create.createInit(bitcoinConnection, unassembledInitialKey, unassembledGenesisDocument, version, network, didDocumentMetadata);
 
         // publish to IPFS?
 

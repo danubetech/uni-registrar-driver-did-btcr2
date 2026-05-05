@@ -71,12 +71,14 @@ public class StateProcessUpdateSignPayload {
 
         DIDDocument didSourceDocument = updateRequest.getOptions() == null || updateRequest.getOptions().getAdditionalProperty("didSourceDocument") == null ? null : DIDDocument.fromJsonObject((Map<String, Object>) updateRequest.getOptions().getAdditionalProperty("didSourceDocument"));
         Integer targetVersionId = updateRequest.getOptions() == null ? null : (updateRequest.getOptions().getAdditionalProperty("targetVersionId") instanceof String targetVersionIdString ? Integer.parseInt(targetVersionIdString) : (Integer) updateRequest.getOptions().getAdditionalProperty("targetVersionId"));
+        URI beaconServiceId = updateRequest.getOptions() == null ? null : (updateRequest.getOptions().getAdditionalProperty("beaconServiceId") instanceof String beaconServiceIdString ? URI.create(beaconServiceIdString) : null);
+        String beaconServiceType = updateRequest.getOptions() == null ? null : (updateRequest.getOptions().getAdditionalProperty("beaconServiceType") instanceof String beaconServiceTypeString ? beaconServiceTypeString : null);
         if (didSourceDocument == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'didSourceDocument' option");
         if (targetVersionId == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'targetVersionId' option");
 
         // read input DID document operations and DID documents
 
-        List<String> didDocumentOperations = updateRequest.getDidDocumentOperation() == null ? Collections.emptyList() : updateRequest.getDidDocumentOperation();;
+        List<String> didDocumentOperations = updateRequest.getDidDocumentOperation() == null ? Collections.emptyList() : updateRequest.getDidDocumentOperation();
         List<DIDDocument> didDocuments = updateRequest.getDidDocument() == null ? Collections.emptyList() : updateRequest.getDidDocument().stream().map(x -> jsonMapper.convertValue(x, DIDDocument.class)).toList();
 
         // read input DID document update operations
@@ -107,7 +109,7 @@ public class StateProcessUpdateSignPayload {
 
         UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayloadResult;
         try {
-            updateProcessUpdateSignPayloadResult = update.updateProcessUpdateSignPayload(bitcoinConnection, didSourceDocument, targetVersionId, jsonPatches, btcr2Update, verificationMethodId, updateSigningResponseSignature, didDocumentMetadata);
+            updateProcessUpdateSignPayloadResult = update.updateProcessUpdateSignPayload(bitcoinConnection, didSourceDocument, targetVersionId, beaconServiceId, beaconServiceType, jsonPatches, btcr2Update, verificationMethodId, updateSigningResponseSignature, didDocumentMetadata);
         } catch (UpdateActionFundAddressException ex) {
             // next state
             return TransitionProcessUpdateSignPayload.transitionToUpdateSignPayloadFundAddress(bitcoinConnection, ex.getAddress(), ex.getMinimumValue(), btcr2Update, updateSignPayload, didRegistrationMetadata, didDocumentMetadata);

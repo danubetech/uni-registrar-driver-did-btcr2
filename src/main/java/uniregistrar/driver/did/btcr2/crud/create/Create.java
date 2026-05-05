@@ -30,18 +30,20 @@ public class Create {
         this.ipfsConnection = ipfsConnection;
     }
 
-    public CreateInitResult create(BitcoinConnection bitcoinConnection, byte[] initialKey, DIDDocument genesisDocument, Integer version, Network network, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public CreateInitResult createInit(BitcoinConnection bitcoinConnection, byte[] initialKey, DIDDocument genesisDocument, Integer version, Network network, Map<String, Object> didDocumentMetadata) throws RegistrationException {
 
         // A did:btcr2 identifier encodes a few pieces of information: an indicator for a specific Bitcoin network and a collection of Genesis Bytes.
 
         byte[] genesisBytes;
         GenesisBytesType genesisBytesType;
 
+        // The Genesis Bytes can be created in two ways: from an secp256k1 public key or from a Genesis Document.
+
         if (genesisDocument == null) {
-            genesisBytes = this.secp256k1PublicKey(initialKey);
+            genesisBytes = secp256k1PublicKey(initialKey);
             genesisBytesType = GenesisBytesType.SECP256K1PUBLICKEY;
         } else {
-            genesisBytes = this.genesisDocumentHash(genesisDocument);
+            genesisBytes = genesisDocumentHash(genesisDocument);
             genesisBytesType = GenesisBytesType.SHA256HASH;
         }
 
@@ -65,7 +67,7 @@ public class Create {
      * See https://dcdpr.github.io/did-btcr2/operations/create.html#secp256k1-public-key
      */
 
-    public byte[] secp256k1PublicKey(byte[] initialKey) throws RegistrationException {
+    public static byte[] secp256k1PublicKey(byte[] initialKey) throws RegistrationException {
 
         // An secp256k1 public key can be used as the Genesis Bytes.
 
@@ -86,7 +88,7 @@ public class Create {
      * See https://dcdpr.github.io/did-btcr2/operations/create.html#genesis-document-hash
      */
 
-    public byte[] genesisDocumentHash(DIDDocument genesisDocument) {
+    public static byte[] genesisDocumentHash(DIDDocument genesisDocument) {
 
         // A Genesis Document can be used as the Genesis Bytes, but MUST be hashed to 32 bytes with the JSON Document Hashing algorithm.
 

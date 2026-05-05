@@ -14,7 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
 import uniregistrar.driver.did.btcr2.crud.update.Update;
-import uniregistrar.driver.did.btcr2.crud.update.UpdateActionGetVerificationMethodException;
 import uniregistrar.driver.did.btcr2.crud.update.UpdateInitResult;
 import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.driver.did.btcr2.job.UpdateJob;
@@ -86,15 +85,14 @@ public class StateInit {
 
         URI verificationMethodId = (updateVerificationMethodPublicData == null || updateVerificationMethodPublicData.getId() == null) ? null : URI.create(updateVerificationMethodPublicData.getId());
 
-        // update()
-
-        UpdateInitResult updateInitResult;
-        try {
-            updateInitResult = update.updateInit(bitcoinConnection, didSourceDocument, targetVersionId, jsonPatches, verificationMethodId, didDocumentMetadata);
-        } catch (UpdateActionGetVerificationMethodException ex) {
+        if (verificationMethodId == null) {
             // next state
             return TransitionInit.transitionToInitGetVerificationMethod(bitcoinConnection, ipfsConnection, didRegistrationMetadata, didDocumentMetadata);
         }
+
+        // update()
+
+        UpdateInitResult updateInitResult = update.updateInit(bitcoinConnection, didSourceDocument, targetVersionId, jsonPatches, verificationMethodId, didDocumentMetadata);
 
         // next state
 

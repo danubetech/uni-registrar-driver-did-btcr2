@@ -172,7 +172,7 @@
         <dependency>
             <groupId>com.danubetech</groupId>
             <artifactId>key-formats-java</artifactId>
-            <version>1.30.0</version>
+            <version>1.31.0</version>
         </dependency>
         <dependency>
             <groupId>decentralized-identity</groupId>
@@ -187,7 +187,7 @@
         <dependency>
             <groupId>com.danubetech</groupId>
             <artifactId>btc-common-java</artifactId>
-            <version>0.4.0</version>
+            <version>0.5.0</version>
         </dependency>
         <dependency>
             <groupId>com.github.ipfs</groupId>
