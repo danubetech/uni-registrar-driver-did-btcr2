@@ -85,7 +85,9 @@ public class AggregationCohort {
         }
 
         public boolean containsParticipantPublicKey(byte[] participantPublicKey) {
-                return this.getParticipantPublicKeys().contains(participantPublicKey);
+                boolean containsParticipantPublicKey = this.getParticipantPublicKeys().contains(participantPublicKey);
+                if (log.isDebugEnabled()) log.debug("Contains participant public key " + Hex.encodeHexString(participantPublicKey) + " in " + this.getParticipantPublicKeys().stream().map(Hex::encodeHexString).toList() + ": " + containsParticipantPublicKey);
+                return containsParticipantPublicKey;
         }
 
         public void addParticipantPublicKey(byte[] participantPublicKey) {
