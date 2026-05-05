@@ -71,7 +71,7 @@ public class DidDocUnAssembler {
             if (testContexts.isEmpty()) JsonLDUtils.jsonLdRemove(testDidDocument, Keywords.CONTEXT);
         }
         List<Object> verificationMethods = JsonLDUtils.jsonLdGetJsonArray(testDidDocument.getJsonObject(), DIDKeywords.JSONLD_TERM_VERIFICATIONMETHOD);
-        List<Object> testVerificationMethods = contexts == null ? null : new ArrayList<>(verificationMethods);
+        List<Object> testVerificationMethods = verificationMethods == null ? null : new ArrayList<>(verificationMethods);
         if (testVerificationMethods != null) {
             testVerificationMethods.removeIf(DidDocUnAssembler::removeVerificationMethod);
             if (testVerificationMethods.isEmpty()) JsonLDUtils.jsonLdRemove(testDidDocument, DIDKeywords.JSONLD_TERM_VERIFICATIONMETHOD);
