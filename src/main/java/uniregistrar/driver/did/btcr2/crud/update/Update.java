@@ -181,7 +181,7 @@ public class Update {
         // Fill the Data Integrity [VC-DATA-INTEGRITY] template below with the required template variables.
 
         URI cryptosuiteVerificationMethod = verificationMethod.getId();
-        if (! cryptosuiteVerificationMethod.isAbsolute()) cryptosuiteVerificationMethod = didSourceDocument.getId().resolve(cryptosuiteVerificationMethod.toString());
+        if (! cryptosuiteVerificationMethod.isAbsolute()) cryptosuiteVerificationMethod = URI.create(didSourceDocument.getId() + cryptosuiteVerificationMethod.toString());
         URI cryptosuiteCapability = URI.create("urn:zcap:root:" + URLEncoder.encode(didSourceDocument.getId().toString(), StandardCharsets.UTF_8));
 
         cryptosuite.setVerificationMethod(cryptosuiteVerificationMethod);
@@ -250,7 +250,7 @@ public class Update {
         // Fill the Data Integrity [VC-DATA-INTEGRITY] template below with the required template variables.
 
         URI cryptosuiteVerificationMethod = verificationMethod.getId();
-        if (! cryptosuiteVerificationMethod.isAbsolute()) cryptosuiteVerificationMethod = didSourceDocument.getId().resolve(cryptosuiteVerificationMethod.toString());
+        if (! cryptosuiteVerificationMethod.isAbsolute()) cryptosuiteVerificationMethod = URI.create(didSourceDocument.getId() + cryptosuiteVerificationMethod.toString());
         URI cryptosuiteCapability = URI.create("urn:zcap:root:" + URLEncoder.encode(didSourceDocument.getId().toString(), StandardCharsets.UTF_8));
 
         cryptosuite.setVerificationMethod(cryptosuiteVerificationMethod);
