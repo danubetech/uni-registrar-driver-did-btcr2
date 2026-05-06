@@ -159,7 +159,7 @@ public class StateInit {
             // DID controllers that wish to join an Aggregation Cohort and become an Aggregation Participant would need to provide the Aggregation Service with a Schnorr public key.
 
             if (! aggregationCohort.containsParticipantPublicKey(unassembledInitialKey)) {
-                if (aggregationCohort.isCompletedCohort()) {
+                if (aggregationCohort.isCohortCompleted()) {
                     throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Aggregation cohort " + aggregationCohort.getId() + " already completed.");
                 }
                 aggregationCohort.addParticipantPublicKey(unassembledInitialKey);
@@ -167,12 +167,12 @@ public class StateInit {
 
             // The Aggregation Service decides when to finalize the membership of the Aggregation Cohort.
 
-            if (! aggregationCohort.isCompletedCohort()) {
+            if (! aggregationCohort.isCohortCompleted()) {
                 // next state
                 return TransitionInit.transitionToInitCompleteAggregationCohort(bitcoinConnection, ipfsConnection, aggregationCohort, didRegistrationMetadata, didDocumentMetadata);
             }
 
-            if (! aggregationCohort.isFinalizedCohort()) {
+            if (! aggregationCohort.isCohortFinalized()) {
                 aggregationCohort.finalizeCohort(bitcoinConnector);
             }
 

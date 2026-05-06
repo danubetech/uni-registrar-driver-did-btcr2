@@ -50,7 +50,11 @@ public class DidDocUnAssembler {
         }
 
         String unassembledInitialKeyString = verificationMethodInitialKey.getPublicKeyMultibase();
-        byte[] unassembledInitialKey = MultiCodecUtil.removeMulticodec(Multibase.decode(unassembledInitialKeyString), MultiCodecUtil.MULTICODEC_SECP256K1_PUB);
+        byte[] unassembledInitialKey = unassembledInitialKeyString == null ? null : MultiCodecUtil.removeMulticodec(Multibase.decode(unassembledInitialKeyString), MultiCodecUtil.MULTICODEC_SECP256K1_PUB);
+        if (unassembledInitialKey == null) {
+            if (log.isWarnEnabled()) log.warn("No 'publicKeyMultibase' for '#initialKey' verification method " + verificationMethodInitialKey.getId() + " and type " + verificationMethodInitialKey.getType());
+            return null;
+        }
 
         // done
 

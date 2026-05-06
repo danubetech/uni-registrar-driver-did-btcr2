@@ -139,7 +139,7 @@ public class StateProcessUtxoSignPayloads {
 
         // update()
 
-        UpdateProcessUtxoSignPayloadsResult updateProcessUtxoSignPayloadsResult = update.updateProcessUtxoSignPayloads(bitcoinConnection, didSourceDocument, targetVersionId, jsonPatches, btcr2Update, btcr2Transaction, updateECKey, utxoSigningResponseSignatures, didDocumentMetadata);
+        UpdateProcessUtxoSignPayloadsResult updateProcessUtxoSignPayloadsResult = update.updateProcessUtxoSignPayloads(bitcoinConnection, did, didSourceDocument, targetVersionId, jsonPatches, btcr2Update, btcr2Transaction, updateECKey, utxoSigningResponseSignatures, didDocumentMetadata);
 
         // publish to IPFS?
 

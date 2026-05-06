@@ -92,7 +92,7 @@ public class StateInit {
 
         // update()
 
-        UpdateInitResult updateInitResult = update.updateInit(bitcoinConnection, didSourceDocument, targetVersionId, jsonPatches, verificationMethodId, didDocumentMetadata);
+        UpdateInitResult updateInitResult = update.updateInit(bitcoinConnection, did, didSourceDocument, targetVersionId, jsonPatches, verificationMethodId, didDocumentMetadata);
 
         // next state
 

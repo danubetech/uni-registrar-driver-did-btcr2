@@ -57,7 +57,13 @@ public class TransitionInit {
         DidStateAction didStateAction = new DidStateAction();
         didStateAction.setState("action");
         didStateAction.setAction("completeAggregationCohort");
-        didStateAction.putAdditionalProperty("aggregationCohort", Map.of(
+        didStateAction.putAdditionalProperty("aggregationCohort", aggregationCohort.getId());
+
+        // REGISTRATION STATE: didRegistrationMetadata
+
+        if (bitcoinConnection != null) didRegistrationMetadata.putAll(bitcoinConnection.getMetadata());
+        if (ipfsConnection != null) didRegistrationMetadata.putAll(ipfsConnection.getMetadata());
+        didRegistrationMetadata.put("aggregationCohort", Map.of(
                 "id", aggregationCohort.getId(),
                 "network", aggregationCohort.getNetwork().toString(),
                 "maxSize", aggregationCohort.getMaxSize(),
@@ -65,11 +71,6 @@ public class TransitionInit {
                 "scriptType", aggregationCohort.getScriptType().toString(),
                 "participantPublicKeys", aggregationCohort.getParticipantPublicKeys().stream().map(Hex::encodeHexString).toList())
         );
-
-        // REGISTRATION STATE: didRegistrationMetadata
-
-        if (bitcoinConnection != null) didRegistrationMetadata.putAll(bitcoinConnection.getMetadata());
-        if (ipfsConnection != null) didRegistrationMetadata.putAll(ipfsConnection.getMetadata());
 
         // create() state
 

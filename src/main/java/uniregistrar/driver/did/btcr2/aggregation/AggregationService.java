@@ -3,6 +3,7 @@ package uniregistrar.driver.did.btcr2.aggregation;
 import com.danubetech.btc.connection.Network;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import org.bitcoinj.base.Address;
 import org.bitcoinj.base.ScriptType;
 import uniregistrar.driver.did.btcr2.beacons.BeaconType;
 
@@ -26,6 +27,10 @@ public class AggregationService {
 
     public static AggregationCohort getAggregationCohort(String id) {
         return aggregationCohorts.getIfPresent(id);
+    }
+
+    public static AggregationCohort findByBeaconAddress(Address  beaconAddress) {
+        return aggregationCohorts.asMap().values().stream().filter(x -> beaconAddress.equals(x.getBeaconAddress())).findFirst().orElse(null);
     }
 
     public static void removeAggregationCohort(AggregationCohort aggregationCohort) {
