@@ -89,12 +89,60 @@ The driver recognizes the following environment variables:
 * Specifies a MultiAddress of an IPFS connection to be used as CAS.
 * Default value: `/ip4/127.0.0.1/tcp/5001`
 
-## Driver Input Options
+### `uniregistrar_driver_did_btcr2_ipfsTimeout`
+
+* Specifies a connect/read timeout in milliseconds for the IPFS connection.
+* Default value: `10000`
+
+## Options for DID Operations
+
+See https://identity.foundation/did-registration/#options.
+
+### `create()`
 
 ```
 {
-    "network": "mutinynet"
+    "version": 1,
+    "network": "mutinynet",
+    "publishToIpfs": true,
+    "generateInitialKey": true,
+    "generateStandardBeacons": false,
+    "generateAggregateBeacon": true    
 }
 ```
 
-* `network`: The name of the network where a DID should be registered. Values depend on `bitcoinConnections` environment variable, but are typically: `bitcoin`, `testnet3`, `signet`, `mutinynet`.
+* `network`: The version of the `did:btcr2` method.
+  * Default value: `1`
+* `version`: The name of the network where a DID should be registered. Values depend on `bitcoinConnections` environment variable, but are typically: `bitcoin`, `testnet3`, `signet`, `mutinynet`.
+  * Default value: `bitcoin`
+* `publishToIpfs`: This boolean option indicates whether the genesis DID document should be published to IPFS. This is only available of an IPFS connection is configured.
+  * Default value: `true`
+* `generateInitialKey`: This boolean option indicates whether a default initial keypair with ID `#initialKey` should be generated.
+  * Default value: `true`
+* `generateStandardBeacons`: This boolean option indicates whether standard beacon services of types `SingletonBeacon`, `CASBeacon`, `SMTBeacon` should be generated in the genesis document. This option requires `generateInitialKey: true`.
+  * Default value: `false`
+* `generateAggregateBeacon`: This string option indicates whether an aggregate beacon service for an aggregation cohort should be generated in the genesis document. The value of this option is the name of the aggregation cohort. This option requires `generateInitialKey: true`.
+  * Default value: `null`
+
+### `update()` and `deactivate()`
+
+```
+{
+    "didSourceDocument": { ... },
+    "targetVersionId": 2,
+    "beaconServiceId": "#initialP2PKH",
+    "beaconServiceType": "SingletonBeacon",
+    "publishToIpfs": true
+}
+```
+
+* `didSourceDocument`: The `didSourceDocument` for the update/deactivate operation.
+  * Default value: none - must be provided
+* `targetVersionId`: The `targetVersionId` for the update/deactivate operation.
+  * Default value: none - must be provided
+* `beaconServiceId`: The URI of the beacon service that should be used for announcing updates.
+  * Default value: none - can optionally be provided
+* `beaconServiceType`: The type of the beacon service that should be used for announcing updates.
+  * Default value: none - can optionally be provided
+* `publishToIpfs`: This boolean option indicates whether the update should be published to IPFS. This is only available of an IPFS connection is configured.
+  * Default value: `true`
