@@ -150,7 +150,7 @@ public class StateInit {
             }
 
             if (unassembledGenesisDocument == null) {
-                unassembledGenesisDocument = DIDDocumentV1_1.builder().build();
+                unassembledGenesisDocument = DIDDocumentV1_1.builder().defaultContexts(true).context(DidDocUnAssembler.JSONLD_CONTEXT_BTCR2_V1).id(DidDocUnAssembler.GENESIS_DID).build();
             }
 
             AggregationCohort aggregationCohort = AggregationService.getAggregationCohort(generateAggregateBeacon);
