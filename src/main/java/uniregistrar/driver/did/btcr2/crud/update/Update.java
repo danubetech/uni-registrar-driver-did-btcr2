@@ -165,7 +165,7 @@ public class Update {
 
         JsonLDObject verificationMethodJsonLDObject = JsonLDDereferencer.findByIdInJsonLdObject(didSourceDocument, verificationMethodId, didSourceDocument.getId());
         VerificationMethod verificationMethod = verificationMethodJsonLDObject == null ? null : VerificationMethod.fromJsonObject(verificationMethodJsonLDObject.getJsonObject());
-        if (! didSourceDocument.getVerificationMethods().contains(verificationMethod)) {
+        if (verificationMethod == null || ! didSourceDocument.getVerificationMethods().contains(verificationMethod)) {
             throw new RegistrationException("INVALID_DID_UPDATE", "didSourceDocument.verificationMethod does not contain " + verificationMethodId);
         }
 
@@ -180,9 +180,13 @@ public class Update {
 
         // Fill the Data Integrity [VC-DATA-INTEGRITY] template below with the required template variables.
 
-        cryptosuite.setVerificationMethod(verificationMethodJsonLDObject.getId());
+        URI cryptosuiteVerificationMethod = verificationMethod.getId();
+        if (! cryptosuiteVerificationMethod.isAbsolute()) cryptosuiteVerificationMethod = didSourceDocument.getId().resolve(cryptosuiteVerificationMethod.toString());
+        URI cryptosuiteCapability = URI.create("urn:zcap:root:" + URLEncoder.encode(didSourceDocument.getId().toString(), StandardCharsets.UTF_8));
+
+        cryptosuite.setVerificationMethod(cryptosuiteVerificationMethod);
         cryptosuite.setProofPurpose("capabilityInvocation");
-        cryptosuite.setCapability(URI.create("urn:zcap:root:" + URLEncoder.encode(didSourceDocument.getId().toString(), StandardCharsets.UTF_8)));
+        cryptosuite.setCapability(cryptosuiteCapability);
         cryptosuite.setCapabilityAction("Write");
 
         // Pass update and proofConfig to the cryptosuite.createProof method and set
@@ -230,7 +234,7 @@ public class Update {
 
         JsonLDObject verificationMethodJsonLDObject = JsonLDDereferencer.findByIdInJsonLdObject(didSourceDocument, verificationMethodId, didSourceDocument.getId());
         VerificationMethod verificationMethod = verificationMethodJsonLDObject == null ? null : VerificationMethod.fromJsonObject(verificationMethodJsonLDObject.getJsonObject());
-        if (! didSourceDocument.getVerificationMethods().contains(verificationMethod)) {
+        if (verificationMethod == null || ! didSourceDocument.getVerificationMethods().contains(verificationMethod)) {
             throw new RegistrationException("INVALID_DID_UPDATE", "didSourceDocument.verificationMethod does not contain " + verificationMethodId);
         }
 
@@ -245,9 +249,13 @@ public class Update {
 
         // Fill the Data Integrity [VC-DATA-INTEGRITY] template below with the required template variables.
 
-        cryptosuite.setVerificationMethod(verificationMethod.getId());
+        URI cryptosuiteVerificationMethod = verificationMethod.getId();
+        if (! cryptosuiteVerificationMethod.isAbsolute()) cryptosuiteVerificationMethod = didSourceDocument.getId().resolve(cryptosuiteVerificationMethod.toString());
+        URI cryptosuiteCapability = URI.create("urn:zcap:root:" + URLEncoder.encode(didSourceDocument.getId().toString(), StandardCharsets.UTF_8));
+
+        cryptosuite.setVerificationMethod(cryptosuiteVerificationMethod);
         cryptosuite.setProofPurpose("capabilityInvocation");
-        cryptosuite.setCapability(URI.create("urn:zcap:root:" + URLEncoder.encode(didSourceDocument.getId().toString(), StandardCharsets.UTF_8)));
+        cryptosuite.setCapability(cryptosuiteCapability);
         cryptosuite.setCapabilityAction("Write");
 
         // Pass update and proofConfig to the cryptosuite.createProof method and set
