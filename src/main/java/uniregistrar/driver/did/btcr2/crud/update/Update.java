@@ -269,6 +269,9 @@ public class Update {
         if (beaconServiceType != null) {
             serviceStream = serviceStream.filter(service -> beaconServiceType.equals(service.getType()));
         }
+        if (beaconServiceId == null && beaconServiceType == null) {
+            serviceStream = serviceStream.filter(BeaconType::isValid);
+        }
         Service beaconService = serviceStream.findFirst().orElse(null);
         if (beaconService == null) beaconService = didSourceDocument.getServices() == null || didSourceDocument.getServices().isEmpty() ? null : didSourceDocument.getServices().getFirst();
         if (log.isDebugEnabled()) log.debug("beaconService: {}", beaconService);
