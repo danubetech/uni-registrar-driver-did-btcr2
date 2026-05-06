@@ -10,6 +10,7 @@ import com.danubetech.keyformats.jose.JWSAlgorithm;
 import foundation.identity.did.DIDDocument;
 import foundation.identity.did.Service;
 import foundation.identity.did.VerificationMethod;
+import foundation.identity.did.validation.Validation;
 import foundation.identity.jsonld.JsonLDDereferencer;
 import foundation.identity.jsonld.JsonLDException;
 import foundation.identity.jsonld.JsonLDObject;
@@ -111,6 +112,20 @@ public class Update {
         DIDDocument didTargetDocument = didSourceDocument;
         didTargetDocument = JSONPatchUtil.apply(didTargetDocument, jsonPatches);
         if (log.isDebugEnabled()) log.debug("didTargetDocument: " + didTargetDocument);
+
+        // didTargetDocument MUST be conformant to DID Core v1.1
+
+        try {
+            Validation.validate(didTargetDocument);
+        } catch (IllegalStateException ex) {
+            throw new RegistrationException("INVALID_DID_UPDATE", "Invalid didTargetDocument: " + ex.getMessage(), ex);
+        }
+
+        // An INVALID_DID_UPDATE error MUST be raised if didTargetDocument.id is not equal to didSourceDocument.id.
+
+        if (! didTargetDocument.getId().equals(didSourceDocument.getId())) {
+            throw new RegistrationException("INVALID_DID_UPDATE", "didTargetDocument.id " + didTargetDocument.getId() + " does not match didSourceDocument.id " + didSourceDocument.getId());
+        }
 
         // Fill the BTCR2 Unsigned Update (data structure) template below with the required template variables.
 
