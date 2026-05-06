@@ -62,6 +62,8 @@ public class DidDocUnAssembler {
 
         if (didDocument == null) return null;
 
+        // test if we need a genesis DID document
+
         DIDDocument testDidDocument = DIDDocument.fromJson(didDocument.toJson());
 
         List<String> contexts = JsonLDUtils.jsonLdGetStringList(testDidDocument.getJsonObject(), Keywords.CONTEXT);
@@ -101,18 +103,39 @@ public class DidDocUnAssembler {
             if (testCapabilityDelegationVerificationMethods.isEmpty()) JsonLDUtils.jsonLdRemove(testDidDocument, DIDKeywords.JSONLD_TERM_CAPABILITYDELEGATION);
         }
 
-        if (log.isDebugEnabled()) log.debug("testDidDocument: " + testDidDocument);
+        boolean needGenesisDocument = ! testDidDocument.getJsonObject().isEmpty();
+        if (log.isDebugEnabled()) log.debug("testDidDocument: " + testDidDocument + " (" + needGenesisDocument + ")");
 
-        DIDDocumentV1_1 unassembledGenesisDocument;
+        // tweak genesis DID document
 
-        if (testDidDocument.getJsonObject().isEmpty()) {
-            unassembledGenesisDocument = null;
-        } else {
-            unassembledGenesisDocument = DIDDocumentV1_1.builder().base(didDocument).defaultContexts(false).id(GENESIS_DID).build();
+        DIDDocumentV1_1 unassembledGenesisDocument = null;
+
+        if (needGenesisDocument) {
+            unassembledGenesisDocument = DIDDocumentV1_1.builder().base(didDocument).defaultContexts(false).build();
+            if (! GENESIS_DID.equals(unassembledGenesisDocument.getId())) {
+                JsonLDUtils.jsonLdRemove(unassembledGenesisDocument, JsonLDKeywords.JSONLD_TERM_ID);
+                JsonLDUtils.jsonLdAdd(unassembledGenesisDocument, JsonLDKeywords.JSONLD_TERM_ID, GENESIS_DID);
+            }
+            if (unassembledGenesisDocument.getContexts() == null || unassembledGenesisDocument.getContexts().isEmpty()) {
+                JsonLDUtils.jsonLdAdd(unassembledGenesisDocument, Keywords.CONTEXT, DIDContexts.JSONLD_CONTEXT_W3_NS_DID_V1_1);
+            }
+            if (! DIDContexts.JSONLD_CONTEXT_W3_NS_DID_V1.equals(unassembledGenesisDocument.getContexts().getFirst())) {
+                List<URI> unassembledGenesisDocumentContexts = unassembledGenesisDocument.getContexts();
+                unassembledGenesisDocumentContexts.set(0, DIDContexts.JSONLD_CONTEXT_W3_NS_DID_V1_1);
+                JsonLDUtils.jsonLdRemove(unassembledGenesisDocument, Keywords.CONTEXT);
+                JsonLDUtils.jsonLdAdd(unassembledGenesisDocument, Keywords.CONTEXT, unassembledGenesisDocumentContexts.stream().map(JsonLDUtils::uriToString).toList());
+            }
             if (! unassembledGenesisDocument.getContexts().contains(JSONLD_CONTEXT_BTCR2_V1)) {
                 JsonLDUtils.jsonLdAdd(unassembledGenesisDocument, Keywords.CONTEXT, JsonLDUtils.uriToString(JSONLD_CONTEXT_BTCR2_V1));
             }
+            for (VerificationMethod verificationMethod : unassembledGenesisDocument.getAllVerificationMethods()) {
+                if (verificationMethod.getController() == null) {
+                    JsonLDUtils.jsonLdAdd(verificationMethod, JsonLDKeywords.JSONLD_TERM_ID, GENESIS_DID);
+                }
+            }
         }
+
+        // done
 
         if (log.isDebugEnabled()) log.debug("unassembledGenesisDocument: " + unassembledGenesisDocument);
         return unassembledGenesisDocument;
