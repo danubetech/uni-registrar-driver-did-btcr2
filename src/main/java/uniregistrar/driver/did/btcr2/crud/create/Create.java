@@ -5,6 +5,7 @@ import com.danubetech.btc.connection.Network;
 import com.danubetech.btc.syntax.GenesisBytesType;
 import foundation.identity.did.DID;
 import foundation.identity.did.DIDDocument;
+import foundation.identity.did.validation.Validation;
 import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,6 +80,8 @@ public class Create {
         if (initialKey.length != 33) throw new RegistrationException(RegistrationException.ERROR_INVALID_DID, "Invalid initial key length: " + initialKey.length);
         if (initialKey[0] != 0x02 && initialKey[0] != 0x03) throw new RegistrationException(RegistrationException.ERROR_INVALID_DID, "Invalid initial key prefix byte: " + Hex.encodeHexString(initialKey));
 
+        // done
+
         if (log.isDebugEnabled()) log.debug("secp256k1PublicKey: {} -> {}", Hex.encodeHexString(initialKey), Hex.encodeHexString(genesisBytes));
         return genesisBytes;
     }
@@ -88,11 +91,19 @@ public class Create {
      * See https://dcdpr.github.io/did-btcr2/operations/create.html#genesis-document-hash
      */
 
-    public static byte[] genesisDocumentHash(DIDDocument genesisDocument) {
+    public static byte[] genesisDocumentHash(DIDDocument genesisDocument) throws RegistrationException {
 
         // A Genesis Document can be used as the Genesis Bytes, but MUST be hashed to 32 bytes with the JSON Document Hashing algorithm.
 
+        try {
+            Validation.validate(genesisDocument);
+        } catch (IllegalStateException ex) {
+            throw new RegistrationException(RegistrationException.ERROR_INVALID_DID_DOCUMENT, "Invalid genesisDocument: " + ex.getMessage(), ex);
+        }
+
         byte[] genesisBytes = JsonCanonicalizationAndHash.jsonCanonicalizationAndHash(genesisDocument);
+
+        // done
 
         if (log.isDebugEnabled()) log.debug("genesisDocumentHash: {} -> {}", genesisDocument, Hex.encodeHexString(genesisBytes));
         return genesisBytes;

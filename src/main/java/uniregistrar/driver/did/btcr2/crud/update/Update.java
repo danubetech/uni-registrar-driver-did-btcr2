@@ -118,13 +118,13 @@ public class Update {
         try {
             Validation.validate(didTargetDocument);
         } catch (IllegalStateException ex) {
-            throw new RegistrationException("INVALID_DID_UPDATE", "Invalid didTargetDocument: " + ex.getMessage(), ex);
+            throw new RegistrationException(RegistrationException.ERROR_INVALID_DID_DOCUMENT, "Invalid didTargetDocument: " + ex.getMessage(), ex);
         }
 
         // An INVALID_DID_UPDATE error MUST be raised if didTargetDocument.id is not equal to didSourceDocument.id.
 
         if (! didTargetDocument.getId().equals(didSourceDocument.getId())) {
-            throw new RegistrationException("INVALID_DID_UPDATE", "didTargetDocument.id " + didTargetDocument.getId() + " does not match didSourceDocument.id " + didSourceDocument.getId());
+            throw new RegistrationException(RegistrationException.ERROR_INVALID_DID_DOCUMENT, "didTargetDocument.id " + didTargetDocument.getId() + " does not match didSourceDocument.id " + didSourceDocument.getId());
         }
 
         // Fill the BTCR2 Unsigned Update (data structure) template below with the required template variables.

@@ -23,6 +23,7 @@ import uniregistrar.driver.did.btcr2.aggregation.AggregationCohort;
 import uniregistrar.driver.did.btcr2.aggregation.AggregationService;
 import uniregistrar.driver.did.btcr2.algorithms.JSONDocumentHashing;
 import uniregistrar.driver.did.btcr2.crud.create.Create;
+import uniregistrar.driver.did.btcr2.crud.create.CreateInitResult;
 import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.driver.did.btcr2.job.CreateJob;
 import uniregistrar.driver.did.btcr2.ledger.DidDocUnAssembler;
@@ -198,7 +199,7 @@ public class StateInit {
 
         // create()
 
-        uniregistrar.driver.did.btcr2.crud.create.CreateInitResult createInitResult = create.createInit(bitcoinConnection, unassembledInitialKey, unassembledGenesisDocument, version, network, didDocumentMetadata);
+        CreateInitResult createInitResult = create.createInit(bitcoinConnection, unassembledInitialKey, unassembledGenesisDocument, version, network, didDocumentMetadata);
 
         // publish to IPFS?
 
