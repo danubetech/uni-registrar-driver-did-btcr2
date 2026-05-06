@@ -159,6 +159,9 @@ public class StateInit {
             // DID controllers that wish to join an Aggregation Cohort and become an Aggregation Participant would need to provide the Aggregation Service with a Schnorr public key.
 
             if (! aggregationCohort.containsParticipantPublicKey(unassembledInitialKey)) {
+                if (aggregationCohort.isCompletedCohort()) {
+                    throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Aggregation cohort " + aggregationCohort.getId() + " already completed.");
+                }
                 aggregationCohort.addParticipantPublicKey(unassembledInitialKey);
             }
 
