@@ -12,21 +12,29 @@ public class IPFSConnection {
 	private static final Logger log = LoggerFactory.getLogger(IPFSConnection.class);
 
 	private final MultiAddress ipfsMultiaddr;
+	private final Integer ipfsTimeout;
 
 	private IPFS ipfs;
 
-	private IPFSConnection(MultiAddress ipfsMultiaddr) {
-		if (log.isDebugEnabled()) log.debug("Creating IPFSConnection: " + ipfsMultiaddr);
+	private IPFSConnection(MultiAddress ipfsMultiaddr, Integer ipfsTimeout) {
+		if (log.isDebugEnabled()) log.debug("Creating IPFSConnection: " + ipfsMultiaddr + ", " + ipfsTimeout);
 		this.ipfsMultiaddr = ipfsMultiaddr;
+		this.ipfsTimeout = ipfsTimeout;
+	}
+
+	public static IPFSConnection create(String ipfsMultiaddr, Integer ipfsTimeout) {
+		return new IPFSConnection(new MultiAddress(ipfsMultiaddr), ipfsTimeout);
 	}
 
 	public static IPFSConnection create(String ipfsMultiaddr) {
-		if (log.isDebugEnabled()) log.debug("Creating IPFSConnection: " + ipfsMultiaddr);
-		return new IPFSConnection(new MultiAddress(ipfsMultiaddr));
+		return new IPFSConnection(new MultiAddress(ipfsMultiaddr), null);
 	}
 
 	public IPFS getIpfs() {
-		if (this.ipfs == null) this.ipfs = new IPFS(this.getIpfsMultiaddr());
+		if (this.ipfs == null) {
+			this.ipfs = new IPFS(this.getIpfsMultiaddr());
+			if (this.getIpfsTimeout() != null) this.ipfs = this.ipfs.timeout(this.getIpfsTimeout());
+		}
 		if (log.isDebugEnabled()) log.debug("getIpfs: " + this.ipfs.protocol + " " + this.ipfs.host + ":" + this.ipfs.port);
 		return this.ipfs;
 	}
@@ -41,5 +49,9 @@ public class IPFSConnection {
 
 	public MultiAddress getIpfsMultiaddr() {
 		return this.ipfsMultiaddr;
+	}
+
+	public Integer getIpfsTimeout() {
+		return this.ipfsTimeout;
 	}
 }
