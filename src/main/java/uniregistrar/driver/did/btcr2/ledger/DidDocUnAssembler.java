@@ -58,7 +58,7 @@ public class DidDocUnAssembler {
         return unassembledInitialKey;
     }
 
-    public static DIDDocumentV1_1 unassembleGenesisDocument(DIDDocument didDocument) {
+    public static DIDDocumentV1_1 unassembleGenesisDocument(DIDDocument didDocument, boolean allowEmpty) {
 
         if (didDocument == null) return null;
 

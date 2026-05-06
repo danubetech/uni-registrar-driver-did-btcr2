@@ -84,7 +84,7 @@ public class StateInit {
 
         // unassemble genesisDocument
 
-        DIDDocumentV1_1 unassembledGenesisDocument = DidDocUnAssembler.unassembleGenesisDocument(didDocument);
+        DIDDocumentV1_1 unassembledGenesisDocument = DidDocUnAssembler.unassembleGenesisDocument(didDocument, unassembledInitialKey == null);
 
         // generate initial key?
 
@@ -103,8 +103,7 @@ public class StateInit {
         if (generateStandardBeacons) {
 
             if (unassembledInitialKey == null) {
-                // next state
-                return TransitionInit.transitionToInitGetVerificationMethod(bitcoinConnection, ipfsConnection, didRegistrationMetadata, didDocumentMetadata);
+                throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Cannot generate standard beacons without initial key. Try setting option `generateInitialKey: true`.");
             }
 
             if (unassembledGenesisDocument == null) {
@@ -147,8 +146,7 @@ public class StateInit {
         if (generateAggregateBeacon != null) {
 
             if (unassembledInitialKey == null) {
-                // next state
-                return TransitionInit.transitionToInitGetVerificationMethod(bitcoinConnection, ipfsConnection, didRegistrationMetadata, didDocumentMetadata);
+                throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Cannot generate standard beacons without initial key. Try setting option `generateInitialKey: true`.");
             }
 
             if (unassembledGenesisDocument == null) {

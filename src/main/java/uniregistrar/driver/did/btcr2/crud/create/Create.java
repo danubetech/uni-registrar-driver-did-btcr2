@@ -40,12 +40,14 @@ public class Create {
 
         // The Genesis Bytes can be created in two ways: from an secp256k1 public key or from a Genesis Document.
 
-        if (genesisDocument == null) {
+        if (genesisDocument == null && initialKey != null) {
             genesisBytes = secp256k1PublicKey(initialKey);
             genesisBytesType = GenesisBytesType.SECP256K1PUBLICKEY;
-        } else {
+        } else if (genesisDocument != null) {
             genesisBytes = genesisDocumentHash(genesisDocument);
             genesisBytesType = GenesisBytesType.SHA256HASH;
+        } else {
+            throw new RegistrationException(RegistrationException.ERROR_INVALID_DID_DOCUMENT, "No initial key and no genesis document provided.");
         }
 
         // A specification version number is also included.
@@ -77,6 +79,7 @@ public class Create {
         // The key MUST be in its compressed SEC format: a 33-byte representation consisting
         // of a single prefix byte (0x02 or 0x03) followed by the 32-byte x-coordinate of the elliptic curve point.
 
+        if (initialKey == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_DID, "No initial key provide,");
         if (initialKey.length != 33) throw new RegistrationException(RegistrationException.ERROR_INVALID_DID, "Invalid initial key length: " + initialKey.length);
         if (initialKey[0] != 0x02 && initialKey[0] != 0x03) throw new RegistrationException(RegistrationException.ERROR_INVALID_DID, "Invalid initial key prefix byte: " + Hex.encodeHexString(initialKey));
 
