@@ -9,10 +9,7 @@ import foundation.identity.did.DIDDocument;
 import foundation.identity.did.VerificationMethod;
 import foundation.identity.jsonld.JsonLDDereferencer;
 import foundation.identity.jsonld.JsonLDObject;
-import fr.acinq.bitcoin.BlockHash;
-import fr.acinq.bitcoin.Crypto;
-import fr.acinq.bitcoin.PublicKey;
-import fr.acinq.bitcoin.XonlyPublicKey;
+import fr.acinq.bitcoin.*;
 import fr.acinq.bitcoin.crypto.musig2.IndividualNonce;
 import fr.acinq.bitcoin.crypto.musig2.Musig2;
 import fr.acinq.bitcoin.crypto.musig2.Session;
@@ -242,7 +239,7 @@ public class AggregationCohort {
             case CAS -> this.aggregateUpdatesCas();
             case SMT -> this.aggregateUpdatesSmt();
             default -> throw new IllegalStateException("Unexpected value: " + this.getBeaconType());
-        };
+        }
 
         // The Unsigned Beacon Signal.
 
@@ -267,12 +264,12 @@ public class AggregationCohort {
 
         // Aggregation Participants return the partially signed Bitcoin transaction to the Aggregation Service
 
-        this.utxoAggregateSignPayloads = IntStream.range(0, this.unsignedBeaconSignal.getInputs().size())
+        this.utxoAggregateSignPayloads = IntStream.range(0, beaconAddressUtxos.size())
                 .mapToObj(i -> {
                     Either<Throwable, Session> either = Musig2.taprootSession(
                             fr.acinq.bitcoin.Transaction.read(this.unsignedBeaconSignal.serialize()),
                             i,
-                            this.unsignedBeaconSignal.getInputs().stream().map(TransactionInput::getConnectedOutput).map(TransactionOutput::serialize).map(fr.acinq.bitcoin.TxOut::read).toList(),
+                            beaconAddressUtxos.stream().map(txOut -> new fr.acinq.bitcoin.TxOut(new Satoshi(txOut.value()), txOut.scriptBytes())).toList(),
                             this.getParticipantPublicKeys().stream().map(BytesArray::bytes).map(fr.acinq.bitcoin.PublicKey::parse).toList(),
                             this.getMusig2IndividualNonces().values().stream().map(BytesArray::bytes).map(IndividualNonce::new).toList(),
                             null);
