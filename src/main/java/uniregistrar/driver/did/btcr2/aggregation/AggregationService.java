@@ -15,10 +15,14 @@ public class AggregationService {
             .expireAfterAccess(10, TimeUnit.MINUTES)
             .build();
 
-    static {
-        // for now for testing
-        addAggregationCohort(new AggregationCohort("cohort-mutinynet-01", Network.mutinynet, 2, BeaconType.CAS, ScriptType.P2TR));
-        addAggregationCohort(new AggregationCohort("cohort-mutinynet-02", Network.mutinynet, 2, BeaconType.SMT, ScriptType.P2TR));
+    // for now for testing
+    private static void checkTestAggregationCohorts() {
+        if (! containsAggregationCohort("cohort-mutinynet-01")) {
+            addAggregationCohort(new AggregationCohort("cohort-mutinynet-01", Network.mutinynet, 2, BeaconType.CAS, ScriptType.P2TR));
+        }
+        if (! containsAggregationCohort("cohort-mutinynet-02")) {
+            addAggregationCohort(new AggregationCohort("cohort-mutinynet-02", Network.mutinynet, 2, BeaconType.SMT, ScriptType.P2TR));
+        }
     }
 
     public static void addAggregationCohort(AggregationCohort aggregationCohort) {
@@ -26,7 +30,12 @@ public class AggregationService {
     }
 
     public static AggregationCohort getAggregationCohort(String id) {
+        checkTestAggregationCohorts();
         return aggregationCohorts.getIfPresent(id);
+    }
+
+    public static boolean containsAggregationCohort(String id) {
+        return aggregationCohorts.getIfPresent(id) != null;
     }
 
     public static AggregationCohort findByBeaconAddress(Address  beaconAddress) {
