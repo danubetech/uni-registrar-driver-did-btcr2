@@ -22,6 +22,7 @@ import org.apache.commons.codec.binary.Hex;
 import org.bitcoinj.base.*;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionInput;
+import org.bitcoinj.core.TransactionOutput;
 import org.bitcoinj.crypto.ECKey;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptBuilder;
@@ -271,7 +272,7 @@ public class AggregationCohort {
                     Either<Throwable, Session> either = Musig2.taprootSession(
                             fr.acinq.bitcoin.Transaction.read(this.unsignedBeaconSignal.serialize()),
                             i,
-                            this.unsignedBeaconSignal.getInputs().stream().map(TransactionInput::serialize).map(fr.acinq.bitcoin.TxOut::read).toList(),
+                            this.unsignedBeaconSignal.getInputs().stream().map(TransactionInput::getConnectedOutput).map(TransactionOutput::serialize).map(fr.acinq.bitcoin.TxOut::read).toList(),
                             this.getParticipantPublicKeys().stream().map(BytesArray::bytes).map(fr.acinq.bitcoin.PublicKey::parse).toList(),
                             this.getMusig2IndividualNonces().values().stream().map(BytesArray::bytes).map(IndividualNonce::new).toList(),
                             null);
