@@ -64,14 +64,7 @@ public class TransitionInit {
 
         if (bitcoinConnection != null) didRegistrationMetadata.putAll(bitcoinConnection.getMetadata());
         if (ipfsConnection != null) didRegistrationMetadata.putAll(ipfsConnection.getMetadata());
-        didRegistrationMetadata.put("aggregationCohort", Map.of(
-                "id", aggregationCohort.getId(),
-                "network", aggregationCohort.getNetwork().toString(),
-                "maxSize", aggregationCohort.getMaxSize(),
-                "beaconType", aggregationCohort.getBeaconType().toString(),
-                "scriptType", aggregationCohort.getScriptType().toString(),
-                "participantPublicKeys", aggregationCohort.getParticipantPublicKeys().stream().map(BytesArray::bytes).map(Hex::encodeHexString).toList())
-        );
+        if (aggregationCohort != null) didRegistrationMetadata.putAll(aggregationCohort.getMetadata());
 
         // create() state
 
@@ -85,7 +78,7 @@ public class TransitionInit {
         return createState;
     }
 
-    public static CreateState transitionToFinished(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, byte[] initialKey, DIDDocument genesisDocument, DID did, MerkleNode merkleNode, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
+    public static CreateState transitionToFinished(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, byte[] initialKey, DIDDocument genesisDocument, DID did, AggregationCohort aggregationCohort, MerkleNode merkleNode, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
 
         // REGISTRATION STATE: jobId
 
@@ -124,6 +117,7 @@ public class TransitionInit {
 
         if (bitcoinConnection != null) didRegistrationMetadata.putAll(bitcoinConnection.getMetadata());
         if (ipfsConnection != null) didRegistrationMetadata.putAll(ipfsConnection.getMetadata());
+        if (aggregationCohort != null) didRegistrationMetadata.putAll(aggregationCohort.getMetadata());
 
         // REGISTRATION STATE: didDocumentMetadata
 

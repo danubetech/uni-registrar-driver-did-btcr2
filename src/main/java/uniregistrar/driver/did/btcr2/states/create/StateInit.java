@@ -140,13 +140,15 @@ public class StateInit {
 
         // generate aggregate beacon?
 
+        AggregationCohort aggregationCohort = null;
+
         if (generateAggregateBeacon != null) {
 
             if (unassembledInitialKey == null) {
                 throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Cannot generate standard beacons without initial key. Try setting option `generateInitialKey: true`.");
             }
 
-            AggregationCohort aggregationCohort = AggregationService.getAggregationCohort(generateAggregateBeacon);
+            aggregationCohort = AggregationService.getAggregationCohort(generateAggregateBeacon);
             if (aggregationCohort == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Unknown aggregation cohort: " + generateAggregateBeacon);
 
             // DID controllers that wish to join an Aggregation Cohort and become an Aggregation Participant would need to provide the Aggregation Service with a Schnorr public key.
@@ -211,6 +213,6 @@ public class StateInit {
 
         // next state
 
-        return TransitionInit.transitionToFinished(bitcoinConnection, ipfsConnection, createInitResult.initialKey(), createInitResult.genesisDocument(), createInitResult.did(), merkleNode, didRegistrationMetadata, didDocumentMetadata);
+        return TransitionInit.transitionToFinished(bitcoinConnection, ipfsConnection, createInitResult.initialKey(), createInitResult.genesisDocument(), createInitResult.did(), aggregationCohort, merkleNode, didRegistrationMetadata, didDocumentMetadata);
     }
 }

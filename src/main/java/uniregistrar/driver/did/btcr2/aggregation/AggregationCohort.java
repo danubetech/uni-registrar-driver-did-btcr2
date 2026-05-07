@@ -247,6 +247,18 @@ public class AggregationCohort {
         this.getMusig2IndividualNonces().set(participantIndex, participantMusig2IndividualNonce);
     }
 
+    public Map<String, Object> getMetadata() {
+
+        return Map.of("aggregationCohort", Map.of(
+                "id", this.getId(),
+                "network", this.getNetwork().toString(),
+                "maxSize", this.getMaxSize(),
+                "beaconType", this.getBeaconType().toString(),
+                "scriptType", this.getScriptType().toString(),
+                "participantPublicKeys", this.getParticipantPublicKeys().stream().map(BytesArray::bytes).map(Hex::encodeHexString).toList())
+        );
+    }
+
     /*
      * Getters
      */
