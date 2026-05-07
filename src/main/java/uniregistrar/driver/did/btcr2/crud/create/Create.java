@@ -49,6 +49,7 @@ public class Create {
         } else {
             throw new RegistrationException(RegistrationException.ERROR_INVALID_DID_DOCUMENT, "No initial key and no genesis document provided.");
         }
+        if (log.isDebugEnabled()) log.debug("Determined genesis bytes type: {}", genesisBytesType);
 
         // A specification version number is also included.
 
