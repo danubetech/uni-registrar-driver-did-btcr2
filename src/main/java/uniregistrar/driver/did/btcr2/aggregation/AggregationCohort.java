@@ -276,9 +276,10 @@ public class AggregationCohort {
                             this.getParticipantPublicKeys().stream().map(BytesArray::bytes).map(fr.acinq.bitcoin.PublicKey::parse).toList(),
                             this.getMusig2IndividualNonces().values().stream().map(BytesArray::bytes).map(IndividualNonce::new).toList(),
                             null);
+                    if (log.isDebugEnabled()) log.debug("Taproot session result: {}, {}, {}", either, either.getLeft(), either.getRight());
                     if (either.isLeft()) throw new RuntimeException(either.getLeft());
-                    Session session = either.getRight();
-                    return session.toByteArray();
+                    if (either.isRight()) return either.getRight().toByteArray();
+                    throw new IllegalStateException("Invalid result: " + either);
                 })
                 .toList();
 
