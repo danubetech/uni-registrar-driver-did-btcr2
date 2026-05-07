@@ -291,12 +291,10 @@ public class Update {
         if (beaconServiceType != null) {
             serviceStream = serviceStream.filter(service -> beaconServiceType.equals(service.getType()));
         }
-        if (beaconServiceId == null && beaconServiceType == null) {
-            serviceStream = serviceStream.filter(BeaconType::isValid);
-        }
+        serviceStream = serviceStream.filter(BeaconType::isValid);
         Service beaconService = serviceStream.findFirst().orElse(null);
         if (beaconService == null) beaconService = didSourceDocument.getServices() == null || didSourceDocument.getServices().isEmpty() ? null : didSourceDocument.getServices().getFirst();
-        if (log.isDebugEnabled()) log.debug("beaconService: {}", beaconService);
+        if (log.isDebugEnabled()) log.debug("beaconService for id {} and type {}: {}", beaconServiceId, beaconServiceType, beaconService);
 
         if (beaconService == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_DID_DOCUMENT, "No beacon service found in source DID document: " + didSourceDocument);
         if (! BeaconType.isValid(beaconService)) throw new RegistrationException("INVALID_DID_UPDATE", "Invalid beacon service: " + beaconService);
