@@ -425,6 +425,9 @@ public class Update {
 
         AggregationCohort aggregationCohort = AggregationService.findByBeaconAddress(beaconAddress);
         if (log.isDebugEnabled()) log.debug("For beacon address {} found aggregation cohort: {}", beaconService, aggregationCohort);
+        if (aggregationCohort == null) {
+            throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Cannot find aggregation cohort for beacon address " + beaconAddress);
+        }
 
         // Aggregation Participants must submit a response to every update opportunity announced by the Aggregation Service;
 
