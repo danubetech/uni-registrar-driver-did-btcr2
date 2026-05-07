@@ -110,16 +110,16 @@ public class AggregationCohort {
     public boolean containsParticipantPublicKey(byte[] participantPublicKey) {
         ByteBuffer participantPublicKeyByteBuffer = BytesUtil.byteBuffer(participantPublicKey);
         boolean containsParticipantPublicKey = this.getParticipantPublicKeys().contains(participantPublicKeyByteBuffer);
-        if (log.isDebugEnabled()) log.debug("Contains participant public key " + Hex.encodeHexString(participantPublicKeyByteBuffer.duplicate().array()) + " in " + this.getParticipantPublicKeys().stream().map(ByteBuffer::duplicate).map(Hex::encodeHexString).toList() + ": " + containsParticipantPublicKey + " (size now " + this.cohortSize() + ")");
+        if (log.isDebugEnabled()) log.debug("Contains participant public key " + Hex.encodeHexString(participantPublicKeyByteBuffer.duplicate()) + " in " + this.getParticipantPublicKeys().stream().map(ByteBuffer::duplicate).map(Hex::encodeHexString).toList() + ": " + containsParticipantPublicKey + " (size now " + this.cohortSize() + ")");
         return containsParticipantPublicKey;
     }
 
     public void addParticipantPublicKey(byte[] participantPublicKey) {
         if (isCohortCompleted()) throw new IllegalStateException("Aggregation cohort " + this.getId() + " already completed.");
         ByteBuffer participantPublicKeyByteBuffer = BytesUtil.byteBuffer(participantPublicKey);
-        if (log.isDebugEnabled()) log.debug("Adding participant public key " + Hex.encodeHexString(participantPublicKeyByteBuffer.duplicate().array()) + " to " + this.getParticipantPublicKeys().stream().map(ByteBuffer::duplicate).map(Hex::encodeHexString).toList() + " (size now " + this.cohortSize() + ")");
+        if (log.isDebugEnabled()) log.debug("Adding participant public key " + Hex.encodeHexString(participantPublicKeyByteBuffer.duplicate()) + " to " + this.getParticipantPublicKeys().stream().map(ByteBuffer::duplicate).map(Hex::encodeHexString).toList() + " (size now " + this.cohortSize() + ")");
         this.getParticipantPublicKeys().add(participantPublicKeyByteBuffer);
-        if (log.isDebugEnabled()) log.debug("Added participant public key " + Hex.encodeHexString(participantPublicKeyByteBuffer.duplicate().array()) + " to " + this.getParticipantPublicKeys().stream().map(ByteBuffer::duplicate).map(Hex::encodeHexString).toList() + " (size now " + this.cohortSize() + ")");
+        if (log.isDebugEnabled()) log.debug("Added participant public key " + Hex.encodeHexString(participantPublicKeyByteBuffer.duplicate()) + " to " + this.getParticipantPublicKeys().stream().map(ByteBuffer::duplicate).map(Hex::encodeHexString).toList() + " (size now " + this.cohortSize() + ")");
     }
 
     public int findParticipantIndexByVerificationMethod(DIDDocument didDocument, URI verificationMethodId) throws RegistrationException {

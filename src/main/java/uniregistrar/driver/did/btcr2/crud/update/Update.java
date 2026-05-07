@@ -460,8 +460,8 @@ public class Update {
         byte[] bytes = new byte[32];
         random.nextBytes(bytes);
         ByteVector32 sessionId = new ByteVector32(bytes);
-        PublicKey participantPublicKey = new PublicKey(aggregationCohort.getParticipantPublicKeys().get(participantIndex).duplicate().array());
-        List<PublicKey> participantPublicKeys = aggregationCohort.getParticipantPublicKeys().stream().map(ByteBuffer::duplicate).map(ByteBuffer::array).map(PublicKey::new).toList();
+        PublicKey participantPublicKey = PublicKey.parse(aggregationCohort.getParticipantPublicKeys().get(participantIndex).duplicate().array());
+        List<PublicKey> participantPublicKeys = aggregationCohort.getParticipantPublicKeys().stream().map(ByteBuffer::duplicate).map(ByteBuffer::array).map(PublicKey::parse).toList();
         Pair<SecretNonce, IndividualNonce> pair = Musig2.generateNonce(sessionId, new Either.Right<PublicKey>(participantPublicKey), participantPublicKeys, null, null);
 
         aggregationCohort.setMusig2SecretNonce(participantIndex, BytesUtil.byteBuffer(pair.component1().getData$bitcoin_kmp().getBytes$bitcoin_kmp()));
@@ -512,8 +512,8 @@ public class Update {
         byte[] bytes = new byte[32];
         random.nextBytes(bytes);
         ByteVector32 sessionId = new ByteVector32(bytes);
-        PublicKey participantPublicKey = new PublicKey(aggregationCohort.getParticipantPublicKeys().get(participantIndex).duplicate().array());
-        List<PublicKey> participantPublicKeys = aggregationCohort.getParticipantPublicKeys().stream().map(ByteBuffer::duplicate).map(ByteBuffer::array).map(PublicKey::new).toList();
+        PublicKey participantPublicKey = PublicKey.parse(aggregationCohort.getParticipantPublicKeys().get(participantIndex).duplicate().array());
+        List<PublicKey> participantPublicKeys = aggregationCohort.getParticipantPublicKeys().stream().map(ByteBuffer::duplicate).map(ByteBuffer::array).map(PublicKey::parse).toList();
         Pair<SecretNonce, IndividualNonce> pair = Musig2.generateNonce(sessionId, new Either.Right<PublicKey>(participantPublicKey), participantPublicKeys, null, null);
 
         aggregationCohort.setMusig2SecretNonce(participantIndex, BytesUtil.byteBuffer(pair.component1().getData$bitcoin_kmp().getBytes$bitcoin_kmp()));
