@@ -7,6 +7,7 @@ import io.ipfs.api.MerkleNode;
 import org.apache.commons.codec.binary.Hex;
 import uniregistrar.driver.did.btcr2.aggregation.AggregationCohort;
 import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
+import uniregistrar.driver.did.btcr2.util.BytesArray;
 import uniregistrar.openapi.model.*;
 
 import java.util.Collections;
@@ -69,7 +70,7 @@ public class TransitionInit {
                 "maxSize", aggregationCohort.getMaxSize(),
                 "beaconType", aggregationCohort.getBeaconType().toString(),
                 "scriptType", aggregationCohort.getScriptType().toString(),
-                "participantPublicKeys", aggregationCohort.getParticipantPublicKeys().stream().map(Hex::encodeHexString).toList())
+                "participantPublicKeys", aggregationCohort.getParticipantPublicKeys().stream().map(BytesArray::bytes).map(Hex::encodeHexString).toList())
         );
 
         // create() state

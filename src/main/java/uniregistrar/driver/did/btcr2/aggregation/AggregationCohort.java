@@ -25,15 +25,13 @@ import org.bitcoinj.script.ScriptPattern;
 import org.bitcoinj.uri.BitcoinURI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.util.control.Exception;
 import uniregistrar.RegistrationException;
 import uniregistrar.driver.did.btcr2.beacons.BeaconType;
 import uniregistrar.driver.did.btcr2.data.json.SMTProof;
-import uniregistrar.driver.did.btcr2.util.BytesUtil;
+import uniregistrar.driver.did.btcr2.util.BytesArray;
 import uniregistrar.driver.did.btcr2.util.MultiCodecUtil;
 
 import java.net.URI;
-import java.nio.ByteBuffer;
 import java.util.*;
 
 public class AggregationCohort {
@@ -48,25 +46,25 @@ public class AggregationCohort {
     private final BeaconType beaconType;
     private final ScriptType scriptType;
 
-    private ArrayList<ByteBuffer> participantPublicKeys = new ArrayList<>();
+    private ArrayList<BytesArray> participantPublicKeys = new ArrayList<>();
     private Address beaconAddress;
 
     // For a CAS Beacon:
 
     private ArrayList<DID> casDids = new ArrayList<>();
-    private ArrayList<ByteBuffer> casUpdateHashes = new ArrayList<>();
+    private ArrayList<BytesArray> casUpdateHashes = new ArrayList<>();
 
     // For an SMT Beacon:
 
-    private ArrayList<ByteBuffer> smtDidIndexes = new ArrayList<>();
-    private ArrayList<ByteBuffer> smtUpdateHashes = new ArrayList<>();
-    private ArrayList<ByteBuffer> smtNonces = new ArrayList<>();
+    private ArrayList<BytesArray> smtDidIndexes = new ArrayList<>();
+    private ArrayList<BytesArray> smtUpdateHashes = new ArrayList<>();
+    private ArrayList<BytesArray> smtNonces = new ArrayList<>();
 
     // For a CAS Beacon:
     // For an SMT Beacon:
 
-    private ArrayList<ByteBuffer> musig2SecretNonces = new ArrayList<>();
-    private ArrayList<ByteBuffer> musig2IndividualNonces = new ArrayList<>();
+    private ArrayList<BytesArray> musig2SecretNonces = new ArrayList<>();
+    private ArrayList<BytesArray> musig2IndividualNonces = new ArrayList<>();
 
     // For a CAS Beacon, the request signal confirmation message contains:
 
@@ -74,7 +72,7 @@ public class AggregationCohort {
 
     // For an SMT Beacon, the request signal confirmation message contains:
 
-    private LinkedHashMap<ByteBuffer, SMTProof> smtProof = new LinkedHashMap<>();
+    private LinkedHashMap<BytesArray, SMTProof> smtProof = new LinkedHashMap<>();
 
     // For a CAS Beacon, the request signal confirmation message contains:
     // For an SMT Beacon, the request signal confirmation message contains:
@@ -108,18 +106,18 @@ public class AggregationCohort {
     }
 
     public boolean containsParticipantPublicKey(byte[] participantPublicKey) {
-        ByteBuffer participantPublicKeyByteBuffer = BytesUtil.byteBuffer(participantPublicKey);
-        boolean containsParticipantPublicKey = this.getParticipantPublicKeys().contains(participantPublicKeyByteBuffer);
-        if (log.isDebugEnabled()) log.debug("Contains participant public key " + Hex.encodeHexString(participantPublicKeyByteBuffer.duplicate()) + " in " + this.getParticipantPublicKeys().stream().map(ByteBuffer::duplicate).map(Hex::encodeHexString).toList() + ": " + containsParticipantPublicKey + " (size now " + this.cohortSize() + ")");
+        BytesArray participantPublicKeyBytesArray = BytesArray.bytesArray(participantPublicKey);
+        boolean containsParticipantPublicKey = this.getParticipantPublicKeys().contains(participantPublicKeyBytesArray);
+        if (log.isDebugEnabled()) log.debug("Contains participant public key " + Hex.encodeHexString(participantPublicKeyBytesArray.bytes()) + " in " + this.getParticipantPublicKeys().stream().map(BytesArray::bytes).map(Hex::encodeHexString).toList() + ": " + containsParticipantPublicKey + " (size now " + this.cohortSize() + ")");
         return containsParticipantPublicKey;
     }
 
     public void addParticipantPublicKey(byte[] participantPublicKey) {
         if (isCohortCompleted()) throw new IllegalStateException("Aggregation cohort " + this.getId() + " already completed.");
-        ByteBuffer participantPublicKeyByteBuffer = BytesUtil.byteBuffer(participantPublicKey);
-        if (log.isDebugEnabled()) log.debug("Adding participant public key " + Hex.encodeHexString(participantPublicKeyByteBuffer.duplicate()) + " to " + this.getParticipantPublicKeys().stream().map(ByteBuffer::duplicate).map(Hex::encodeHexString).toList() + " (size now " + this.cohortSize() + ")");
-        this.getParticipantPublicKeys().add(participantPublicKeyByteBuffer);
-        if (log.isDebugEnabled()) log.debug("Added participant public key " + Hex.encodeHexString(participantPublicKeyByteBuffer.duplicate()) + " to " + this.getParticipantPublicKeys().stream().map(ByteBuffer::duplicate).map(Hex::encodeHexString).toList() + " (size now " + this.cohortSize() + ")");
+        BytesArray participantPublicKeyBytesArray = BytesArray.bytesArray(participantPublicKey);
+        if (log.isDebugEnabled()) log.debug("Adding participant public key " + Hex.encodeHexString(participantPublicKeyBytesArray.bytes()) + " to " + this.getParticipantPublicKeys().stream().map(BytesArray::bytes).map(Hex::encodeHexString).toList() + " (size now " + this.cohortSize() + ")");
+        this.getParticipantPublicKeys().add(participantPublicKeyBytesArray);
+        if (log.isDebugEnabled()) log.debug("Added participant public key " + Hex.encodeHexString(participantPublicKeyBytesArray.bytes()) + " to " + this.getParticipantPublicKeys().stream().map(BytesArray::bytes).map(Hex::encodeHexString).toList() + " (size now " + this.cohortSize() + ")");
     }
 
     public int findParticipantIndexByVerificationMethod(DIDDocument didDocument, URI verificationMethodId) throws RegistrationException {
@@ -140,14 +138,14 @@ public class AggregationCohort {
 
         Integer participantIndex = null;
         for (int i=0; i<this.getParticipantPublicKeys().size(); i++) {
-            ByteBuffer participantPublicKey = this.getParticipantPublicKeys().get(i);
-            if (participantPublicKey.equals(BytesUtil.byteBuffer(verificationMethodKey))) {
+            BytesArray participantPublicKey = this.getParticipantPublicKeys().get(i);
+            if (participantPublicKey.equals(BytesArray.bytesArray(verificationMethodKey))) {
                 participantIndex = i;
                 break;
             }
         }
         if (participantIndex == null) {
-            throw new RegistrationException("INVALID_UPDATE", "Participant public key " + Hex.encodeHexString(verificationMethodKey) + " not found in aggregation cohort " + this.getId() + ": " + this.getParticipantPublicKeys().stream().map(Hex::encodeHexString).toList());
+            throw new RegistrationException("INVALID_UPDATE", "Participant public key " + Hex.encodeHexString(verificationMethodKey) + " not found in aggregation cohort " + this.getId() + ": " + this.getParticipantPublicKeys().stream().map(BytesArray::bytes).map(Hex::encodeHexString).toList());
         }
 
         return participantIndex;
@@ -160,19 +158,19 @@ public class AggregationCohort {
 
         this.beaconAddress = switch (this.getScriptType()) {
             case P2SH -> {
-                List<ECKey> publicKeys = new ArrayList<>(this.getParticipantPublicKeys().stream().map(ByteBuffer::duplicate).map(ByteBuffer::array).map(ECKey::fromPublicOnly).toList());
+                List<ECKey> publicKeys = new ArrayList<>(this.getParticipantPublicKeys().stream().map(BytesArray::bytes).map(ECKey::fromPublicOnly).toList());
                 publicKeys.sort(ECKey.PUBKEY_COMPARATOR);
                 Script script = ScriptBuilder.createRedeemScript(this.getParticipantPublicKeys().size(), publicKeys);
                 yield LegacyAddress.fromScriptHash(this.getNetwork().toBitcoinjNetwork(), ScriptPattern.extractHashFromP2SH(script));
             }
             case P2WSH -> {
-                List<ECKey> publicKeys = new ArrayList<>(this.getParticipantPublicKeys().stream().map(ByteBuffer::duplicate).map(ByteBuffer::array).map(ECKey::fromPublicOnly).toList());
+                List<ECKey> publicKeys = new ArrayList<>(this.getParticipantPublicKeys().stream().map(BytesArray::bytes).map(ECKey::fromPublicOnly).toList());
                 publicKeys.sort(ECKey.PUBKEY_COMPARATOR);
                 Script script = ScriptBuilder.createRedeemScript(this.getParticipantPublicKeys().size(), publicKeys);
                 yield LegacyAddress.fromScriptHash(this.getNetwork().toBitcoinjNetwork(), ScriptPattern.extractHashFromP2PKH(script));
             }
             case P2TR -> {
-                List<PublicKey> publicKeys = this.getParticipantPublicKeys().stream().map(ByteBuffer::duplicate).map(ByteBuffer::array).map(PublicKey::parse).toList();
+                List<PublicKey> publicKeys = this.getParticipantPublicKeys().stream().map(BytesArray::bytes).map(PublicKey::parse).toList();
                 XonlyPublicKey aggregatePublicKey = Musig2.aggregateKeys(publicKeys);
                 aggregatePublicKey.tweak(Crypto.TaprootTweak.KeyPathTweak.INSTANCE);
                 yield AddressParser.getDefault().parseAddress(aggregatePublicKey.p2trAddress(new BlockHash(bitcoinConnector.getGensisHash(this.getNetwork()))));
@@ -225,27 +223,27 @@ public class AggregationCohort {
         this.getCasDids().set(participantIndex, participantCasDid);
     }
 
-    public void setCasUpdateHash(int participantIndex, ByteBuffer participantCasUpdateHash) {
+    public void setCasUpdateHash(int participantIndex, BytesArray participantCasUpdateHash) {
         this.getCasUpdateHashes().set(participantIndex, participantCasUpdateHash);
     }
 
-    public void setSmtDidIndex(int participantIndex, ByteBuffer participantSmtDidIndex) {
+    public void setSmtDidIndex(int participantIndex, BytesArray participantSmtDidIndex) {
         this.getSmtDidIndexes().set(participantIndex, participantSmtDidIndex);
     }
 
-    public void setSmtUpdateHash(int participantIndex, ByteBuffer participantSmtUpdateHash) {
+    public void setSmtUpdateHash(int participantIndex, BytesArray participantSmtUpdateHash) {
         this.getSmtUpdateHashes().set(participantIndex, participantSmtUpdateHash);
     }
 
-    public void setSmtNonce(int participantIndex, ByteBuffer participantSmtNonce) {
+    public void setSmtNonce(int participantIndex, BytesArray participantSmtNonce) {
         this.getSmtNonces().set(participantIndex, participantSmtNonce);
     }
 
-    public void setMusig2SecretNonce(int participantIndex, ByteBuffer participantMusig2SecretNonce) {
+    public void setMusig2SecretNonce(int participantIndex, BytesArray participantMusig2SecretNonce) {
         this.getMusig2SecretNonces().set(participantIndex, participantMusig2SecretNonce);
     }
 
-    public void setMusig2IndividualNonce(int participantIndex, ByteBuffer participantMusig2IndividualNonce) {
+    public void setMusig2IndividualNonce(int participantIndex, BytesArray participantMusig2IndividualNonce) {
         this.getMusig2IndividualNonces().set(participantIndex, participantMusig2IndividualNonce);
     }
 
@@ -273,7 +271,7 @@ public class AggregationCohort {
         return scriptType;
     }
 
-    public ArrayList<ByteBuffer> getParticipantPublicKeys() {
+    public ArrayList<BytesArray> getParticipantPublicKeys() {
         return participantPublicKeys;
     }
 
@@ -285,27 +283,27 @@ public class AggregationCohort {
         return casDids;
     }
 
-    public ArrayList<ByteBuffer> getCasUpdateHashes() {
+    public ArrayList<BytesArray> getCasUpdateHashes() {
         return casUpdateHashes;
     }
 
-    public ArrayList<ByteBuffer> getSmtDidIndexes() {
+    public ArrayList<BytesArray> getSmtDidIndexes() {
         return smtDidIndexes;
     }
 
-    public ArrayList<ByteBuffer> getSmtUpdateHashes() {
+    public ArrayList<BytesArray> getSmtUpdateHashes() {
         return smtUpdateHashes;
     }
 
-    public ArrayList<ByteBuffer> getSmtNonces() {
+    public ArrayList<BytesArray> getSmtNonces() {
         return smtNonces;
     }
 
-    public ArrayList<ByteBuffer> getMusig2SecretNonces() {
+    public ArrayList<BytesArray> getMusig2SecretNonces() {
         return musig2SecretNonces;
     }
 
-    public ArrayList<ByteBuffer> getMusig2IndividualNonces() {
+    public ArrayList<BytesArray> getMusig2IndividualNonces() {
         return musig2IndividualNonces;
     }
 
@@ -313,7 +311,7 @@ public class AggregationCohort {
         return casBeaconAnnouncementMap;
     }
 
-    public LinkedHashMap<ByteBuffer, SMTProof> getSmtProof() {
+    public LinkedHashMap<BytesArray, SMTProof> getSmtProof() {
         return smtProof;
     }
 
