@@ -137,7 +137,7 @@ public class AggregationCohort {
                 aggregatePublicKey.tweak(Crypto.TaprootTweak.KeyPathTweak.INSTANCE);
                 yield AddressParser.getDefault().parseAddress(aggregatePublicKey.p2trAddress(new BlockHash(bitcoinConnector.getGenesisHash(this.getNetwork()))));
             }
-            default -> throw new IllegalStateException("Invalid script type, not aupported for aggregation cohort: " + this.getScriptType());
+            default -> throw new IllegalStateException("Invalid script type, not supported for aggregation cohort: " + this.getScriptType());
         };
 
         if (log.isDebugEnabled()) log.debug("For script tyoe " + this.getScriptType() + " and size " + this.cohortSize() + " finalized cohort with beacon address: " + this.getBeaconAddress());
