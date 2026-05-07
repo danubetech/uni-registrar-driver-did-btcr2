@@ -25,9 +25,11 @@ import org.bitcoinj.script.ScriptPattern;
 import org.bitcoinj.uri.BitcoinURI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.util.control.Exception;
 import uniregistrar.RegistrationException;
 import uniregistrar.driver.did.btcr2.beacons.BeaconType;
 import uniregistrar.driver.did.btcr2.data.json.SMTProof;
+import uniregistrar.driver.did.btcr2.util.BytesUtil;
 import uniregistrar.driver.did.btcr2.util.MultiCodecUtil;
 
 import java.net.URI;
@@ -106,18 +108,18 @@ public class AggregationCohort {
     }
 
     public boolean containsParticipantPublicKey(byte[] participantPublicKey) {
-        ByteBuffer participantPublicKeyByteBuffer = ByteBuffer.wrap(participantPublicKey);
+        ByteBuffer participantPublicKeyByteBuffer = BytesUtil.byteBuffer(participantPublicKey);
         boolean containsParticipantPublicKey = this.getParticipantPublicKeys().contains(participantPublicKeyByteBuffer);
-        if (log.isDebugEnabled()) log.debug("Contains participant public key " + Hex.encodeHexString(participantPublicKeyByteBuffer) + " in " + this.getParticipantPublicKeys().stream().map(Hex::encodeHexString).toList() + ": " + containsParticipantPublicKey + " (size now " + this.cohortSize() + ")");
+        if (log.isDebugEnabled()) log.debug("Contains participant public key " + Hex.encodeHexString(participantPublicKeyByteBuffer.duplicate().array()) + " in " + this.getParticipantPublicKeys().stream().map(ByteBuffer::duplicate).map(Hex::encodeHexString).toList() + ": " + containsParticipantPublicKey + " (size now " + this.cohortSize() + ")");
         return containsParticipantPublicKey;
     }
 
     public void addParticipantPublicKey(byte[] participantPublicKey) {
         if (isCohortCompleted()) throw new IllegalStateException("Aggregation cohort " + this.getId() + " already completed.");
-        ByteBuffer participantPublicKeyByteBuffer = ByteBuffer.wrap(participantPublicKey);
-        if (log.isDebugEnabled()) log.debug("Adding participant public key " + Hex.encodeHexString(participantPublicKeyByteBuffer) + " to " + this.getParticipantPublicKeys().stream().map(Hex::encodeHexString).toList() + " (size now " + this.cohortSize() + ")");
+        ByteBuffer participantPublicKeyByteBuffer = BytesUtil.byteBuffer(participantPublicKey);
+        if (log.isDebugEnabled()) log.debug("Adding participant public key " + Hex.encodeHexString(participantPublicKeyByteBuffer.duplicate().array()) + " to " + this.getParticipantPublicKeys().stream().map(ByteBuffer::duplicate).map(Hex::encodeHexString).toList() + " (size now " + this.cohortSize() + ")");
         this.getParticipantPublicKeys().add(participantPublicKeyByteBuffer);
-        if (log.isDebugEnabled()) log.debug("Added participant public key " + Hex.encodeHexString(participantPublicKeyByteBuffer) + " to " + this.getParticipantPublicKeys().stream().map(Hex::encodeHexString).toList() + " (size now " + this.cohortSize() + ")");
+        if (log.isDebugEnabled()) log.debug("Added participant public key " + Hex.encodeHexString(participantPublicKeyByteBuffer.duplicate().array()) + " to " + this.getParticipantPublicKeys().stream().map(ByteBuffer::duplicate).map(Hex::encodeHexString).toList() + " (size now " + this.cohortSize() + ")");
     }
 
     public int findParticipantIndexByVerificationMethod(DIDDocument didDocument, URI verificationMethodId) throws RegistrationException {
@@ -139,7 +141,7 @@ public class AggregationCohort {
         Integer participantIndex = null;
         for (int i=0; i<this.getParticipantPublicKeys().size(); i++) {
             ByteBuffer participantPublicKey = this.getParticipantPublicKeys().get(i);
-            if (participantPublicKey.equals(ByteBuffer.wrap(verificationMethodKey))) {
+            if (participantPublicKey.equals(BytesUtil.byteBuffer(verificationMethodKey))) {
                 participantIndex = i;
                 break;
             }
@@ -158,19 +160,19 @@ public class AggregationCohort {
 
         this.beaconAddress = switch (this.getScriptType()) {
             case P2SH -> {
-                List<ECKey> publicKeys = new ArrayList<>(this.getParticipantPublicKeys().stream().map(ByteBuffer::array).map(ECKey::fromPublicOnly).toList());
+                List<ECKey> publicKeys = new ArrayList<>(this.getParticipantPublicKeys().stream().map(ByteBuffer::duplicate).map(ByteBuffer::array).map(ECKey::fromPublicOnly).toList());
                 publicKeys.sort(ECKey.PUBKEY_COMPARATOR);
                 Script script = ScriptBuilder.createRedeemScript(this.getParticipantPublicKeys().size(), publicKeys);
                 yield LegacyAddress.fromScriptHash(this.getNetwork().toBitcoinjNetwork(), ScriptPattern.extractHashFromP2SH(script));
             }
             case P2WSH -> {
-                List<ECKey> publicKeys = new ArrayList<>(this.getParticipantPublicKeys().stream().map(ByteBuffer::array).map(ECKey::fromPublicOnly).toList());
+                List<ECKey> publicKeys = new ArrayList<>(this.getParticipantPublicKeys().stream().map(ByteBuffer::duplicate).map(ByteBuffer::array).map(ECKey::fromPublicOnly).toList());
                 publicKeys.sort(ECKey.PUBKEY_COMPARATOR);
                 Script script = ScriptBuilder.createRedeemScript(this.getParticipantPublicKeys().size(), publicKeys);
                 yield LegacyAddress.fromScriptHash(this.getNetwork().toBitcoinjNetwork(), ScriptPattern.extractHashFromP2PKH(script));
             }
             case P2TR -> {
-                List<PublicKey> publicKeys = this.getParticipantPublicKeys().stream().map(ByteBuffer::array).map(PublicKey::parse).toList();
+                List<PublicKey> publicKeys = this.getParticipantPublicKeys().stream().map(ByteBuffer::duplicate).map(ByteBuffer::array).map(PublicKey::parse).toList();
                 XonlyPublicKey aggregatePublicKey = Musig2.aggregateKeys(publicKeys);
                 aggregatePublicKey.tweak(Crypto.TaprootTweak.KeyPathTweak.INSTANCE);
                 yield AddressParser.getDefault().parseAddress(aggregatePublicKey.p2trAddress(new BlockHash(bitcoinConnector.getGensisHash(this.getNetwork()))));

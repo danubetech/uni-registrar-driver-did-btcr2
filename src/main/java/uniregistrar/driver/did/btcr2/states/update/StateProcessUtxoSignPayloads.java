@@ -29,11 +29,11 @@ import uniregistrar.driver.did.btcr2.data.jsonld.BTCR2Update;
 import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.driver.did.btcr2.job.UpdateJob;
 import uniregistrar.driver.did.btcr2.syntax.DidBtcr2IdentifierDecoding;
+import uniregistrar.driver.did.btcr2.util.BytesUtil;
 import uniregistrar.driver.did.btcr2.util.MultiCodecUtil;
 import uniregistrar.openapi.model.*;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -57,7 +57,7 @@ public class StateProcessUtxoSignPayloads {
         BTCR2Update btcr2Update = updateJob.btcr2Update() == null ? null : BTCR2Update.fromJson(updateJob.btcr2Update());
         if (btcr2Update == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'btcr2Update' in jobId");
 
-        Transaction btcr2Transaction = updateJob.btcr2Transaction() == null ? null : Transaction.read(ByteBuffer.wrap(Base64.getDecoder().decode(updateJob.btcr2Transaction())));
+        Transaction btcr2Transaction = updateJob.btcr2Transaction() == null ? null : Transaction.read(BytesUtil.byteBuffer(Base64.getDecoder().decode(updateJob.btcr2Transaction())));
         if (btcr2Transaction == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'btcr2Transaction' in jobId");
 
         // read input DID
