@@ -375,7 +375,7 @@ public class AggregationCohort {
         metadata.put("isCohortFinalized", this.isCohortFinalized());
         metadata.put("isUpdatesCompleted", this.isUpdatesCompleted());
         metadata.put("isUpdatesFinalized", this.isUpdatesAggregated());
-        metadata.put("beaconAddress", this.getBeaconAddress() == null ? null : this.getBeaconAddress());
+        metadata.put("beaconAddress", this.getBeaconAddress() == null ? null : this.getBeaconAddress().toString());
         metadata.put("signalBytes", this.getSignalBytes() == null ? null : Hex.encodeHexString(this.getSignalBytes()));
         metadata.put("unsignedBeaconSignal", this.getUnsignedBeaconSignal() == null ? null : Hex.encodeHexString(this.getUnsignedBeaconSignal().serialize()));
         metadata.put("musig2AggregatedNonce", this.getMusig2AggregatedNonce() == null ? null : Hex.encodeHexString(this.getMusig2AggregatedNonce()));
