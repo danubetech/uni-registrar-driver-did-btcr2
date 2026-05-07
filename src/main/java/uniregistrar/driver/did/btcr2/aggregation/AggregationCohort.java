@@ -250,7 +250,7 @@ public class AggregationCohort {
         if (totalValue.compareTo(BITCOIN_FEE) < 0) {
             // next state
             Coin minimumValue = BITCOIN_FEE.minus(totalValue);
-            throw new UpdateActionFundAddressException(this.getBeaconAddress(), minimumValue);
+            throw new UpdateActionFundAddressException(this.getBeaconAddress(), minimumValue, this);
         }
 
         this.unsignedBeaconSignal = new Transaction();

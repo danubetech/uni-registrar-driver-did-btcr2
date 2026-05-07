@@ -113,7 +113,7 @@ public class StateProcessUpdateSignPayload {
             updateProcessUpdateSignPayloadResult = update.updateProcessUpdateSignPayload(bitcoinConnection, did, didSourceDocument, targetVersionId, beaconServiceId, beaconServiceType, jsonPatches, btcr2Update, verificationMethodId, updateSigningResponseSignature, didDocumentMetadata);
         } catch (UpdateActionFundAddressException ex) {
             // next state
-            return TransitionProcessUpdateSignPayload.transitionToUpdateSignPayloadFundAddress(bitcoinConnection, ipfsConnection, ex.getAddress(), ex.getMinimumValue(), btcr2Update, updateSignPayload, didRegistrationMetadata, didDocumentMetadata);
+            return TransitionProcessUpdateSignPayload.transitionToUpdateSignPayloadFundAddress(bitcoinConnection, ipfsConnection, ex.getAddress(), ex.getMinimumValue(), ex.getAggregationCohort(), btcr2Update, updateSignPayload, didRegistrationMetadata, didDocumentMetadata);
         } catch (UpdateActionCompleteAggregationUpdatesException ex) {
             // next state
             return TransitionProcessUpdateSignPayload.transitionToUpdateSignPayloadCompleteAggregationUpdates(bitcoinConnection, ipfsConnection, ex.getAggregationCohort(), btcr2Update, updateSignPayload, didRegistrationMetadata, didDocumentMetadata);
@@ -121,6 +121,6 @@ public class StateProcessUpdateSignPayload {
 
         // next state
 
-        return TransitionProcessUpdateSignPayload.transitionToUtxoSignPayloads(bitcoinConnection, ipfsConnection, updateProcessUpdateSignPayloadResult.btcr2Update(), updateProcessUpdateSignPayloadResult.unsignedBeaconSignal(), updateProcessUpdateSignPayloadResult.utxoSignPayloads(), didRegistrationMetadata, didDocumentMetadata);
+        return TransitionProcessUpdateSignPayload.transitionToUtxoSignPayloads(bitcoinConnection, ipfsConnection, updateProcessUpdateSignPayloadResult.btcr2Update(), updateProcessUpdateSignPayloadResult.unsignedBeaconSignal(), updateProcessUpdateSignPayloadResult.utxoSignPayloads(), updateProcessUpdateSignPayloadResult.aggregationCohort(), didRegistrationMetadata, didDocumentMetadata);
     }
 }

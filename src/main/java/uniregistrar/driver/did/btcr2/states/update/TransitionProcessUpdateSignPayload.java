@@ -22,7 +22,7 @@ import java.util.Map;
 
 public class TransitionProcessUpdateSignPayload {
 
-    public static UpdateState transitionToUpdateSignPayloadFundAddress(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, Address address, Coin minimumValue, BTCR2Update btcr2Update, byte[] updateSignPayload, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public static UpdateState transitionToUpdateSignPayloadFundAddress(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, Address address, Coin minimumValue, AggregationCohort aggregationCohort, BTCR2Update btcr2Update, byte[] updateSignPayload, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
 
         // REGISTRATION STATE: jobId
 
@@ -40,7 +40,9 @@ public class TransitionProcessUpdateSignPayload {
 
         // REGISTRATION STATE: didRegistrationMetadata
 
-        didRegistrationMetadata.putAll(bitcoinConnection.getMetadata());
+        if (bitcoinConnection != null) didRegistrationMetadata.putAll(bitcoinConnection.getMetadata());
+        if (ipfsConnection != null) didRegistrationMetadata.putAll(ipfsConnection.getMetadata());
+        if (aggregationCohort != null) didRegistrationMetadata.putAll(aggregationCohort.getMetadata());
 
         // REGISTRATION STATE: update()
 
@@ -88,11 +90,11 @@ public class TransitionProcessUpdateSignPayload {
         return updateState;
     }
 
-    public static UpdateState transitionToUtxoSignPayloads(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, BTCR2Update btcr2Update, Transaction btcr2Transaction, List<byte[]> utxoSignPayloads, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public static UpdateState transitionToUtxoSignPayloads(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, BTCR2Update btcr2Update, Transaction unsignedBeaconSignal, List<byte[]> utxoSignPayloads, AggregationCohort aggregationCohort, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
 
         // REGISTRATION STATE: jobId
 
-        UpdateJob updateJob = new UpdateJob(btcr2Update.toJson(), null, Base64.getEncoder().encodeToString(btcr2Transaction.serialize()), utxoSignPayloads.stream().map(x -> Base64.getEncoder().encodeToString(x)).toList());
+        UpdateJob updateJob = new UpdateJob(btcr2Update.toJson(), null, Base64.getEncoder().encodeToString(unsignedBeaconSignal.serialize()), utxoSignPayloads.stream().map(x -> Base64.getEncoder().encodeToString(x)).toList());
 
         Map<String, Object> jobId = updateJob.toJsonObject();
 
@@ -119,6 +121,7 @@ public class TransitionProcessUpdateSignPayload {
 
         if (bitcoinConnection != null) didRegistrationMetadata.putAll(bitcoinConnection.getMetadata());
         if (ipfsConnection != null) didRegistrationMetadata.putAll(ipfsConnection.getMetadata());
+        if (aggregationCohort != null) didRegistrationMetadata.putAll(aggregationCohort.getMetadata());
 
         // REGISTRATION STATE: update()
 

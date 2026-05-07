@@ -2,6 +2,7 @@ package uniregistrar.driver.did.btcr2.states.update;
 
 import com.danubetech.btc.connection.BitcoinConnection;
 import io.ipfs.api.MerkleNode;
+import uniregistrar.driver.did.btcr2.aggregation.AggregationCohort;
 import uniregistrar.driver.did.btcr2.data.jsonld.BTCR2Update;
 import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.openapi.model.DidStateFinished;
@@ -11,7 +12,7 @@ import java.util.Map;
 
 public class TransitionProcessUtxoSignPayloads {
 
-    public static UpdateState transitionToFinished(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, BTCR2Update btcr2Update, MerkleNode merkleNode, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
+    public static UpdateState transitionToFinished(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, BTCR2Update btcr2Update, AggregationCohort aggregationCohort, MerkleNode merkleNode, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
 
         // REGISTRATION STATE: didState.state="finished"
 
@@ -22,6 +23,7 @@ public class TransitionProcessUtxoSignPayloads {
 
         if (bitcoinConnection != null) didRegistrationMetadata.putAll(bitcoinConnection.getMetadata());
         if (ipfsConnection != null) didRegistrationMetadata.putAll(ipfsConnection.getMetadata());
+        if (aggregationCohort != null) didRegistrationMetadata.putAll(aggregationCohort.getMetadata());
 
         // REGISTRATION STATE: didDocumentMetadata
 

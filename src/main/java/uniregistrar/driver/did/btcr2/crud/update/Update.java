@@ -346,7 +346,7 @@ public class Update {
         if (totalValue.compareTo(BITCOIN_FEE) < 0) {
             // next state
             Coin minimumValue = BITCOIN_FEE.minus(totalValue);
-            throw new UpdateActionFundAddressException(beaconAddress, minimumValue);
+            throw new UpdateActionFundAddressException(beaconAddress, minimumValue, null);
         }
 
         Transaction unsignedBeaconSignal = new Transaction();
@@ -370,7 +370,7 @@ public class Update {
 
         // result
 
-        return new UpdateProcessUpdateSignPayloadResult(btcr2Update, unsignedBeaconSignal, utxoSignPayloads);
+        return new UpdateProcessUpdateSignPayloadResult(btcr2Update, unsignedBeaconSignal, utxoSignPayloads, null);
     }
 
     public UpdateProcessUtxoSignPayloadsResult updateProcessUtxoSignPayloads(BitcoinConnection bitcoinConnection, DID did, DIDDocument didSourceDocument, Integer targetVersionId, JsonPatch jsonPatches, BTCR2Update btcr2Update, Transaction unsignedBeaconSignal, ECKey updateECKey, List<byte[]> utxoSigningResponseSignatures, Map<String, Object> didDocumentMetadata) throws RegistrationException {
@@ -401,7 +401,7 @@ public class Update {
 
         // result
 
-        UpdateProcessUtxoSignPayloadsResult updateProcessUtxoSignPayloadsResult = new UpdateProcessUtxoSignPayloadsResult(btcr2Update);
+        UpdateProcessUtxoSignPayloadsResult updateProcessUtxoSignPayloadsResult = new UpdateProcessUtxoSignPayloadsResult(btcr2Update, null);
         if (log.isDebugEnabled()) log.debug("Update: " + updateProcessUtxoSignPayloadsResult);
         return updateProcessUtxoSignPayloadsResult;
     }
@@ -456,11 +456,13 @@ public class Update {
 
         // it aggregates the update announcements into an Unsigned Beacon Signal.
 
-        aggregationCohort.aggregateUpdates(bitcoinConnection);
+        if (! aggregationCohort.isUpdatesAggregated()) {
+            aggregationCohort.aggregateUpdates(bitcoinConnection);
+        }
 
         // result
 
-        return new UpdateProcessUpdateSignPayloadResult(btcr2Update, aggregationCohort.getUnsignedBeaconSignal(), aggregationCohort.getUtxoSignPayloads());
+        return new UpdateProcessUpdateSignPayloadResult(btcr2Update, aggregationCohort.getUnsignedBeaconSignal(), aggregationCohort.getUtxoSignPayloads(), aggregationCohort);
     }
 
     public static void updateAggregateBeaconCAS(BitcoinConnection bitcoinConnection, AggregationCohort aggregationCohort, int participantIndex, DID did, DIDDocument didSourceDocument, BTCR2Update btcr2Update, URI verificationMethodId) throws RegistrationException {
