@@ -84,7 +84,8 @@ public class StateInit {
 
         // unassemble genesisDocument
 
-        DIDDocumentV1_1 unassembledGenesisDocument = DidDocUnAssembler.unassembleGenesisDocument(didDocument, unassembledInitialKey == null);
+        boolean forceGenesisDocument = generateStandardBeacons || generateAggregateBeacon != null;
+        DIDDocumentV1_1 unassembledGenesisDocument = DidDocUnAssembler.unassembleGenesisDocument(didDocument, forceGenesisDocument);
 
         // generate initial key?
 
@@ -106,16 +107,12 @@ public class StateInit {
                 throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Cannot generate standard beacons without initial key. Try setting option `generateInitialKey: true`.");
             }
 
-            if (unassembledGenesisDocument == null) {
-                unassembledGenesisDocument = DIDDocumentV1_1.builder().defaultContexts(true).context(DidDocUnAssembler.JSONLD_CONTEXT_BTCR2_V1).id(DidDocUnAssembler.GENESIS_DID).build();
-            }
-
             AddressParser addressParser = AddressParser.getDefault();
             PublicKey initialPublicKey = PublicKey.parse(unassembledInitialKey);
 
-            URI p2pkhServiceEndpoint = URI.create(BitcoinURI.convertToBitcoinURI(addressParser.parseAddress(initialPublicKey.p2pkhAddress(new BlockHash(bitcoinConnector.getGensisHash(network)))), null, null, null));
-            URI p2wpkhServiceEndpoint = URI.create(BitcoinURI.convertToBitcoinURI(addressParser.parseAddress(initialPublicKey.p2wpkhAddress(new BlockHash(bitcoinConnector.getGensisHash(network)))), null, null, null));
-            URI p2trServiceEndpoint = URI.create(BitcoinURI.convertToBitcoinURI(addressParser.parseAddress(initialPublicKey.p2trAddress(new BlockHash(bitcoinConnector.getGensisHash(network)))), null, null, null));
+            URI p2pkhServiceEndpoint = URI.create(BitcoinURI.convertToBitcoinURI(addressParser.parseAddress(initialPublicKey.p2pkhAddress(new BlockHash(bitcoinConnector.getGenesisHash(network)))), null, null, null));
+            URI p2wpkhServiceEndpoint = URI.create(BitcoinURI.convertToBitcoinURI(addressParser.parseAddress(initialPublicKey.p2wpkhAddress(new BlockHash(bitcoinConnector.getGenesisHash(network)))), null, null, null));
+            URI p2trServiceEndpoint = URI.create(BitcoinURI.convertToBitcoinURI(addressParser.parseAddress(initialPublicKey.p2trAddress(new BlockHash(bitcoinConnector.getGenesisHash(network)))), null, null, null));
 
             unassembledGenesisDocument = DIDDocumentV1_1.builder()
                     .base(unassembledGenesisDocument)
@@ -147,10 +144,6 @@ public class StateInit {
 
             if (unassembledInitialKey == null) {
                 throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Cannot generate standard beacons without initial key. Try setting option `generateInitialKey: true`.");
-            }
-
-            if (unassembledGenesisDocument == null) {
-                unassembledGenesisDocument = DIDDocumentV1_1.builder().defaultContexts(true).context(DidDocUnAssembler.JSONLD_CONTEXT_BTCR2_V1).id(DidDocUnAssembler.GENESIS_DID).build();
             }
 
             AggregationCohort aggregationCohort = AggregationService.getAggregationCohort(generateAggregateBeacon);

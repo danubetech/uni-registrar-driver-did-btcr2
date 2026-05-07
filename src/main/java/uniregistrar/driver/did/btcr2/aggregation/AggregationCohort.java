@@ -173,7 +173,7 @@ public class AggregationCohort {
                 List<PublicKey> publicKeys = this.getParticipantPublicKeys().stream().map(BytesArray::bytes).map(PublicKey::parse).toList();
                 XonlyPublicKey aggregatePublicKey = Musig2.aggregateKeys(publicKeys);
                 aggregatePublicKey.tweak(Crypto.TaprootTweak.KeyPathTweak.INSTANCE);
-                yield AddressParser.getDefault().parseAddress(aggregatePublicKey.p2trAddress(new BlockHash(bitcoinConnector.getGensisHash(this.getNetwork()))));
+                yield AddressParser.getDefault().parseAddress(aggregatePublicKey.p2trAddress(new BlockHash(bitcoinConnector.getGenesisHash(this.getNetwork()))));
             }
             default -> throw new IllegalStateException("Invalid script type, not aupported for aggregation cohort: " + this.getScriptType());
         };

@@ -62,7 +62,7 @@ public class DidDocUnAssembler {
         return unassembledInitialKey;
     }
 
-    public static DIDDocumentV1_1 unassembleGenesisDocument(DIDDocument didDocument, boolean allowEmpty) {
+    public static DIDDocumentV1_1 unassembleGenesisDocument(DIDDocument didDocument, boolean forceGenesisDocument) {
 
         if (didDocument == null) return null;
 
@@ -107,8 +107,9 @@ public class DidDocUnAssembler {
             if (testCapabilityDelegationVerificationMethods.isEmpty()) JsonLDUtils.jsonLdRemove(testDidDocument, DIDKeywords.JSONLD_TERM_CAPABILITYDELEGATION);
         }
 
-        boolean needGenesisDocument = ! testDidDocument.getJsonObject().isEmpty();
-        if (log.isDebugEnabled()) log.debug("testDidDocument: " + testDidDocument + " (" + needGenesisDocument + ")");
+        boolean isEmptyTestDidDocument = testDidDocument.getJsonObject().isEmpty();
+        boolean needGenesisDocument = (! isEmptyTestDidDocument) || forceGenesisDocument;
+        if (log.isDebugEnabled()) log.debug("testDidDocument: " + testDidDocument + " -> isEmptyTestDidDocument=" + isEmptyTestDidDocument + ", forceGenesisDocument=" + forceGenesisDocument + ", needGenesisDocument=" + needGenesisDocument + ")");
 
         // tweak genesis DID document
 
