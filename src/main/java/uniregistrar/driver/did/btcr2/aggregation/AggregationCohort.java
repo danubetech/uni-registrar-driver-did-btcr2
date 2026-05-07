@@ -57,20 +57,20 @@ public class AggregationCohort {
 
     // For a CAS Beacon:
 
-    private ArrayList<DID> casDids = new ArrayList<>();
-    private ArrayList<BytesArray> casUpdateHashes = new ArrayList<>();
+    private Map<Integer, DID> casDids = new HashMap<>();
+    private Map<Integer, BytesArray> casUpdateHashes = new HashMap<>();
 
     // For an SMT Beacon:
 
-    private ArrayList<BytesArray> smtDidIndexes = new ArrayList<>();
-    private ArrayList<BytesArray> smtUpdateHashes = new ArrayList<>();
-    private ArrayList<BytesArray> smtNonces = new ArrayList<>();
+    private Map<Integer, BytesArray> smtDidIndexes = new HashMap<>();
+    private Map<Integer, BytesArray> smtUpdateHashes = new HashMap<>();
+    private Map<Integer, BytesArray> smtNonces = new HashMap<>();
 
     // For a CAS Beacon:
     // For an SMT Beacon:
 
-    private ArrayList<BytesArray> musig2SecretNonces = new ArrayList<>();
-    private ArrayList<BytesArray> musig2IndividualNonces = new ArrayList<>();
+    private Map<Integer, BytesArray> musig2SecretNonces = new HashMap<>();
+    private Map<Integer, BytesArray> musig2IndividualNonces = new HashMap<>();
 
     // For a CAS Beacon, the request signal confirmation message contains:
 
@@ -274,7 +274,7 @@ public class AggregationCohort {
 
         // The MuSig2 aggregated nonce.
 
-        this.musig2AggregatedNonce = IndividualNonce.aggregate(this.musig2IndividualNonces.stream().map(BytesArray::bytes).map(IndividualNonce::new).toList()).getRight().toByteArray();
+        this.musig2AggregatedNonce = IndividualNonce.aggregate(this.musig2IndividualNonces.values().stream().map(BytesArray::bytes).map(IndividualNonce::new).toList()).getRight().toByteArray();
     }
 
     private void aggregateUpdatesCas() {
@@ -323,40 +323,40 @@ public class AggregationCohort {
         this.signalBytes = new byte[32]; /* TODO */
     }
 
-    public ArrayList<BytesArray> getUpdatesHashes() {
+    public List<BytesArray> getUpdatesHashes() {
         return switch (this.getBeaconType()) {
-            case CAS -> this.getCasUpdateHashes();
-            case SMT -> this.getSmtUpdateHashes();
+            case CAS -> this.getCasUpdateHashes().entrySet().stream().sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue).toList();
+            case SMT -> this.getSmtUpdateHashes().entrySet().stream().sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue).toList();
             default -> throw new IllegalStateException("Unexpected value: " + this.getBeaconType());
         };
     }
 
     public void setCasDid(int participantIndex, DID participantCasDid) {
-        this.getCasDids().add(participantIndex, participantCasDid);
+        this.getCasDids().put(participantIndex, participantCasDid);
     }
 
     public void setCasUpdateHash(int participantIndex, BytesArray participantCasUpdateHash) {
-        this.getCasUpdateHashes().add(participantIndex, participantCasUpdateHash);
+        this.getCasUpdateHashes().put(participantIndex, participantCasUpdateHash);
     }
 
     public void setSmtDidIndex(int participantIndex, BytesArray participantSmtDidIndex) {
-        this.getSmtDidIndexes().add(participantIndex, participantSmtDidIndex);
+        this.getSmtDidIndexes().put(participantIndex, participantSmtDidIndex);
     }
 
     public void setSmtUpdateHash(int participantIndex, BytesArray participantSmtUpdateHash) {
-        this.getSmtUpdateHashes().add(participantIndex, participantSmtUpdateHash);
+        this.getSmtUpdateHashes().put(participantIndex, participantSmtUpdateHash);
     }
 
     public void setSmtNonce(int participantIndex, BytesArray participantSmtNonce) {
-        this.getSmtNonces().add(participantIndex, participantSmtNonce);
+        this.getSmtNonces().put(participantIndex, participantSmtNonce);
     }
 
     public void setMusig2SecretNonce(int participantIndex, BytesArray participantMusig2SecretNonce) {
-        this.getMusig2SecretNonces().add(participantIndex, participantMusig2SecretNonce);
+        this.getMusig2SecretNonces().put(participantIndex, participantMusig2SecretNonce);
     }
 
     public void setMusig2IndividualNonce(int participantIndex, BytesArray participantMusig2IndividualNonce) {
-        this.getMusig2IndividualNonces().add(participantIndex, participantMusig2IndividualNonce);
+        this.getMusig2IndividualNonces().put(participantIndex, participantMusig2IndividualNonce);
     }
 
     public Map<String, Object> getMetadata() {
@@ -414,31 +414,31 @@ public class AggregationCohort {
         return beaconAddress;
     }
 
-    public ArrayList<DID> getCasDids() {
+    public Map<Integer, DID> getCasDids() {
         return casDids;
     }
 
-    public ArrayList<BytesArray> getCasUpdateHashes() {
+    public Map<Integer, BytesArray> getCasUpdateHashes() {
         return casUpdateHashes;
     }
 
-    public ArrayList<BytesArray> getSmtDidIndexes() {
+    public Map<Integer, BytesArray> getSmtDidIndexes() {
         return smtDidIndexes;
     }
 
-    public ArrayList<BytesArray> getSmtUpdateHashes() {
+    public Map<Integer, BytesArray> getSmtUpdateHashes() {
         return smtUpdateHashes;
     }
 
-    public ArrayList<BytesArray> getSmtNonces() {
+    public Map<Integer, BytesArray> getSmtNonces() {
         return smtNonces;
     }
 
-    public ArrayList<BytesArray> getMusig2SecretNonces() {
+    public Map<Integer, BytesArray> getMusig2SecretNonces() {
         return musig2SecretNonces;
     }
 
-    public ArrayList<BytesArray> getMusig2IndividualNonces() {
+    public Map<Integer, BytesArray> getMusig2IndividualNonces() {
         return musig2IndividualNonces;
     }
 
