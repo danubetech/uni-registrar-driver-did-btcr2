@@ -106,15 +106,18 @@ public class AggregationCohort {
     }
 
     public boolean containsParticipantPublicKey(byte[] participantPublicKey) {
-        boolean containsParticipantPublicKey = this.getParticipantPublicKeys().contains(ByteBuffer.wrap(participantPublicKey));
-        if (log.isDebugEnabled()) log.debug("Contains participant public key " + Hex.encodeHexString(participantPublicKey) + " in " + this.getParticipantPublicKeys().stream().map(Hex::encodeHexString).toList() + ": " + containsParticipantPublicKey);
+        ByteBuffer participantPublicKeyByteBuffer = ByteBuffer.wrap(participantPublicKey);
+        boolean containsParticipantPublicKey = this.getParticipantPublicKeys().contains(participantPublicKeyByteBuffer);
+        if (log.isDebugEnabled()) log.debug("Contains participant public key " + Hex.encodeHexString(participantPublicKeyByteBuffer) + " in " + this.getParticipantPublicKeys().stream().map(Hex::encodeHexString).toList() + ": " + containsParticipantPublicKey + " (size now " + this.cohortSize() + ")");
         return containsParticipantPublicKey;
     }
 
     public void addParticipantPublicKey(byte[] participantPublicKey) {
         if (isCohortCompleted()) throw new IllegalStateException("Aggregation cohort " + this.getId() + " already completed.");
-        this.getParticipantPublicKeys().add(ByteBuffer.wrap(participantPublicKey));
-        if (log.isDebugEnabled()) log.debug("Added participant public key: " + Hex.encodeHexString(participantPublicKey) + " (size now " + this.cohortSize() + ")");
+        ByteBuffer participantPublicKeyByteBuffer = ByteBuffer.wrap(participantPublicKey);
+        if (log.isDebugEnabled()) log.debug("Adding participant public key " + Hex.encodeHexString(participantPublicKeyByteBuffer) + " to " + this.getParticipantPublicKeys().stream().map(Hex::encodeHexString).toList() + " (size now " + this.cohortSize() + ")");
+        this.getParticipantPublicKeys().add(participantPublicKeyByteBuffer);
+        if (log.isDebugEnabled()) log.debug("Added participant public key " + Hex.encodeHexString(participantPublicKeyByteBuffer) + " to " + this.getParticipantPublicKeys().stream().map(Hex::encodeHexString).toList() + " (size now " + this.cohortSize() + ")");
     }
 
     public int findParticipantIndexByVerificationMethod(DIDDocument didDocument, URI verificationMethodId) throws RegistrationException {
