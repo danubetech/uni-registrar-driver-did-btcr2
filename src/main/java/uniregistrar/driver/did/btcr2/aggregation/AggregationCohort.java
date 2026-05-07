@@ -332,31 +332,31 @@ public class AggregationCohort {
     }
 
     public void setCasDid(int participantIndex, DID participantCasDid) {
-        this.getCasDids().set(participantIndex, participantCasDid);
+        this.getCasDids().add(participantIndex, participantCasDid);
     }
 
     public void setCasUpdateHash(int participantIndex, BytesArray participantCasUpdateHash) {
-        this.getCasUpdateHashes().set(participantIndex, participantCasUpdateHash);
+        this.getCasUpdateHashes().add(participantIndex, participantCasUpdateHash);
     }
 
     public void setSmtDidIndex(int participantIndex, BytesArray participantSmtDidIndex) {
-        this.getSmtDidIndexes().set(participantIndex, participantSmtDidIndex);
+        this.getSmtDidIndexes().add(participantIndex, participantSmtDidIndex);
     }
 
     public void setSmtUpdateHash(int participantIndex, BytesArray participantSmtUpdateHash) {
-        this.getSmtUpdateHashes().set(participantIndex, participantSmtUpdateHash);
+        this.getSmtUpdateHashes().add(participantIndex, participantSmtUpdateHash);
     }
 
     public void setSmtNonce(int participantIndex, BytesArray participantSmtNonce) {
-        this.getSmtNonces().set(participantIndex, participantSmtNonce);
+        this.getSmtNonces().add(participantIndex, participantSmtNonce);
     }
 
     public void setMusig2SecretNonce(int participantIndex, BytesArray participantMusig2SecretNonce) {
-        this.getMusig2SecretNonces().set(participantIndex, participantMusig2SecretNonce);
+        this.getMusig2SecretNonces().add(participantIndex, participantMusig2SecretNonce);
     }
 
     public void setMusig2IndividualNonce(int participantIndex, BytesArray participantMusig2IndividualNonce) {
-        this.getMusig2IndividualNonces().set(participantIndex, participantMusig2IndividualNonce);
+        this.getMusig2IndividualNonces().add(participantIndex, participantMusig2IndividualNonce);
     }
 
     public Map<String, Object> getMetadata() {
