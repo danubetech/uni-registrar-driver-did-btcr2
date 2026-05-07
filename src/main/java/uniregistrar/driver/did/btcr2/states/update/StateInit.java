@@ -13,7 +13,7 @@ import jakarta.json.JsonPatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
-import uniregistrar.driver.did.btcr2.crud.update.Update;
+import uniregistrar.driver.did.btcr2.crud.update.UpdateInit;
 import uniregistrar.driver.did.btcr2.crud.update.UpdateInitResult;
 import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.driver.did.btcr2.job.UpdateJob;
@@ -31,7 +31,7 @@ public class StateInit {
             .defaultPropertyInclusion(JsonInclude.Value.ALL_NON_NULL)
             .build();
 
-    public static UpdateState update(UpdateJob updateJob, UpdateRequest updateRequest, Update update, BitcoinConnector bitcoinConnector, IPFSConnection ipfsConnection) throws RegistrationException {
+    public static UpdateState update(UpdateJob updateJob, UpdateRequest updateRequest, UpdateInit updateInit, BitcoinConnector bitcoinConnector, IPFSConnection ipfsConnection) throws RegistrationException {
 
         // prepare didRegistrationMetadata and didDocumentMetadata
 
@@ -92,7 +92,7 @@ public class StateInit {
 
         // update()
 
-        UpdateInitResult updateInitResult = update.updateInit(bitcoinConnection, did, didSourceDocument, targetVersionId, jsonPatches, verificationMethodId, didDocumentMetadata);
+        UpdateInitResult updateInitResult = updateInit.update(bitcoinConnection, did, didSourceDocument, targetVersionId, jsonPatches, verificationMethodId, didDocumentMetadata);
 
         // next state
 

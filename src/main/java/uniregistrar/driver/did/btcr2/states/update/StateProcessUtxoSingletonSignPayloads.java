@@ -23,8 +23,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
 import uniregistrar.driver.did.btcr2.algorithms.JSONDocumentHashing;
-import uniregistrar.driver.did.btcr2.crud.update.Update;
-import uniregistrar.driver.did.btcr2.crud.update.UpdateProcessUtxoSignPayloadsResult;
+import uniregistrar.driver.did.btcr2.crud.update.UpdateProcessUtxoSingletonSignPayloads;
+import uniregistrar.driver.did.btcr2.crud.update.UpdateProcessUtxoSingletonSignPayloadsResult;
 import uniregistrar.driver.did.btcr2.data.jsonld.BTCR2Update;
 import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.driver.did.btcr2.job.UpdateJob;
@@ -37,15 +37,15 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-public class StateProcessUtxoSignPayloads {
+public class StateProcessUtxoSingletonSignPayloads {
 
-    private static final Logger log = LoggerFactory.getLogger(StateProcessUtxoSignPayloads.class);
+    private static final Logger log = LoggerFactory.getLogger(StateProcessUtxoSingletonSignPayloads.class);
 
     private static final JsonMapper jsonMapper = JsonMapper.builder()
             .defaultPropertyInclusion(JsonInclude.Value.ALL_NON_NULL)
             .build();
 
-    public static UpdateState update(UpdateJob updateJob, UpdateRequest updateRequest, Update update, BitcoinConnector bitcoinConnector, IPFSConnection ipfsConnection) throws RegistrationException {
+    public static UpdateState update(UpdateJob updateJob, UpdateRequest updateRequest, UpdateProcessUtxoSingletonSignPayloads updateProcessUtxoSingletonSignPayloads, BitcoinConnector bitcoinConnector, IPFSConnection ipfsConnection) throws RegistrationException {
 
         // prepare didRegistrationMetadata and didDocumentMetadata
 
@@ -129,24 +129,24 @@ public class StateProcessUtxoSignPayloads {
         // read signing responses
 
         Map<String, SigningResponse> signingResponses = requestSecret == null ? null : requestSecret.getSigningResponse();
-        List<SigningResponse> utxoSigningResponses = signingResponses == null ? null : signingResponses.entrySet().stream().filter(signingResponseEntry -> signingResponseEntry.getKey().startsWith("utxo")).map(Map.Entry::getValue).toList();
+        List<SigningResponse> utxoSingletonSigningResponses = signingResponses == null ? null : signingResponses.entrySet().stream().filter(signingResponseEntry -> signingResponseEntry.getKey().startsWith("utxoSingleton")).map(Map.Entry::getValue).toList();
 
-        if (utxoSigningResponses == null) {
+        if (utxoSingletonSigningResponses == null) {
             throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Signing responses 'utxo*' not found");
         }
 
-        List<byte[]> utxoSigningResponseSignatures = utxoSigningResponses.stream().map(SigningResponse::getSignature).map(signature -> Base64.getDecoder().decode(signature)).toList();
+        List<byte[]> utxoSingletonSigningResponseSignatures = utxoSingletonSigningResponses.stream().map(SigningResponse::getSignature).map(signature -> Base64.getDecoder().decode(signature)).toList();
 
         // update()
 
-        UpdateProcessUtxoSignPayloadsResult updateProcessUtxoSignPayloadsResult = update.updateProcessUtxoSignPayloads(bitcoinConnection, did, didSourceDocument, targetVersionId, jsonPatches, btcr2Update, unsignedBeaconSignal, updateECKey, utxoSigningResponseSignatures, didDocumentMetadata);
+        UpdateProcessUtxoSingletonSignPayloadsResult updateProcessUtxoSingletonSignPayloadsResult = updateProcessUtxoSingletonSignPayloads.update(bitcoinConnection, did, didSourceDocument, targetVersionId, jsonPatches, btcr2Update, unsignedBeaconSignal, updateECKey, utxoSingletonSigningResponseSignatures, didDocumentMetadata);
 
         // publish to IPFS?
 
         MerkleNode merkleNode = null;
-        if (publishToIpfs && ipfsConnection != null && updateProcessUtxoSignPayloadsResult.btcr2Update() != null) {
+        if (publishToIpfs && ipfsConnection != null && updateProcessUtxoSingletonSignPayloadsResult.btcr2Update() != null) {
             try {
-                byte[] ipfsPayload = JSONDocumentHashing.jsonDocumentCanonicalizing(updateProcessUtxoSignPayloadsResult.btcr2Update().toJson()).getBytes(StandardCharsets.UTF_8);
+                byte[] ipfsPayload = JSONDocumentHashing.jsonDocumentCanonicalizing(updateProcessUtxoSingletonSignPayloadsResult.btcr2Update().toJson()).getBytes(StandardCharsets.UTF_8);
                 AddArgs addArgs = AddArgs.Builder.newInstance().setCidVersion(1).setRawLeaves().setHash("sha2-256").setPin().build();
                 merkleNode = ipfsConnection.getIpfs().add(new NamedStreamable.ByteArrayWrapper(ipfsPayload), addArgs).getFirst();
             } catch (IOException ex) {
@@ -157,6 +157,6 @@ public class StateProcessUtxoSignPayloads {
 
         // next state
 
-        return TransitionProcessUtxoSignPayloads.transitionToFinished(bitcoinConnection, ipfsConnection, updateProcessUtxoSignPayloadsResult.btcr2Update(), updateProcessUtxoSignPayloadsResult.aggregationCohort(), merkleNode, didRegistrationMetadata, didDocumentMetadata);
+        return TransitionProcessUtxoSingletonSignPayloads.transitionToFinished(bitcoinConnection, ipfsConnection, updateProcessUtxoSingletonSignPayloadsResult.btcr2Update(), merkleNode, didRegistrationMetadata, didDocumentMetadata);
     }
 }

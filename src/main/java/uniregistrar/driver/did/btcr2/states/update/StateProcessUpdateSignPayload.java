@@ -13,9 +13,9 @@ import jakarta.json.JsonPatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
-import uniregistrar.driver.did.btcr2.crud.update.Update;
 import uniregistrar.driver.did.btcr2.crud.update.UpdateActionCompleteAggregationUpdatesException;
 import uniregistrar.driver.did.btcr2.crud.update.UpdateActionFundAddressException;
+import uniregistrar.driver.did.btcr2.crud.update.UpdateProcessUpdateSignPayload;
 import uniregistrar.driver.did.btcr2.crud.update.UpdateProcessUpdateSignPayloadResult;
 import uniregistrar.driver.did.btcr2.data.jsonld.BTCR2Update;
 import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
@@ -37,7 +37,7 @@ public class StateProcessUpdateSignPayload {
             .defaultPropertyInclusion(JsonInclude.Value.ALL_NON_NULL)
             .build();
 
-    public static UpdateState update(UpdateJob updateJob, UpdateRequest updateRequest, Update update, BitcoinConnector bitcoinConnector, IPFSConnection ipfsConnection) throws RegistrationException {
+    public static UpdateState update(UpdateJob updateJob, UpdateRequest updateRequest, UpdateProcessUpdateSignPayload updateProcessUpdateSignPayload, BitcoinConnector bitcoinConnector, IPFSConnection ipfsConnection) throws RegistrationException {
 
         // prepare didRegistrationMetadata and didDocumentMetadata
 
@@ -110,10 +110,10 @@ public class StateProcessUpdateSignPayload {
 
         UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayloadResult;
         try {
-            updateProcessUpdateSignPayloadResult = update.updateProcessUpdateSignPayload(bitcoinConnection, did, didSourceDocument, targetVersionId, beaconServiceId, beaconServiceType, jsonPatches, btcr2Update, verificationMethodId, updateSigningResponseSignature, didDocumentMetadata);
+            updateProcessUpdateSignPayloadResult = updateProcessUpdateSignPayload.update(bitcoinConnection, did, didSourceDocument, targetVersionId, beaconServiceId, beaconServiceType, jsonPatches, btcr2Update, verificationMethodId, updateSigningResponseSignature, didDocumentMetadata);
         } catch (UpdateActionFundAddressException ex) {
             // next state
-            return TransitionProcessUpdateSignPayload.transitionToUpdateSignPayloadFundAddress(bitcoinConnection, ipfsConnection, ex.getAddress(), ex.getMinimumValue(), ex.getAggregationCohort(), btcr2Update, updateSignPayload, didRegistrationMetadata, didDocumentMetadata);
+            return TransitionProcessUpdateSignPayload.transitionToUpdateSignPayloadFundAddress(bitcoinConnection, ipfsConnection, ex.getAddress(), ex.getMinimumValue(), btcr2Update, updateSignPayload, didRegistrationMetadata, didDocumentMetadata);
         } catch (UpdateActionCompleteAggregationUpdatesException ex) {
             // next state
             return TransitionProcessUpdateSignPayload.transitionToUpdateSignPayloadCompleteAggregationUpdates(bitcoinConnection, ipfsConnection, ex.getAggregationCohort(), btcr2Update, updateSignPayload, didRegistrationMetadata, didDocumentMetadata);
@@ -121,6 +121,12 @@ public class StateProcessUpdateSignPayload {
 
         // next state
 
-        return TransitionProcessUpdateSignPayload.transitionToUtxoSignPayloads(bitcoinConnection, ipfsConnection, updateProcessUpdateSignPayloadResult.btcr2Update(), updateProcessUpdateSignPayloadResult.unsignedBeaconSignal(), updateProcessUpdateSignPayloadResult.utxoSignPayloads(), updateProcessUpdateSignPayloadResult.aggregationCohort(), didRegistrationMetadata, didDocumentMetadata);
+        if (updateProcessUpdateSignPayloadResult.utxoSingletonSignPayloads() != null) {
+            return TransitionProcessUpdateSignPayload.transitionToUtxoSingletonSignPayloads(bitcoinConnection, ipfsConnection, updateProcessUpdateSignPayloadResult.btcr2Update(), updateProcessUpdateSignPayloadResult.unsignedBeaconSignal(), updateProcessUpdateSignPayloadResult.utxoSingletonSignPayloads(), didRegistrationMetadata, didDocumentMetadata);
+        }
+        if (updateProcessUpdateSignPayloadResult.utxoAggregateSignPayloads() != null) {
+            return TransitionProcessUpdateSignPayload.transitionToUtxoAggregateSignPayloads(bitcoinConnection, ipfsConnection, updateProcessUpdateSignPayloadResult.btcr2Update(), updateProcessUpdateSignPayloadResult.unsignedBeaconSignal(), updateProcessUpdateSignPayloadResult.utxoAggregateSignPayloads(), updateProcessUpdateSignPayloadResult.aggregationCohort(), didRegistrationMetadata, didDocumentMetadata);
+        }
+        throw new IllegalArgumentException("Invalid result: " + updateProcessUpdateSignPayloadResult);
     }
 }

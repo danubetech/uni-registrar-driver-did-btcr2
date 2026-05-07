@@ -7,10 +7,13 @@ import com.danubetech.btc.connection.impl.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.driver.did.btcr2.DidBtcr2Driver;
-import uniregistrar.driver.did.btcr2.crud.create.Create;
+import uniregistrar.driver.did.btcr2.crud.create.CreateInit;
 import uniregistrar.driver.did.btcr2.crud.deactivate.Deactivate;
 import uniregistrar.driver.did.btcr2.crud.execute.Execute;
-import uniregistrar.driver.did.btcr2.crud.update.Update;
+import uniregistrar.driver.did.btcr2.crud.update.UpdateInit;
+import uniregistrar.driver.did.btcr2.crud.update.UpdateProcessUpdateSignPayload;
+import uniregistrar.driver.did.btcr2.crud.update.UpdateProcessUtxoAggregateSignPayloads;
+import uniregistrar.driver.did.btcr2.crud.update.UpdateProcessUtxoSingletonSignPayloads;
 import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 
 import java.net.URI;
@@ -112,8 +115,11 @@ public class Configuration {
 
             // configure
 
-            didBtcr2Driver.setCreate(new Create(ipfsConnection));
-            didBtcr2Driver.setUpdate(new Update(ipfsConnection));
+            didBtcr2Driver.setCreateInit(new CreateInit(ipfsConnection));
+            didBtcr2Driver.setUpdateInit(new UpdateInit(ipfsConnection));
+            didBtcr2Driver.setUpdateProcessUpdateSignPayload(new UpdateProcessUpdateSignPayload(ipfsConnection));
+            didBtcr2Driver.setUpdateProcessUtxoSingletonSignPayloads(new UpdateProcessUtxoSingletonSignPayloads(ipfsConnection));
+            didBtcr2Driver.setUpdateProcessUtxoAggregateSignPayloads(new UpdateProcessUtxoAggregateSignPayloads(ipfsConnection));
             didBtcr2Driver.setDeactivate(new Deactivate(ipfsConnection));
             didBtcr2Driver.setExecute(new Execute(ipfsConnection));
             didBtcr2Driver.setBitcoinConnector(bitcoinConnector);

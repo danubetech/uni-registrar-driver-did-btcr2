@@ -15,10 +15,13 @@ import fr.acinq.bitcoin.PublicKey;
 import fr.acinq.bitcoin.XonlyPublicKey;
 import fr.acinq.bitcoin.crypto.musig2.IndividualNonce;
 import fr.acinq.bitcoin.crypto.musig2.Musig2;
+import fr.acinq.bitcoin.crypto.musig2.Session;
+import fr.acinq.bitcoin.utils.Either;
 import io.ipfs.multibase.Multibase;
 import org.apache.commons.codec.binary.Hex;
 import org.bitcoinj.base.*;
 import org.bitcoinj.core.Transaction;
+import org.bitcoinj.core.TransactionInput;
 import org.bitcoinj.crypto.ECKey;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptBuilder;
@@ -57,20 +60,20 @@ public class AggregationCohort {
 
     // For a CAS Beacon:
 
-    private Map<Integer, DID> casDids = new HashMap<>();
-    private Map<Integer, BytesArray> casUpdateHashes = new HashMap<>();
+    private Map<Integer, DID> casDids = new TreeMap<>();
+    private Map<Integer, BytesArray> casUpdateHashes = new TreeMap<>();
 
     // For an SMT Beacon:
 
-    private Map<Integer, BytesArray> smtDidIndexes = new HashMap<>();
-    private Map<Integer, BytesArray> smtUpdateHashes = new HashMap<>();
-    private Map<Integer, BytesArray> smtNonces = new HashMap<>();
+    private Map<Integer, BytesArray> smtDidIndexes = new TreeMap<>();
+    private Map<Integer, BytesArray> smtUpdateHashes = new TreeMap<>();
+    private Map<Integer, BytesArray> smtNonces = new TreeMap<>();
 
     // For a CAS Beacon:
     // For an SMT Beacon:
 
-    private Map<Integer, BytesArray> musig2SecretNonces = new HashMap<>();
-    private Map<Integer, BytesArray> musig2IndividualNonces = new HashMap<>();
+    private Map<Integer, BytesArray> musig2SecretNonces = new TreeMap<>();
+    private Map<Integer, BytesArray> musig2IndividualNonces = new TreeMap<>();
 
     // For a CAS Beacon, the request signal confirmation message contains:
 
@@ -85,7 +88,7 @@ public class AggregationCohort {
 
     private byte[] signalBytes;
     private Transaction unsignedBeaconSignal;
-    private List<byte[]> utxoSignPayloads;
+    private List<byte[]> utxoAggregateSignPayloads;
     private byte[] musig2AggregatedNonce;
 
     public AggregationCohort(String id, Network network, int maxSize, BeaconType beaconType, ScriptType scriptType) {
@@ -250,7 +253,7 @@ public class AggregationCohort {
         if (totalValue.compareTo(BITCOIN_FEE) < 0) {
             // next state
             Coin minimumValue = BITCOIN_FEE.minus(totalValue);
-            throw new UpdateActionFundAddressException(this.getBeaconAddress(), minimumValue, this);
+            throw new UpdateActionFundAddressException(this.getBeaconAddress(), minimumValue);
         }
 
         this.unsignedBeaconSignal = new Transaction();
@@ -263,13 +266,19 @@ public class AggregationCohort {
 
         // Aggregation Participants return the partially signed Bitcoin transaction to the Aggregation Service
 
-        this.utxoSignPayloads = IntStream.range(0, this.unsignedBeaconSignal.getInputs().size())
-                .mapToObj(i -> this.unsignedBeaconSignal.hashForSignature(
-                        i,
-                        this.unsignedBeaconSignal.getInput(i).getScriptBytes(),
-                        Transaction.SigHash.ALL,
-                        false))
-                .map(Sha256Hash::getBytes)
+        this.utxoAggregateSignPayloads = IntStream.range(0, this.unsignedBeaconSignal.getInputs().size())
+                .mapToObj(i -> {
+                    Either<Throwable, Session> either = Musig2.taprootSession(
+                            fr.acinq.bitcoin.Transaction.read(this.unsignedBeaconSignal.serialize()),
+                            i,
+                            this.unsignedBeaconSignal.getInputs().stream().map(TransactionInput::serialize).map(fr.acinq.bitcoin.TxOut::read).toList(),
+                            this.getParticipantPublicKeys().stream().map(BytesArray::bytes).map(fr.acinq.bitcoin.PublicKey::parse).toList(),
+                            this.getMusig2IndividualNonces().values().stream().map(BytesArray::bytes).map(IndividualNonce::new).toList(),
+                            null);
+                    if (either.isLeft()) throw new RuntimeException(either.getLeft());
+                    Session session = either.getRight();
+                    return session.toByteArray();
+                })
                 .toList();
 
         // The MuSig2 aggregated nonce.
@@ -325,8 +334,8 @@ public class AggregationCohort {
 
     public List<BytesArray> getUpdatesHashes() {
         return switch (this.getBeaconType()) {
-            case CAS -> this.getCasUpdateHashes().entrySet().stream().sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue).toList();
-            case SMT -> this.getSmtUpdateHashes().entrySet().stream().sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue).toList();
+            case CAS -> this.getCasUpdateHashes().values().stream().toList();
+            case SMT -> this.getSmtUpdateHashes().values().stream().toList();
             default -> throw new IllegalStateException("Unexpected value: " + this.getBeaconType());
         };
     }
@@ -458,8 +467,8 @@ public class AggregationCohort {
         return unsignedBeaconSignal;
     }
 
-    public List<byte[]> getUtxoSignPayloads() {
-        return utxoSignPayloads;
+    public List<byte[]> getUtxoAggregateSignPayloads() {
+        return utxoAggregateSignPayloads;
     }
 
     public byte[] getMusig2AggregatedNonce() {
@@ -474,12 +483,12 @@ public class AggregationCohort {
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         AggregationCohort that = (AggregationCohort) o;
-        return maxSize == that.maxSize && Objects.equals(id, that.id) && network == that.network && beaconType == that.beaconType && scriptType == that.scriptType && Objects.equals(participantPublicKeys, that.participantPublicKeys) && Objects.equals(beaconAddress, that.beaconAddress) && Objects.equals(casDids, that.casDids) && Objects.equals(casUpdateHashes, that.casUpdateHashes) && Objects.equals(smtDidIndexes, that.smtDidIndexes) && Objects.equals(smtUpdateHashes, that.smtUpdateHashes) && Objects.equals(smtNonces, that.smtNonces) && Objects.equals(musig2SecretNonces, that.musig2SecretNonces) && Objects.equals(musig2IndividualNonces, that.musig2IndividualNonces) && Objects.equals(casBeaconAnnouncementMap, that.casBeaconAnnouncementMap) && Objects.equals(smtProofs, that.smtProofs) && Objects.deepEquals(signalBytes, that.signalBytes) && Objects.equals(unsignedBeaconSignal, that.unsignedBeaconSignal) && Objects.equals(utxoSignPayloads, that.utxoSignPayloads) && Objects.deepEquals(musig2AggregatedNonce, that.musig2AggregatedNonce);
+        return maxSize == that.maxSize && Objects.equals(id, that.id) && network == that.network && beaconType == that.beaconType && scriptType == that.scriptType && Objects.equals(participantPublicKeys, that.participantPublicKeys) && Objects.equals(beaconAddress, that.beaconAddress) && Objects.equals(casDids, that.casDids) && Objects.equals(casUpdateHashes, that.casUpdateHashes) && Objects.equals(smtDidIndexes, that.smtDidIndexes) && Objects.equals(smtUpdateHashes, that.smtUpdateHashes) && Objects.equals(smtNonces, that.smtNonces) && Objects.equals(musig2SecretNonces, that.musig2SecretNonces) && Objects.equals(musig2IndividualNonces, that.musig2IndividualNonces) && Objects.equals(casBeaconAnnouncementMap, that.casBeaconAnnouncementMap) && Objects.equals(smtProofs, that.smtProofs) && Objects.deepEquals(signalBytes, that.signalBytes) && Objects.equals(unsignedBeaconSignal, that.unsignedBeaconSignal) && Objects.equals(utxoAggregateSignPayloads, that.utxoAggregateSignPayloads) && Objects.deepEquals(musig2AggregatedNonce, that.musig2AggregatedNonce);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, network, maxSize, beaconType, scriptType, participantPublicKeys, beaconAddress, casDids, casUpdateHashes, smtDidIndexes, smtUpdateHashes, smtNonces, musig2SecretNonces, musig2IndividualNonces, casBeaconAnnouncementMap, smtProofs, Arrays.hashCode(signalBytes), unsignedBeaconSignal, utxoSignPayloads, Arrays.hashCode(musig2AggregatedNonce));
+        return Objects.hash(id, network, maxSize, beaconType, scriptType, participantPublicKeys, beaconAddress, casDids, casUpdateHashes, smtDidIndexes, smtUpdateHashes, smtNonces, musig2SecretNonces, musig2IndividualNonces, casBeaconAnnouncementMap, smtProofs, Arrays.hashCode(signalBytes), unsignedBeaconSignal, utxoAggregateSignPayloads, Arrays.hashCode(musig2AggregatedNonce));
     }
 
     @Override
@@ -503,7 +512,7 @@ public class AggregationCohort {
                 ", smtProofs=" + smtProofs +
                 ", signalBytes=" + Arrays.toString(signalBytes) +
                 ", unsignedBeaconSignal=" + unsignedBeaconSignal +
-                ", utxoSignPayloads=" + utxoSignPayloads +
+                ", utxoSingletonSignPayloads=" + utxoAggregateSignPayloads +
                 ", musig2AggregatedNonce=" + Arrays.toString(musig2AggregatedNonce) +
                 '}';
     }

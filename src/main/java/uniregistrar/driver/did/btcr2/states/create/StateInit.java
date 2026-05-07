@@ -22,7 +22,7 @@ import uniregistrar.RegistrationException;
 import uniregistrar.driver.did.btcr2.aggregation.AggregationCohort;
 import uniregistrar.driver.did.btcr2.aggregation.AggregationService;
 import uniregistrar.driver.did.btcr2.algorithms.JSONDocumentHashing;
-import uniregistrar.driver.did.btcr2.crud.create.Create;
+import uniregistrar.driver.did.btcr2.crud.create.CreateInit;
 import uniregistrar.driver.did.btcr2.crud.create.CreateInitResult;
 import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.driver.did.btcr2.job.CreateJob;
@@ -47,7 +47,7 @@ public class StateInit {
 
     public static final int STATE = 0;
 
-    public static CreateState create(CreateJob createJob, CreateRequest createRequest, Create create, BitcoinConnector bitcoinConnector, IPFSConnection ipfsConnection) throws RegistrationException {
+    public static CreateState create(CreateJob createJob, CreateRequest createRequest, CreateInit createInit, BitcoinConnector bitcoinConnector, IPFSConnection ipfsConnection) throws RegistrationException {
 
         // prepare didRegistrationMetadata and didDocumentMetadata
 
@@ -195,7 +195,7 @@ public class StateInit {
 
         // create()
 
-        CreateInitResult createInitResult = create.createInit(bitcoinConnection, unassembledInitialKey, unassembledGenesisDocument, version, network, didDocumentMetadata);
+        CreateInitResult createInitResult = createInit.create(bitcoinConnection, unassembledInitialKey, unassembledGenesisDocument, version, network, didDocumentMetadata);
 
         // publish to IPFS?
 

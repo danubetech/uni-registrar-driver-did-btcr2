@@ -21,17 +21,17 @@ import java.util.Map;
  * See https://dcdpr.github.io/did-btcr2/operations/create.html#create
  */
 
-public class Create {
+public class CreateInit {
 
-    private static final Logger log = LoggerFactory.getLogger(Create.class);
+    private static final Logger log = LoggerFactory.getLogger(CreateInit.class);
 
     private IPFSConnection ipfsConnection;
 
-    public Create(IPFSConnection ipfsConnection) {
+    public CreateInit(IPFSConnection ipfsConnection) {
         this.ipfsConnection = ipfsConnection;
     }
 
-    public CreateInitResult createInit(BitcoinConnection bitcoinConnection, byte[] initialKey, DIDDocument genesisDocument, Integer version, Network network, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public CreateInitResult create(BitcoinConnection bitcoinConnection, byte[] initialKey, DIDDocument genesisDocument, Integer version, Network network, Map<String, Object> didDocumentMetadata) throws RegistrationException {
 
         // A did:btcr2 identifier encodes a few pieces of information: an indicator for a specific Bitcoin network and a collection of Genesis Bytes.
 

@@ -30,7 +30,7 @@ public class Execute {
     }
 
     /*
-     * Getters and settes
+     * Getters and setters
      */
 
     public IPFSConnection getIpfsConnection() {

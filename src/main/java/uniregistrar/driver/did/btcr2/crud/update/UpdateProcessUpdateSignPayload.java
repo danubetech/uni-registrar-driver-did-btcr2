@@ -11,7 +11,6 @@ import foundation.identity.did.DID;
 import foundation.identity.did.DIDDocument;
 import foundation.identity.did.Service;
 import foundation.identity.did.VerificationMethod;
-import foundation.identity.did.validation.Validation;
 import foundation.identity.jsonld.JsonLDDereferencer;
 import foundation.identity.jsonld.JsonLDException;
 import foundation.identity.jsonld.JsonLDObject;
@@ -29,9 +28,6 @@ import org.bitcoinj.base.Address;
 import org.bitcoinj.base.Coin;
 import org.bitcoinj.base.Sha256Hash;
 import org.bitcoinj.core.Transaction;
-import org.bitcoinj.core.TransactionInput;
-import org.bitcoinj.crypto.ECKey;
-import org.bitcoinj.crypto.TransactionSignature;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptBuilder;
 import org.bitcoinj.uri.BitcoinURI;
@@ -46,20 +42,16 @@ import uniregistrar.driver.did.btcr2.beacons.BeaconType;
 import uniregistrar.driver.did.btcr2.data.jsonld.BTCR2Update;
 import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.driver.did.btcr2.util.BytesArray;
-import uniregistrar.driver.did.btcr2.util.JSONPatchUtil;
 import uniregistrar.driver.did.btcr2.util.SHA256Util;
 
 import java.io.IOException;
-import java.math.BigInteger;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -68,7 +60,7 @@ import java.util.stream.Stream;
  * See https://dcdpr.github.io/did-btcr2/operations/update.html
  */
 
-public class Update {
+public class UpdateProcessUpdateSignPayload {
 
     private static final String BTCR2_UNSIGNED_UPDATE_TEMPLATE =
             """
@@ -106,123 +98,15 @@ public class Update {
 
     private static final Coin BITCOIN_FEE = Coin.valueOf(100);
 
-    private static final Logger log = LoggerFactory.getLogger(Update.class);
+    private static final Logger log = LoggerFactory.getLogger(UpdateProcessUpdateSignPayload.class);
 
     private IPFSConnection ipfsConnection;
 
-    public Update(IPFSConnection ipfsConnection) {
+    public UpdateProcessUpdateSignPayload(IPFSConnection ipfsConnection) {
         this.ipfsConnection = ipfsConnection;
     }
 
-    public UpdateInitResult updateInit(BitcoinConnection bitcoinConnection, DID did, DIDDocument didSourceDocument, Integer targetVersionId, JsonPatch jsonPatches, URI verificationMethodId, Map<String, Object> didDocumentMetadata) throws RegistrationException {
-
-        /*
-         * Construct BTCR2 Unsigned Update
-         * See https://dcdpr.github.io/did-btcr2/operations/update.html#construct-btcr2-unsigned-update
-         */
-
-        // Apply all JSON patches in jsonPatches to didSourceDocument to create didTargetDocument.
-
-        DIDDocument didTargetDocument = didSourceDocument;
-        didTargetDocument = JSONPatchUtil.apply(didTargetDocument, jsonPatches);
-        if (log.isDebugEnabled()) log.debug("didTargetDocument: " + didTargetDocument);
-
-        // didTargetDocument MUST be conformant to DID Core v1.1
-
-        try {
-            Validation.validate(didTargetDocument);
-        } catch (IllegalStateException ex) {
-            throw new RegistrationException(RegistrationException.ERROR_INVALID_DID_DOCUMENT, "Invalid didTargetDocument: " + ex.getMessage(), ex);
-        }
-
-        // An INVALID_DID_UPDATE error MUST be raised if didTargetDocument.id is not equal to didSourceDocument.id.
-
-        if (! didTargetDocument.getId().equals(didSourceDocument.getId())) {
-            throw new RegistrationException(RegistrationException.ERROR_INVALID_DID_DOCUMENT, "didTargetDocument.id " + didTargetDocument.getId() + " does not match didSourceDocument.id " + didSourceDocument.getId());
-        }
-
-        // Fill the BTCR2 Unsigned Update (data structure) template below with the required template variables.
-
-        String updateString = BTCR2_UNSIGNED_UPDATE_TEMPLATE
-                .replace("{{array-of-patches}}", jsonPatches.toJsonArray().toString())
-                .replace("{{source-hash}}", Base64.getUrlEncoder().withoutPadding().encodeToString(JSONDocumentHashing.jsonDocumentHashing(didSourceDocument)))
-                .replace("{{target-hash}}", Base64.getUrlEncoder().withoutPadding().encodeToString(JSONDocumentHashing.jsonDocumentHashing(didTargetDocument)))
-                .replace("{{target-version-id}}", targetVersionId.toString());
-        if (log.isDebugEnabled()) log.debug("updateString: " + updateString);
-
-        // Let update be the result of parsing the rendered template as JSON.
-
-        BTCR2Update btcr2Update = BTCR2Update.fromJson(updateString);
-        if (log.isDebugEnabled()) log.debug("btcr2Update: " + btcr2Update);
-
-        /*
-         * Construct BTCR2 Signed Update
-         * See https://dcdpr.github.io/did-btcr2/operations/update.html#construct-btcr2-signed-update
-         */
-
-        // An INVALID_DID_UPDATE error MUST be raised if the didSourceDocument.verificationMethod Set does not contain an id matching verificationMethodId.
-        // An INVALID_DID_UPDATE error MUST be raised if the didSourceDocument.capabilityInvocation Set does not contain verificationMethodId.
-
-        JsonLDObject verificationMethodJsonLDObject = JsonLDDereferencer.findByIdInJsonLdObject(didSourceDocument, verificationMethodId, didSourceDocument.getId());
-        VerificationMethod verificationMethod = verificationMethodJsonLDObject == null ? null : VerificationMethod.fromJsonObject(verificationMethodJsonLDObject.getJsonObject());
-        if (verificationMethod == null || ! didSourceDocument.getVerificationMethods().contains(verificationMethod)) {
-            throw new RegistrationException("INVALID_DID_UPDATE", "didSourceDocument.verificationMethod does not contain " + verificationMethodId);
-        }
-
-        if (! didSourceDocument.getCapabilityInvocationVerificationMethodsDereferenced().contains(verificationMethod)) {
-            throw new RegistrationException("INVALID_DID_UPDATE", "didSourceDocument.capabilityInvocation does not contain " + verificationMethodId);
-        }
-
-        // Create cryptosuite as a BIP340 Cryptosuite [BIP340-Cryptosuite] instance with privateKey and "bip340-jcs-2025" cryptosuite.
-
-        DataIntegrityProofLdSigner cryptosuite = new DataIntegrityProofLdSigner();
-        cryptosuite.setCryptosuite("bip340-jcs-2025");
-
-        // Fill the Data Integrity [VC-DATA-INTEGRITY] template below with the required template variables.
-
-        URI cryptosuiteVerificationMethod = verificationMethod.getId();
-        if (! cryptosuiteVerificationMethod.isAbsolute()) cryptosuiteVerificationMethod = URI.create(didSourceDocument.getId() + cryptosuiteVerificationMethod.toString());
-        URI cryptosuiteCapability = URI.create("urn:zcap:root:" + URLEncoder.encode(didSourceDocument.getId().toString(), StandardCharsets.UTF_8));
-
-        cryptosuite.setVerificationMethod(cryptosuiteVerificationMethod);
-        cryptosuite.setProofPurpose("capabilityInvocation");
-        cryptosuite.setCapability(cryptosuiteCapability);
-        cryptosuite.setCapabilityAction("Write");
-
-        // Pass update and proofConfig to the cryptosuite.createProof method and set
-        // update.proof to the resulting Data Integrity Proof (data structure).
-
-        byte[] updateSignPayload;
-
-        try {
-
-            final AtomicReference<byte[]> reference = new AtomicReference<>();
-
-            JsonLDUtils.jsonLdRemove(btcr2Update, DataIntegrityKeywords.JSONLD_TERM_PROOF);
-
-            cryptosuite.setSigner(new ByteSigner(JWSAlgorithm.ES256KS) {
-                @Override
-                protected byte[] sign(byte[] bytes) {
-                    if (log.isDebugEnabled()) log.debug("Signing bytes {}", Hex.encodeHexString(bytes));
-                    reference.set(bytes);
-                    return new byte[0];
-                }
-            });
-            cryptosuite.sign(btcr2Update, false, false);
-
-            updateSignPayload = reference.get();
-        } catch (IOException | GeneralSecurityException | JsonLDException ex) {
-            throw new RegistrationException("Cannot sign the BTCR2 Update: " + ex.getMessage(), ex);
-        }
-
-        // result
-
-        UpdateInitResult updateInitResult = new UpdateInitResult(verificationMethodId, btcr2Update, updateSignPayload);
-        if (log.isDebugEnabled()) log.debug("Update: " + updateInitResult);
-        return updateInitResult;
-    }
-
-    public UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayload(BitcoinConnection bitcoinConnection, DID did, DIDDocument didSourceDocument, Integer targetVersionId, URI beaconServiceId, String beaconServiceType, JsonPatch jsonPatches, BTCR2Update btcr2Update, URI verificationMethodId, byte[] updateSigningResponseSignature, Map<String, Object> didDocumentMetadata) throws RegistrationException, UpdateActionFundAddressException, UpdateActionCompleteAggregationUpdatesException {
+    public UpdateProcessUpdateSignPayloadResult update(BitcoinConnection bitcoinConnection, DID did, DIDDocument didSourceDocument, Integer targetVersionId, URI beaconServiceId, String beaconServiceType, JsonPatch jsonPatches, BTCR2Update btcr2Update, URI verificationMethodId, byte[] updateSigningResponseSignature, Map<String, Object> didDocumentMetadata) throws RegistrationException, UpdateActionFundAddressException, UpdateActionCompleteAggregationUpdatesException {
 
         /*
          * Construct BTCR2 Signed Update
@@ -346,7 +230,7 @@ public class Update {
         if (totalValue.compareTo(BITCOIN_FEE) < 0) {
             // next state
             Coin minimumValue = BITCOIN_FEE.minus(totalValue);
-            throw new UpdateActionFundAddressException(beaconAddress, minimumValue, null);
+            throw new UpdateActionFundAddressException(beaconAddress, minimumValue);
         }
 
         Transaction unsignedBeaconSignal = new Transaction();
@@ -359,7 +243,7 @@ public class Update {
 
         // The Beacon Signal is signed by the private key that controls the Beacon Address
 
-        List<byte[]> utxoSignPayloads = IntStream.range(0, unsignedBeaconSignal.getInputs().size())
+        List<byte[]> utxoSingletonSignPayloads = IntStream.range(0, unsignedBeaconSignal.getInputs().size())
                 .mapToObj(i -> unsignedBeaconSignal.hashForSignature(
                         i,
                         unsignedBeaconSignal.getInput(i).getScriptBytes(),
@@ -370,40 +254,7 @@ public class Update {
 
         // result
 
-        return new UpdateProcessUpdateSignPayloadResult(btcr2Update, unsignedBeaconSignal, utxoSignPayloads, null);
-    }
-
-    public UpdateProcessUtxoSignPayloadsResult updateProcessUtxoSignPayloads(BitcoinConnection bitcoinConnection, DID did, DIDDocument didSourceDocument, Integer targetVersionId, JsonPatch jsonPatches, BTCR2Update btcr2Update, Transaction unsignedBeaconSignal, ECKey updateECKey, List<byte[]> utxoSigningResponseSignatures, Map<String, Object> didDocumentMetadata) throws RegistrationException {
-
-        // The Beacon Signal is signed by the private key that controls the Beacon Address
-
-        Transaction beaconSignal = unsignedBeaconSignal;
-
-        for (int i = 0; i<beaconSignal.getInputs().size(); i++) {
-            TransactionInput transactionInput = beaconSignal.getInput(i);
-            byte[] utxoSigningResponseSignature = utxoSigningResponseSignatures.get(i);
-            byte[] r = new byte[32];
-            byte[] s = new byte[32];
-            System.arraycopy(utxoSigningResponseSignature, 0, r, 0, r.length);
-            System.arraycopy(utxoSigningResponseSignature, 32, s, 0, s.length);
-            ECKey.ECDSASignature signature = new ECKey.ECDSASignature(new BigInteger(1, r), new BigInteger(1, s));
-            TransactionSignature transactionSignature = new TransactionSignature(signature, Transaction.SigHash.ALL, false);
-            TransactionInput signedTransactionInput = transactionInput.withScriptSig(ScriptBuilder.createInputScript(transactionSignature, updateECKey));
-            beaconSignal.replaceInput(i, signedTransactionInput);
-        }
-        if (log.isDebugEnabled()) log.debug("beaconSignal after signing: {}", beaconSignal);
-
-        // and broadcast to the Bitcoin network.
-
-        byte[] beaconSignalBytes = beaconSignal.serialize();
-        if (log.isDebugEnabled()) log.debug("Broadcasting beacon signal: " + Hex.encodeHexString(beaconSignalBytes));
-        bitcoinConnection.broadcastRawTransaction(beaconSignalBytes);
-
-        // result
-
-        UpdateProcessUtxoSignPayloadsResult updateProcessUtxoSignPayloadsResult = new UpdateProcessUtxoSignPayloadsResult(btcr2Update, null);
-        if (log.isDebugEnabled()) log.debug("Update: " + updateProcessUtxoSignPayloadsResult);
-        return updateProcessUtxoSignPayloadsResult;
+        return new UpdateProcessUpdateSignPayloadResult(btcr2Update, unsignedBeaconSignal, utxoSingletonSignPayloads, null, null);
     }
 
     /*
@@ -462,7 +313,7 @@ public class Update {
 
         // result
 
-        return new UpdateProcessUpdateSignPayloadResult(btcr2Update, aggregationCohort.getUnsignedBeaconSignal(), aggregationCohort.getUtxoSignPayloads(), aggregationCohort);
+        return new UpdateProcessUpdateSignPayloadResult(btcr2Update, aggregationCohort.getUnsignedBeaconSignal(), null, aggregationCohort.getUtxoAggregateSignPayloads(), aggregationCohort);
     }
 
     public static void updateAggregateBeaconCAS(BitcoinConnection bitcoinConnection, AggregationCohort aggregationCohort, int participantIndex, DID did, DIDDocument didSourceDocument, BTCR2Update btcr2Update, URI verificationMethodId) throws RegistrationException {
@@ -542,7 +393,7 @@ public class Update {
     }
 
     /*
-     * Getters and settes
+     * Getters and setters
      */
 
     public IPFSConnection getIpfsConnection() {
