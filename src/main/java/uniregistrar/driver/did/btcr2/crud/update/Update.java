@@ -286,7 +286,7 @@ public class Update {
 
         Stream<Service> serviceStream = didSourceDocument.getServices().stream();
         if (beaconServiceId != null) {
-            serviceStream = serviceStream.filter(service -> JsonLDDereferencer.findByIdInJsonLdObject(didSourceDocument, beaconServiceId, didSourceDocument.getId()) != null);
+            serviceStream = serviceStream.filter(service -> service.equals(JsonLDDereferencer.findByIdInJsonLdObject(didSourceDocument, beaconServiceId, didSourceDocument.getId())));
         }
         if (beaconServiceType != null) {
             serviceStream = serviceStream.filter(service -> beaconServiceType.equals(service.getType()));
