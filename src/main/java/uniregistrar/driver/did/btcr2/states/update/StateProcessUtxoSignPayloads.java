@@ -57,8 +57,8 @@ public class StateProcessUtxoSignPayloads {
         BTCR2Update btcr2Update = updateJob.btcr2Update() == null ? null : BTCR2Update.fromJson(updateJob.btcr2Update());
         if (btcr2Update == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'btcr2Update' in jobId");
 
-        Transaction btcr2Transaction = updateJob.btcr2Transaction() == null ? null : Transaction.read(ByteBuffer.wrap(Base64.getDecoder().decode(updateJob.btcr2Transaction())));
-        if (btcr2Transaction == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'btcr2Transaction' in jobId");
+        Transaction unsignedBeaconSignal = updateJob.unsignedBeaconSignal() == null ? null : Transaction.read(ByteBuffer.wrap(Base64.getDecoder().decode(updateJob.unsignedBeaconSignal())));
+        if (unsignedBeaconSignal == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'unsignedBeaconSignal' in jobId");
 
         // read input DID
 
@@ -139,7 +139,7 @@ public class StateProcessUtxoSignPayloads {
 
         // update()
 
-        UpdateProcessUtxoSignPayloadsResult updateProcessUtxoSignPayloadsResult = update.updateProcessUtxoSignPayloads(bitcoinConnection, did, didSourceDocument, targetVersionId, jsonPatches, btcr2Update, btcr2Transaction, updateECKey, utxoSigningResponseSignatures, didDocumentMetadata);
+        UpdateProcessUtxoSignPayloadsResult updateProcessUtxoSignPayloadsResult = update.updateProcessUtxoSignPayloads(bitcoinConnection, did, didSourceDocument, targetVersionId, jsonPatches, btcr2Update, unsignedBeaconSignal, updateECKey, utxoSigningResponseSignatures, didDocumentMetadata);
 
         // publish to IPFS?
 

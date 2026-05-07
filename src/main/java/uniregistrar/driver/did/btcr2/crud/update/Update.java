@@ -222,7 +222,7 @@ public class Update {
         return updateInitResult;
     }
 
-    public UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayload(BitcoinConnection bitcoinConnection, DID did, DIDDocument didSourceDocument, Integer targetVersionId, URI beaconServiceId, String beaconServiceType, JsonPatch jsonPatches, BTCR2Update btcr2Update, URI verificationMethodId, byte[] updateSigningResponseSignature, Map<String, Object> didDocumentMetadata) throws RegistrationException, UpdateActionFundAddressException {
+    public UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayload(BitcoinConnection bitcoinConnection, DID did, DIDDocument didSourceDocument, Integer targetVersionId, URI beaconServiceId, String beaconServiceType, JsonPatch jsonPatches, BTCR2Update btcr2Update, URI verificationMethodId, byte[] updateSigningResponseSignature, Map<String, Object> didDocumentMetadata) throws RegistrationException, UpdateActionFundAddressException, UpdateActionCompleteAggregationUpdatesException {
 
         /*
          * Construct BTCR2 Signed Update
@@ -327,38 +327,41 @@ public class Update {
 
         // This 32-byte SHA-256 hash is used as the Signal Bytes when constructing a Beacon Signal Bitcoin transaction.
 
-        Address beaconServiceAddress;
+        byte[] signalBytes = updateAnnouncement;
+
+        Address beaconAddress;
         try {
-            beaconServiceAddress = AddressUtil.bitcoinUriToBitcoinjAddress((URI) beaconService.getServiceEndpoint());
+            beaconAddress = AddressUtil.bitcoinUriToBitcoinjAddress((URI) beaconService.getServiceEndpoint());
         } catch (BitcoinURIParseException ex) {
             throw new RegistrationException(RegistrationException.ERROR_INVALID_DID_DOCUMENT, "Invalid beacon service found in source DID document: " + beaconService);
         }
-        if (log.isDebugEnabled()) log.debug("beaconServiceAddress: {}", beaconServiceAddress);
+        if (log.isDebugEnabled()) log.debug("beaconAddress: {}", beaconAddress);
 
-        List<TxOut> beaconServiceAddressUtxos = bitcoinConnection.getAddressUtxos(beaconServiceAddress.toString());
-        if (log.isDebugEnabled()) log.debug("beaconServiceAddressUtxos: {}", beaconServiceAddressUtxos);
+        List<TxOut> beaconAddressUtxos = bitcoinConnection.getAddressUtxos(beaconAddress.toString());
+        if (log.isDebugEnabled()) log.debug("beaconAddressUtxos: {}", beaconAddressUtxos);
 
-        Coin totalValue = Coin.valueOf(beaconServiceAddressUtxos.stream().mapToLong(TxOut::value).sum());
+        Coin totalValue = Coin.valueOf(beaconAddressUtxos.stream().mapToLong(TxOut::value).sum());
         if (log.isDebugEnabled()) log.debug("totalValue: {}", totalValue);
         if (totalValue.compareTo(BITCOIN_FEE) < 0) {
+            // next state
             Coin minimumValue = BITCOIN_FEE.minus(totalValue);
-            throw new UpdateActionFundAddressException(beaconServiceAddress, minimumValue);
+            throw new UpdateActionFundAddressException(beaconAddress, minimumValue);
         }
 
-        Transaction btcr2Transaction = new Transaction();
-        for (TxOut beaconServiceAddressUtxo : beaconServiceAddressUtxos) {
-            btcr2Transaction.addInput(Sha256Hash.wrap(beaconServiceAddressUtxo.txIdBytes()), beaconServiceAddressUtxo.txOutIndex(), Script.parse(beaconServiceAddressUtxo.scriptBytes()));
+        Transaction unsignedBeaconSignal = new Transaction();
+        for (TxOut beaconAddressUtxo : beaconAddressUtxos) {
+            unsignedBeaconSignal.addInput(Sha256Hash.wrap(beaconAddressUtxo.txIdBytes()), beaconAddressUtxo.txOutIndex(), Script.parse(beaconAddressUtxo.scriptBytes()));
         }
-        btcr2Transaction.addOutput(totalValue.minus(BITCOIN_FEE), beaconServiceAddress);
-        btcr2Transaction.addOutput(Coin.ZERO, ScriptBuilder.createOpReturnScript(updateAnnouncement));
-        if (log.isDebugEnabled()) log.debug("btcr2Transaction before signing: {}", btcr2Transaction);
+        unsignedBeaconSignal.addOutput(totalValue.minus(BITCOIN_FEE), beaconAddress);
+        unsignedBeaconSignal.addOutput(Coin.ZERO, ScriptBuilder.createOpReturnScript(signalBytes));
+        if (log.isDebugEnabled()) log.debug("unsignedBeaconSignal before signing: {}", unsignedBeaconSignal);
 
         // The Beacon Signal is signed by the private key that controls the Beacon Address
 
-        List<byte[]> utxoSignPayloads = IntStream.range(0, btcr2Transaction.getInputs().size())
-                .mapToObj(i -> btcr2Transaction.hashForSignature(
+        List<byte[]> utxoSignPayloads = IntStream.range(0, unsignedBeaconSignal.getInputs().size())
+                .mapToObj(i -> unsignedBeaconSignal.hashForSignature(
                         i,
-                        btcr2Transaction.getInput(i).getScriptBytes(),
+                        unsignedBeaconSignal.getInput(i).getScriptBytes(),
                         Transaction.SigHash.ALL,
                         false))
                 .map(Sha256Hash::getBytes)
@@ -366,15 +369,17 @@ public class Update {
 
         // result
 
-        return new UpdateProcessUpdateSignPayloadResult(btcr2Update, btcr2Transaction, utxoSignPayloads);
+        return new UpdateProcessUpdateSignPayloadResult(btcr2Update, unsignedBeaconSignal, utxoSignPayloads);
     }
 
-    public UpdateProcessUtxoSignPayloadsResult updateProcessUtxoSignPayloads(BitcoinConnection bitcoinConnection, DID did, DIDDocument didSourceDocument, Integer targetVersionId, JsonPatch jsonPatches, BTCR2Update btcr2Update, Transaction btcr2Transaction, ECKey updateECKey, List<byte[]> utxoSigningResponseSignatures, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public UpdateProcessUtxoSignPayloadsResult updateProcessUtxoSignPayloads(BitcoinConnection bitcoinConnection, DID did, DIDDocument didSourceDocument, Integer targetVersionId, JsonPatch jsonPatches, BTCR2Update btcr2Update, Transaction unsignedBeaconSignal, ECKey updateECKey, List<byte[]> utxoSigningResponseSignatures, Map<String, Object> didDocumentMetadata) throws RegistrationException {
 
         // The Beacon Signal is signed by the private key that controls the Beacon Address
 
-        for (int i=0; i<btcr2Transaction.getInputs().size(); i++) {
-            TransactionInput transactionInput = btcr2Transaction.getInput(i);
+        Transaction beaconSignal = unsignedBeaconSignal;
+
+        for (int i = 0; i<beaconSignal.getInputs().size(); i++) {
+            TransactionInput transactionInput = beaconSignal.getInput(i);
             byte[] utxoSigningResponseSignature = utxoSigningResponseSignatures.get(i);
             byte[] r = new byte[32];
             byte[] s = new byte[32];
@@ -383,15 +388,15 @@ public class Update {
             ECKey.ECDSASignature signature = new ECKey.ECDSASignature(new BigInteger(1, r), new BigInteger(1, s));
             TransactionSignature transactionSignature = new TransactionSignature(signature, Transaction.SigHash.ALL, false);
             TransactionInput signedTransactionInput = transactionInput.withScriptSig(ScriptBuilder.createInputScript(transactionSignature, updateECKey));
-            btcr2Transaction.replaceInput(i, signedTransactionInput);
+            beaconSignal.replaceInput(i, signedTransactionInput);
         }
-        if (log.isDebugEnabled()) log.debug("btcr2Transaction after signing: {}", btcr2Transaction);
+        if (log.isDebugEnabled()) log.debug("beaconSignal after signing: {}", beaconSignal);
 
         // and broadcast to the Bitcoin network.
 
-        byte[] beaconSignal = btcr2Transaction.serialize();
-        if (log.isDebugEnabled()) log.debug("Broadcasting beacon signal: " + Hex.encodeHexString(beaconSignal));
-        bitcoinConnection.broadcastRawTransaction(beaconSignal);
+        byte[] beaconSignalBytes = beaconSignal.serialize();
+        if (log.isDebugEnabled()) log.debug("Broadcasting beacon signal: " + Hex.encodeHexString(beaconSignalBytes));
+        bitcoinConnection.broadcastRawTransaction(beaconSignalBytes);
 
         // result
 
@@ -405,7 +410,7 @@ public class Update {
      * See https://dcdpr.github.io/did-btcr2/operations/update.html#announcing-to-an-aggregate-beacon
      */
 
-    public static UpdateProcessUpdateSignPayloadResult announceToAggregateBeacon(BitcoinConnection bitcoinConnection, DID did, DIDDocument didSourceDocument, BTCR2Update btcr2Update, URI verificationMethodId, Service beaconService) throws RegistrationException {
+    public static UpdateProcessUpdateSignPayloadResult announceToAggregateBeacon(BitcoinConnection bitcoinConnection, DID did, DIDDocument didSourceDocument, BTCR2Update btcr2Update, URI verificationMethodId, Service beaconService) throws RegistrationException, UpdateActionCompleteAggregationUpdatesException, UpdateActionFundAddressException {
 
         // find aggregation cohort
 
@@ -432,14 +437,29 @@ public class Update {
 
         BeaconType beaconType = BeaconType.fromServiceType(beaconService.getType());
 
-        return switch (beaconType) {
-            case CAS -> announceToAggregateBeaconCAS(bitcoinConnection, aggregationCohort, participantIndex, did, didSourceDocument, btcr2Update, verificationMethodId);
-            case SMT -> announceToAggregateBeaconSMT(bitcoinConnection, aggregationCohort, participantIndex, did, didSourceDocument, btcr2Update, verificationMethodId, /* TODO */ null);
+        switch (beaconType) {
+            case CAS -> updateAggregateBeaconCAS(bitcoinConnection, aggregationCohort, participantIndex, did, didSourceDocument, btcr2Update, verificationMethodId);
+            case SMT -> updateAggregateBeaconSMT(bitcoinConnection, aggregationCohort, participantIndex, did, didSourceDocument, btcr2Update, verificationMethodId, /* TODO */ null);
             default -> throw new IllegalStateException("Unexpected beacon type: " + beaconType);
         };
+
+        // Once responses to an update opportunity are collected
+
+        if (! aggregationCohort.isUpdatesCompleted()) {
+            // next state
+            throw new UpdateActionCompleteAggregationUpdatesException(aggregationCohort);
+        }
+
+        // it aggregates the update announcements into an Unsigned Beacon Signal.
+
+        aggregationCohort.aggregateUpdates(bitcoinConnection);
+
+        // result
+
+        return new UpdateProcessUpdateSignPayloadResult(btcr2Update, aggregationCohort.getUnsignedBeaconSignal(), aggregationCohort.getUtxoSignPayloads());
     }
 
-    public static UpdateProcessUpdateSignPayloadResult announceToAggregateBeaconCAS(BitcoinConnection bitcoinConnection, AggregationCohort aggregationCohort, int participantIndex, DID did, DIDDocument didSourceDocument, BTCR2Update btcr2Update, URI verificationMethodId) throws RegistrationException {
+    public static void updateAggregateBeaconCAS(BitcoinConnection bitcoinConnection, AggregationCohort aggregationCohort, int participantIndex, DID did, DIDDocument didSourceDocument, BTCR2Update btcr2Update, URI verificationMethodId) throws RegistrationException {
 
         // For a CAS Beacon:
 
@@ -465,13 +485,9 @@ public class Update {
 
         aggregationCohort.setMusig2SecretNonce(participantIndex, BytesArray.bytesArray(pair.component1().getData$bitcoin_kmp().getBytes$bitcoin_kmp()));
         aggregationCohort.setMusig2IndividualNonce(participantIndex, BytesArray.bytesArray(pair.component2().toByteArray()));
-
-        // result
-
-        return new UpdateProcessUpdateSignPayloadResult(btcr2Update, null, null);
     }
 
-    public static UpdateProcessUpdateSignPayloadResult announceToAggregateBeaconSMT(BitcoinConnection bitcoinConnection, AggregationCohort aggregationCohort, int participantIndex, DID did, DIDDocument didSourceDocument, BTCR2Update btcr2Update, URI verificationMethodId, byte[] nonce) throws RegistrationException {
+    public static void updateAggregateBeaconSMT(BitcoinConnection bitcoinConnection, AggregationCohort aggregationCohort, int participantIndex, DID did, DIDDocument didSourceDocument, BTCR2Update btcr2Update, URI verificationMethodId, byte[] nonce) throws RegistrationException {
 
         // For an SMT Beacon:
 
@@ -517,10 +533,6 @@ public class Update {
 
         aggregationCohort.setMusig2SecretNonce(participantIndex, BytesArray.bytesArray(pair.component1().getData$bitcoin_kmp().getBytes$bitcoin_kmp()));
         aggregationCohort.setMusig2IndividualNonce(participantIndex, BytesArray.bytesArray(pair.component2().toByteArray()));
-
-        // result
-
-        return new UpdateProcessUpdateSignPayloadResult(btcr2Update, null, null);
     }
 
     /*

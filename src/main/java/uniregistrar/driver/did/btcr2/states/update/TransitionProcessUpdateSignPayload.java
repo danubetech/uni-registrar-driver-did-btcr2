@@ -6,6 +6,7 @@ import org.bitcoinj.base.Address;
 import org.bitcoinj.base.Coin;
 import org.bitcoinj.core.Transaction;
 import uniregistrar.RegistrationException;
+import uniregistrar.driver.did.btcr2.aggregation.AggregationCohort;
 import uniregistrar.driver.did.btcr2.data.jsonld.BTCR2Update;
 import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.driver.did.btcr2.job.UpdateJob;
@@ -21,7 +22,7 @@ import java.util.Map;
 
 public class TransitionProcessUpdateSignPayload {
 
-    public static UpdateState transitionToUpdateSignPayloadFundAddress(BitcoinConnection bitcoinConnection, Address address, Coin minimumValue, BTCR2Update btcr2Update, byte[] updateSignPayload, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public static UpdateState transitionToUpdateSignPayloadFundAddress(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, Address address, Coin minimumValue, BTCR2Update btcr2Update, byte[] updateSignPayload, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
 
         // REGISTRATION STATE: jobId
 
@@ -45,6 +46,39 @@ public class TransitionProcessUpdateSignPayload {
 
         UpdateState updateState = new UpdateState();
         updateState.setJobId(new RegistrarStateJobId(jobId));
+        updateState.setDidState(didStateAction);
+        updateState.setDidRegistrationMetadata(didRegistrationMetadata);
+        updateState.setDidDocumentMetadata(didDocumentMetadata);
+
+        // done
+
+        return updateState;
+    }
+
+    public static UpdateState transitionToUpdateSignPayloadCompleteAggregationUpdates(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, AggregationCohort aggregationCohort, BTCR2Update btcr2Update, byte[] updateSignPayload, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
+
+        // REGISTRATION STATE: jobId
+
+        UpdateJob updateJob = new UpdateJob(btcr2Update.toJson(), Base64.getEncoder().encodeToString(updateSignPayload), null, null);
+
+        Map<String, Object> jobId = updateJob.toJsonObject();
+
+        // REGISTRATION STATE: didState.state="action"
+
+        DidStateAction didStateAction = new DidStateAction();
+        didStateAction.setState("action");
+        didStateAction.setAction("completeAggregationUpdates");
+        didStateAction.putAdditionalProperty("aggregationCohort", aggregationCohort.getId());
+
+        // REGISTRATION STATE: didRegistrationMetadata
+
+        if (bitcoinConnection != null) didRegistrationMetadata.putAll(bitcoinConnection.getMetadata());
+        if (ipfsConnection != null) didRegistrationMetadata.putAll(ipfsConnection.getMetadata());
+        if (aggregationCohort != null) didRegistrationMetadata.putAll(aggregationCohort.getMetadata());
+
+        // create() state
+
+        UpdateState updateState = new UpdateState();
         updateState.setDidState(didStateAction);
         updateState.setDidRegistrationMetadata(didRegistrationMetadata);
         updateState.setDidDocumentMetadata(didDocumentMetadata);

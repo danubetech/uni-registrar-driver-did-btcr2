@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
 import uniregistrar.driver.did.btcr2.crud.update.Update;
+import uniregistrar.driver.did.btcr2.crud.update.UpdateActionCompleteAggregationUpdatesException;
 import uniregistrar.driver.did.btcr2.crud.update.UpdateActionFundAddressException;
 import uniregistrar.driver.did.btcr2.crud.update.UpdateProcessUpdateSignPayloadResult;
 import uniregistrar.driver.did.btcr2.data.jsonld.BTCR2Update;
@@ -112,11 +113,14 @@ public class StateProcessUpdateSignPayload {
             updateProcessUpdateSignPayloadResult = update.updateProcessUpdateSignPayload(bitcoinConnection, did, didSourceDocument, targetVersionId, beaconServiceId, beaconServiceType, jsonPatches, btcr2Update, verificationMethodId, updateSigningResponseSignature, didDocumentMetadata);
         } catch (UpdateActionFundAddressException ex) {
             // next state
-            return TransitionProcessUpdateSignPayload.transitionToUpdateSignPayloadFundAddress(bitcoinConnection, ex.getAddress(), ex.getMinimumValue(), btcr2Update, updateSignPayload, didRegistrationMetadata, didDocumentMetadata);
+            return TransitionProcessUpdateSignPayload.transitionToUpdateSignPayloadFundAddress(bitcoinConnection, ipfsConnection, ex.getAddress(), ex.getMinimumValue(), btcr2Update, updateSignPayload, didRegistrationMetadata, didDocumentMetadata);
+        } catch (UpdateActionCompleteAggregationUpdatesException ex) {
+            // next state
+            return TransitionProcessUpdateSignPayload.transitionToUpdateSignPayloadCompleteAggregationUpdates(bitcoinConnection, ipfsConnection, ex.getAggregationCohort(), btcr2Update, updateSignPayload, didRegistrationMetadata, didDocumentMetadata);
         }
 
         // next state
 
-        return TransitionProcessUpdateSignPayload.transitionToUtxoSignPayloads(bitcoinConnection, ipfsConnection, updateProcessUpdateSignPayloadResult.btcr2Update(), updateProcessUpdateSignPayloadResult.btcr2Transaction(), updateProcessUpdateSignPayloadResult.utxoSignPayloads(), didRegistrationMetadata, didDocumentMetadata);
+        return TransitionProcessUpdateSignPayload.transitionToUtxoSignPayloads(bitcoinConnection, ipfsConnection, updateProcessUpdateSignPayloadResult.btcr2Update(), updateProcessUpdateSignPayloadResult.unsignedBeaconSignal(), updateProcessUpdateSignPayloadResult.utxoSignPayloads(), didRegistrationMetadata, didDocumentMetadata);
     }
 }
