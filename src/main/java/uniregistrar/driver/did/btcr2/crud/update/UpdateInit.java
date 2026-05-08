@@ -84,7 +84,7 @@ public class UpdateInit {
         this.ipfsConnection = ipfsConnection;
     }
 
-    public UpdateInitResult update(BitcoinConnection bitcoinConnection, DID did, DIDDocument didSourceDocument, Integer targetVersionId, JsonPatch jsonPatches, URI verificationMethodId, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public UpdateInitResult update(BitcoinConnection bitcoinConnection, DIDDocument didSourceDocument, Integer targetVersionId, JsonPatch jsonPatches, URI verificationMethodId, Map<String, Object> didDocumentMetadata) throws RegistrationException {
 
         /*
          * Construct BTCR2 Unsigned Update

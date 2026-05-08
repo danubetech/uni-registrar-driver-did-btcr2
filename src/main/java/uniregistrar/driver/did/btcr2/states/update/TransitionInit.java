@@ -52,7 +52,13 @@ public class TransitionInit {
 
         // REGISTRATION STATE: jobId
 
-        UpdateJob updateJob = new UpdateJob(btcr2Update.toJson(), Base64.getEncoder().encodeToString(updateSignPayload), null, null, null);
+        UpdateJob updateJob = new UpdateJob(
+                btcr2Update.toJson(),
+                Base64.getEncoder().encodeToString(updateSignPayload),
+                null,
+                null,
+                null,
+                null);
 
         Map<String, Object> jobId = updateJob.toJsonObject();
 

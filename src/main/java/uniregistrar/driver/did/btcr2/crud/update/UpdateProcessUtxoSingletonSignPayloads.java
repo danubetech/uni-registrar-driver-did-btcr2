@@ -38,7 +38,7 @@ public class UpdateProcessUtxoSingletonSignPayloads {
         this.ipfsConnection = ipfsConnection;
     }
 
-    public UpdateProcessUtxoSingletonSignPayloadsResult update(BitcoinConnection bitcoinConnection, DID did, DIDDocument didSourceDocument, Integer targetVersionId, JsonPatch jsonPatches, BTCR2Update btcr2Update, Transaction unsignedBeaconSignal, ECKey updateECKey, List<byte[]> utxoSingletonSigningResponseSignatures, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public UpdateProcessUtxoSingletonSignPayloadsResult update(BitcoinConnection bitcoinConnection, BTCR2Update btcr2Update, Transaction unsignedBeaconSignal, ECKey updateECKey, List<byte[]> utxoSingletonSignatures, Map<String, Object> didDocumentMetadata) throws RegistrationException {
 
         // The Beacon Signal is signed by the private key that controls the Beacon Address
 
@@ -46,11 +46,11 @@ public class UpdateProcessUtxoSingletonSignPayloads {
 
         for (int i = 0; i<beaconSignal.getInputs().size(); i++) {
             TransactionInput transactionInput = beaconSignal.getInput(i);
-            byte[] utxoSingletonSigningResponseSignature = utxoSingletonSigningResponseSignatures.get(i);
+            byte[] utxoSingletonSignature = utxoSingletonSignatures.get(i);
             byte[] r = new byte[32];
             byte[] s = new byte[32];
-            System.arraycopy(utxoSingletonSigningResponseSignature, 0, r, 0, r.length);
-            System.arraycopy(utxoSingletonSigningResponseSignature, 32, s, 0, s.length);
+            System.arraycopy(utxoSingletonSignature, 0, r, 0, r.length);
+            System.arraycopy(utxoSingletonSignature, 32, s, 0, s.length);
             ECKey.ECDSASignature signature = new ECKey.ECDSASignature(new BigInteger(1, r), new BigInteger(1, s));
             TransactionSignature transactionSignature = new TransactionSignature(signature, Transaction.SigHash.ALL, false);
             TransactionInput signedTransactionInput = transactionInput.withScriptSig(ScriptBuilder.createInputScript(transactionSignature, updateECKey));

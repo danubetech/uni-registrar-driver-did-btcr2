@@ -9,9 +9,6 @@ public class CreateJob {
 
     private static final JsonMapper jsonMapper = JsonMapper.builder().build();
 
-    public CreateJob() {
-    }
-
     public static CreateJob fromJsonObject(Map<String, Object> jsonObject) {
         return jsonMapper.convertValue(jsonObject, CreateJob.class);
     }

@@ -213,6 +213,6 @@ public class StateInit {
 
         // next state
 
-        return TransitionInit.transitionToFinished(bitcoinConnection, ipfsConnection, createInitResult.initialKey(), createInitResult.genesisDocument(), createInitResult.did(), aggregationCohort, merkleNode, didRegistrationMetadata, didDocumentMetadata);
+        return TransitionInit.transitionToFinished(bitcoinConnection, ipfsConnection, aggregationCohort, createInitResult.initialKey(), createInitResult.genesisDocument(), createInitResult.did(), merkleNode, didRegistrationMetadata, didDocumentMetadata);
     }
 }

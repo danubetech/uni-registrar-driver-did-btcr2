@@ -8,8 +8,6 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import foundation.identity.did.DID;
 import foundation.identity.did.DIDDocument;
 import foundation.identity.did.parser.ParserException;
-import jakarta.json.Json;
-import jakarta.json.JsonPatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
@@ -27,7 +25,9 @@ import uniregistrar.openapi.model.UpdateRequest;
 import uniregistrar.openapi.model.UpdateState;
 
 import java.net.URI;
-import java.util.*;
+import java.util.Base64;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class StateProcessUpdateSignPayload {
 
@@ -43,14 +43,6 @@ public class StateProcessUpdateSignPayload {
 
         Map<String, Object> didRegistrationMetadata = new LinkedHashMap<>();
         Map<String, Object> didDocumentMetadata = new LinkedHashMap<>();
-
-        // read job
-
-        BTCR2Update btcr2Update = updateJob.btcr2Update() == null ? null : BTCR2Update.fromJson(updateJob.btcr2Update());
-        if (btcr2Update == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'btcr2Update' in jobId");
-
-        byte[] updateSignPayload = updateJob.updateSignPayload() == null ? null : Base64.getDecoder().decode(updateJob.updateSignPayload());
-        if (updateSignPayload == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'updateSignPayload' in jobId");
 
         // read input DID
 
@@ -68,30 +60,20 @@ public class StateProcessUpdateSignPayload {
         BitcoinConnection bitcoinConnection = bitcoinConnector.getBitcoinConnection(identifierComponents.network());
         if (bitcoinConnection == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_DID, "Unknown network: " + identifierComponents.network());
 
-        // read didSourceDocument and targetVersionId options
+        // read job
+
+        BTCR2Update btcr2Update = updateJob.btcr2Update() == null ? null : BTCR2Update.fromJson(updateJob.btcr2Update());
+        if (btcr2Update == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'btcr2Update' in jobId");
+
+        byte[] updateSignPayload = updateJob.updateSignPayload() == null ? null : Base64.getDecoder().decode(updateJob.updateSignPayload());
+        if (updateSignPayload == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'updateSignPayload' in jobId");
+
+        // read options
 
         DIDDocument didSourceDocument = updateRequest.getOptions() == null || updateRequest.getOptions().getAdditionalProperty("didSourceDocument") == null ? null : DIDDocument.fromJsonObject((Map<String, Object>) updateRequest.getOptions().getAdditionalProperty("didSourceDocument"));
-        Integer targetVersionId = updateRequest.getOptions() == null ? null : (updateRequest.getOptions().getAdditionalProperty("targetVersionId") instanceof String targetVersionIdString ? Integer.parseInt(targetVersionIdString) : (Integer) updateRequest.getOptions().getAdditionalProperty("targetVersionId"));
         URI beaconServiceId = updateRequest.getOptions() == null ? null : (updateRequest.getOptions().getAdditionalProperty("beaconServiceId") instanceof String beaconServiceIdString ? URI.create(beaconServiceIdString) : null);
         String beaconServiceType = updateRequest.getOptions() == null ? null : (updateRequest.getOptions().getAdditionalProperty("beaconServiceType") instanceof String beaconServiceTypeString ? beaconServiceTypeString : null);
         if (didSourceDocument == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'didSourceDocument' option");
-        if (targetVersionId == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'targetVersionId' option");
-
-        // read input DID document operations and DID documents
-
-        List<String> didDocumentOperations = updateRequest.getDidDocumentOperation() == null ? Collections.emptyList() : updateRequest.getDidDocumentOperation();
-        List<DIDDocument> didDocuments = updateRequest.getDidDocument() == null ? Collections.emptyList() : updateRequest.getDidDocument().stream().map(x -> jsonMapper.convertValue(x, DIDDocument.class)).toList();
-
-        // read input DID document update operations
-
-        List<Map<String, Object>> jsonPatchesObjects = new LinkedList<>();
-        for (int i=0; i<didDocumentOperations.size(); i++) {
-            String didDocumentOperation = didDocumentOperations.get(i);
-            DIDDocument didDocument = didDocuments.get(i);
-            if (! "patchDidDocument".equals(didDocumentOperation)) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Unsupported DID document operation: " + didDocumentOperation);
-            jsonPatchesObjects.add(didDocument.getJsonObject());
-        }
-        JsonPatch jsonPatches = Json.createPatch(Json.createArrayBuilder(jsonPatchesObjects).build());
 
         // read signing response
 
@@ -99,24 +81,27 @@ public class StateProcessUpdateSignPayload {
         Map<String, SigningResponse> signingResponses = requestSecret == null ? null : requestSecret.getSigningResponse();
         SigningResponse updateSigningResponse = signingResponses == null ? null : signingResponses.get("update");
 
-        if (updateSigningResponse == null || updateSigningResponse.getKid() == null) {
-            throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Signing response 'update' not found");
+        if (updateSigningResponse == null) {
+            throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Signing response 'update' not found: " + updateSigningResponse);
+        }
+        if (updateSigningResponse.getKid() == null) {
+            throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Signing response 'update' has no 'kid'");
         }
 
         URI verificationMethodId = URI.create(updateSigningResponse.getKid());
-        byte[] updateSigningResponseSignature = Base64.getDecoder().decode(updateSigningResponse.getSignature());
+        byte[] updateSignature = Base64.getDecoder().decode(updateSigningResponse.getSignature());
 
         // update()
 
         UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayloadResult;
         try {
-            updateProcessUpdateSignPayloadResult = updateProcessUpdateSignPayload.update(bitcoinConnection, did, didSourceDocument, targetVersionId, beaconServiceId, beaconServiceType, jsonPatches, btcr2Update, verificationMethodId, updateSigningResponseSignature, didDocumentMetadata);
+            updateProcessUpdateSignPayloadResult = updateProcessUpdateSignPayload.update(bitcoinConnection, did, btcr2Update, verificationMethodId, didSourceDocument, beaconServiceId, beaconServiceType, updateSignature, didDocumentMetadata);
         } catch (UpdateActionFundAddressException ex) {
             // next state
-            return TransitionProcessUpdateSignPayload.transitionToUpdateSignPayloadFundAddress(bitcoinConnection, ipfsConnection, ex.getAddress(), ex.getMinimumValue(), btcr2Update, updateSignPayload, didRegistrationMetadata, didDocumentMetadata);
+            return TransitionProcessUpdateSignPayload.transitionToUpdateSignPayloadFundAddress(bitcoinConnection, ipfsConnection, btcr2Update, updateSignPayload, ex.getAddress(), ex.getMinimumValue(), didRegistrationMetadata, didDocumentMetadata);
         } catch (UpdateActionCompleteAggregationUpdatesException ex) {
             // next state
-            return TransitionProcessUpdateSignPayload.transitionToUpdateSignPayloadCompleteAggregationUpdates(bitcoinConnection, ipfsConnection, ex.getAggregationCohort(), btcr2Update, updateSignPayload, didRegistrationMetadata, didDocumentMetadata);
+            return TransitionProcessUpdateSignPayload.transitionToUpdateSignPayloadCompleteAggregationUpdates(bitcoinConnection, ipfsConnection, btcr2Update, updateSignPayload, ex.getAggregationCohort(), didRegistrationMetadata, didDocumentMetadata);
         }
 
         // next state

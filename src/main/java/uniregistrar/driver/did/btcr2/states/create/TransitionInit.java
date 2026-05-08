@@ -78,7 +78,7 @@ public class TransitionInit {
         return createState;
     }
 
-    public static CreateState transitionToFinished(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, byte[] initialKey, DIDDocument genesisDocument, DID did, AggregationCohort aggregationCohort, MerkleNode merkleNode, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
+    public static CreateState transitionToFinished(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, AggregationCohort aggregationCohort, byte[] initialKey, DIDDocument genesisDocument, DID did, MerkleNode merkleNode, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
 
         // REGISTRATION STATE: jobId
 

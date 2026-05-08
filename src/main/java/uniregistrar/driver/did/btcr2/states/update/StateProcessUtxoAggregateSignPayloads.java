@@ -3,9 +3,6 @@ package uniregistrar.driver.did.btcr2.states.update;
 import com.danubetech.btc.connection.BitcoinConnection;
 import com.danubetech.btc.connection.BitcoinConnector;
 import com.danubetech.btc.syntax.IdentifierComponents;
-import com.danubetech.keyformats.JWK_to_PublicKey;
-import com.danubetech.keyformats.PublicKeyBytes;
-import com.danubetech.keyformats.jose.JWK;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import foundation.identity.did.DID;
@@ -14,30 +11,31 @@ import foundation.identity.did.parser.ParserException;
 import io.ipfs.api.AddArgs;
 import io.ipfs.api.MerkleNode;
 import io.ipfs.api.NamedStreamable;
-import io.ipfs.multibase.Multibase;
-import jakarta.json.Json;
-import jakarta.json.JsonPatch;
 import org.bitcoinj.core.Transaction;
-import org.bitcoinj.crypto.ECKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
 import uniregistrar.driver.did.btcr2.algorithms.JSONDocumentHashing;
+import uniregistrar.driver.did.btcr2.crud.update.UpdateActionCompleteAggregationSignaturesException;
 import uniregistrar.driver.did.btcr2.crud.update.UpdateProcessUtxoAggregateSignPayloads;
 import uniregistrar.driver.did.btcr2.crud.update.UpdateProcessUtxoAggregateSignPayloadsResult;
-import uniregistrar.driver.did.btcr2.crud.update.UpdateProcessUtxoSingletonSignPayloads;
-import uniregistrar.driver.did.btcr2.crud.update.UpdateProcessUtxoSingletonSignPayloadsResult;
 import uniregistrar.driver.did.btcr2.data.jsonld.BTCR2Update;
 import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.driver.did.btcr2.job.UpdateJob;
 import uniregistrar.driver.did.btcr2.syntax.DidBtcr2IdentifierDecoding;
-import uniregistrar.driver.did.btcr2.util.MultiCodecUtil;
-import uniregistrar.openapi.model.*;
+import uniregistrar.openapi.model.RequestSecret;
+import uniregistrar.openapi.model.SigningResponse;
+import uniregistrar.openapi.model.UpdateRequest;
+import uniregistrar.openapi.model.UpdateState;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.Base64;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public class StateProcessUtxoAggregateSignPayloads {
 
@@ -53,14 +51,6 @@ public class StateProcessUtxoAggregateSignPayloads {
 
         Map<String, Object> didRegistrationMetadata = new LinkedHashMap<>();
         Map<String, Object> didDocumentMetadata = new LinkedHashMap<>();
-
-        // read job
-
-        BTCR2Update btcr2Update = updateJob.btcr2Update() == null ? null : BTCR2Update.fromJson(updateJob.btcr2Update());
-        if (btcr2Update == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'btcr2Update' in jobId");
-
-        Transaction unsignedBeaconSignal = updateJob.unsignedBeaconSignal() == null ? null : Transaction.read(ByteBuffer.wrap(Base64.getDecoder().decode(updateJob.unsignedBeaconSignal())));
-        if (unsignedBeaconSignal == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'unsignedBeaconSignal' in jobId");
 
         // read input DID
 
@@ -78,70 +68,56 @@ public class StateProcessUtxoAggregateSignPayloads {
         BitcoinConnection bitcoinConnection = bitcoinConnector.getBitcoinConnection(identifierComponents.network());
         if (bitcoinConnection == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_DID, "Unknown network: " + identifierComponents.network());
 
-        // read didSourceDocument and targetVersionId and publishToIpfs options
+        // read job
+
+        BTCR2Update btcr2Update = updateJob.btcr2Update() == null ? null : BTCR2Update.fromJson(updateJob.btcr2Update());
+        if (btcr2Update == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'btcr2Update' in jobId");
+
+        Transaction unsignedBeaconSignal = updateJob.unsignedBeaconSignal() == null ? null : Transaction.read(ByteBuffer.wrap(Base64.getDecoder().decode(updateJob.unsignedBeaconSignal())));
+        if (unsignedBeaconSignal == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'unsignedBeaconSignal' in jobId");
+
+        List<byte[]> utxoAggregateSignPayloads = updateJob.utxoAggregateSignPayloads() == null ? null : updateJob.utxoAggregateSignPayloads().stream().map(x -> Base64.getDecoder().decode(x)).toList();
+        if (utxoAggregateSignPayloads == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'utxoAggregateSignPayloads' in jobId");
+
+        String aggregationCohortId = updateJob.aggregationCohortId();
+        if (aggregationCohortId == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'aggregationCohortId' in jobId");
+
+        // read options
 
         DIDDocument didSourceDocument = updateRequest.getOptions() == null || updateRequest.getOptions().getAdditionalProperty("didSourceDocument") == null ? null : DIDDocument.fromJsonObject((Map<String, Object>) updateRequest.getOptions().getAdditionalProperty("didSourceDocument"));
-        Integer targetVersionId = updateRequest.getOptions() == null ? null : (updateRequest.getOptions().getAdditionalProperty("targetVersionId") instanceof String targetVersionIdString ? Integer.parseInt(targetVersionIdString) : (Integer) updateRequest.getOptions().getAdditionalProperty("targetVersionId"));
         Boolean publishToIpfs = updateRequest.getOptions() == null ? null : (updateRequest.getOptions().getAdditionalProperty("publishToIpfs") == null ? null : (Boolean) updateRequest.getOptions().getAdditionalProperty("publishToIpfs"));
         if (didSourceDocument == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'didSourceDocument' option");
-        if (targetVersionId == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'targetVersionId' option");
         if (publishToIpfs == null) publishToIpfs = Boolean.TRUE;
-
-        // read input DID document operations and DID documents
-
-        List<String> didDocumentOperations = updateRequest.getDidDocumentOperation() == null ? Collections.emptyList() : updateRequest.getDidDocumentOperation();;
-        List<DIDDocument> didDocuments = updateRequest.getDidDocument() == null ? Collections.emptyList() : updateRequest.getDidDocument().stream().map(x -> jsonMapper.convertValue(x, DIDDocument.class)).toList();
-
-        // read input DID document update operations
-
-        List<Map<String, Object>> jsonPatchesObjects = new LinkedList<>();
-        for (int i=0; i<didDocumentOperations.size(); i++) {
-            String didDocumentOperation = didDocumentOperations.get(i);
-            DIDDocument didDocument = didDocuments.get(i);
-            if (! "patchDidDocument".equals(didDocumentOperation)) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Unsupported DID document operation: " + didDocumentOperation);
-            jsonPatchesObjects.add(didDocument.getJsonObject());
-        }
-        JsonPatch jsonPatches = Json.createPatch(Json.createArrayBuilder(jsonPatchesObjects).build());
-
-        // read verification method public data
-
-        RequestSecret requestSecret = updateRequest.getSecret();
-        List<RequestSecretVerificationMethodInner> requestSecretVerificationMethodInners = requestSecret == null ? null : requestSecret.getVerificationMethod();
-        VerificationMethodPublicData updateVerificationMethodPublicData = requestSecretVerificationMethodInners == null ? null : requestSecretVerificationMethodInners.getFirst().getVerificationMethodPublicData();
-
-        if (updateVerificationMethodPublicData == null || updateVerificationMethodPublicData.getId() == null) {
-            throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Verification method public data not found");
-        }
-
-        ECKey updateECKey = null;
-        try {
-            if (updateVerificationMethodPublicData.getPublicKeyJwk() != null) {
-                updateECKey = JWK_to_PublicKey.JWK_to_secp256k1PublicKey(JWK.fromMap(updateVerificationMethodPublicData.getPublicKeyJwk()));
-            } else if (updateVerificationMethodPublicData.getPublicKeyMultibase() != null) {
-                updateECKey = PublicKeyBytes.bytes_to_secp256k1PublicKey(MultiCodecUtil.removeMulticodec(Multibase.decode(updateVerificationMethodPublicData.getPublicKeyMultibase()), MultiCodecUtil.MULTICODEC_SECP256K1_PUB));
-            }
-        } catch (Exception ex) {
-            throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Cannot construct update public key from verification method public data: "+ ex.getMessage(), ex);
-        }
-
-        if (updateECKey == null) {
-            throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Cannot find update public key from verification method public data: "+ updateVerificationMethodPublicData);
-        }
 
         // read signing responses
 
+        RequestSecret requestSecret = updateRequest.getSecret();
         Map<String, SigningResponse> signingResponses = requestSecret == null ? null : requestSecret.getSigningResponse();
         List<SigningResponse> utxoAggregateSigningResponses = signingResponses == null ? null : signingResponses.entrySet().stream().filter(signingResponseEntry -> signingResponseEntry.getKey().startsWith("utxoAggregate")).map(Map.Entry::getValue).toList();
 
-        if (utxoAggregateSigningResponses == null) {
-            throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Signing responses 'utxoAggregate*' not found");
+        if (utxoAggregateSigningResponses == null || utxoAggregateSigningResponses.isEmpty()) {
+            throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Signing responses 'utxoAggregate*' not found: " + utxoAggregateSigningResponses);
+        }
+        for (SigningResponse utxoAggregateSigningResponse : utxoAggregateSigningResponses) {
+            if (utxoAggregateSigningResponse.getKid() == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Signing response 'utxoAggregate*' has no 'kid'");
         }
 
-        List<byte[]> utxoAggregateSigningResponseSignatures = utxoAggregateSigningResponses.stream().map(SigningResponse::getSignature).map(signature -> Base64.getDecoder().decode(signature)).toList();
+        List<URI> verificationMethodIds = utxoAggregateSigningResponses.stream().map(SigningResponse::getKid).map(URI::create).toList();
+        List<byte[]> utxoAggregateSignatures = utxoAggregateSigningResponses.stream().map(SigningResponse::getSignature).map(signature -> Base64.getDecoder().decode(signature)).toList();
+
+        URI verificationMethodId = verificationMethodIds.getFirst();
+
+        if (! verificationMethodIds.stream().allMatch(verificationMethodId::equals)) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Signing responses 'utxoAggregate*' have different 'kid's:" + verificationMethodIds);
 
         // update()
 
-        UpdateProcessUtxoAggregateSignPayloadsResult updateProcessUtxoAggregateSignPayloadsResult = updateProcessUtxoAggregateSignPayloads.update(bitcoinConnection, did, didSourceDocument, targetVersionId, jsonPatches, btcr2Update, unsignedBeaconSignal, updateECKey, utxoAggregateSigningResponseSignatures, didDocumentMetadata);
+        UpdateProcessUtxoAggregateSignPayloadsResult updateProcessUtxoAggregateSignPayloadsResult;
+        try {
+            updateProcessUtxoAggregateSignPayloadsResult = updateProcessUtxoAggregateSignPayloads.update(bitcoinConnection, didSourceDocument, btcr2Update, verificationMethodId, unsignedBeaconSignal, aggregationCohortId, utxoAggregateSignatures, didDocumentMetadata);
+        } catch (UpdateActionCompleteAggregationSignaturesException ex) {
+            // next state
+            return TransitionProcessUtxoAggregateSignPayloads.transitionToUtxoAggregateSignPayloadsCompleteAggregationSignatures(bitcoinConnection, ipfsConnection, btcr2Update, unsignedBeaconSignal, ex.getAggregationCohort(), utxoAggregateSignPayloads, didRegistrationMetadata, didDocumentMetadata);
+        }
 
         // publish to IPFS?
 

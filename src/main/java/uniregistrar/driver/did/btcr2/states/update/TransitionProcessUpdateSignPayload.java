@@ -22,11 +22,17 @@ import java.util.Map;
 
 public class TransitionProcessUpdateSignPayload {
 
-    public static UpdateState transitionToUpdateSignPayloadFundAddress(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, Address address, Coin minimumValue, BTCR2Update btcr2Update, byte[] updateSignPayload, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public static UpdateState transitionToUpdateSignPayloadFundAddress(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, BTCR2Update btcr2Update, byte[] updateSignPayload, Address address, Coin minimumValue, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
 
         // REGISTRATION STATE: jobId
 
-        UpdateJob updateJob = new UpdateJob(btcr2Update.toJson(), Base64.getEncoder().encodeToString(updateSignPayload), null, null, null);
+        UpdateJob updateJob = new UpdateJob(
+                btcr2Update.toJson(),
+                Base64.getEncoder().encodeToString(updateSignPayload),
+                null,
+                null,
+                null,
+                null);
 
         Map<String, Object> jobId = updateJob.toJsonObject();
 
@@ -56,11 +62,17 @@ public class TransitionProcessUpdateSignPayload {
         return updateState;
     }
 
-    public static UpdateState transitionToUpdateSignPayloadCompleteAggregationUpdates(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, AggregationCohort aggregationCohort, BTCR2Update btcr2Update, byte[] updateSignPayload, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
+    public static UpdateState transitionToUpdateSignPayloadCompleteAggregationUpdates(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, BTCR2Update btcr2Update, byte[] updateSignPayload, AggregationCohort aggregationCohort, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
 
         // REGISTRATION STATE: jobId
 
-        UpdateJob updateJob = new UpdateJob(btcr2Update.toJson(), Base64.getEncoder().encodeToString(updateSignPayload), null, null, null);
+        UpdateJob updateJob = new UpdateJob(
+                btcr2Update.toJson(),
+                Base64.getEncoder().encodeToString(updateSignPayload),
+                null,
+                null,
+                null,
+                null);
 
         Map<String, Object> jobId = updateJob.toJsonObject();
 
@@ -93,7 +105,13 @@ public class TransitionProcessUpdateSignPayload {
 
         // REGISTRATION STATE: jobId
 
-        UpdateJob updateJob = new UpdateJob(btcr2Update.toJson(), null, Base64.getEncoder().encodeToString(unsignedBeaconSignal.serialize()), utxoSingletonSignPayloads.stream().map(x -> Base64.getEncoder().encodeToString(x)).toList(), null);
+        UpdateJob updateJob = new UpdateJob(
+                btcr2Update.toJson(),
+                null,
+                Base64.getEncoder().encodeToString(unsignedBeaconSignal.serialize()),
+                utxoSingletonSignPayloads.stream().map(x -> Base64.getEncoder().encodeToString(x)).toList(),
+                null,
+                null);
 
         Map<String, Object> jobId = updateJob.toJsonObject();
 
@@ -138,14 +156,20 @@ public class TransitionProcessUpdateSignPayload {
 
         // REGISTRATION STATE: jobId
 
-        UpdateJob updateJob = new UpdateJob(btcr2Update.toJson(), null, Base64.getEncoder().encodeToString(unsignedBeaconSignal.serialize()), null, utxoAggregateSignPayloads.stream().map(x -> Base64.getEncoder().encodeToString(x)).toList());
+        UpdateJob updateJob = new UpdateJob(
+                btcr2Update.toJson(),
+                null,
+                Base64.getEncoder().encodeToString(unsignedBeaconSignal.serialize()),
+                null,
+                utxoAggregateSignPayloads.stream().map(x -> Base64.getEncoder().encodeToString(x)).toList(),
+                aggregationCohort.getId());
 
         Map<String, Object> jobId = updateJob.toJsonObject();
 
         // REGISTRATION STATE: signing request
 
         List<SigningRequest> utxoAggregateSigningRequests = utxoAggregateSignPayloads.stream().map( x -> new SigningRequest()
-                        .alg(JWSAlgorithm.ES256KRR)
+                        .alg("MUSIG2")
                         .purpose("capabilityInvocation")
                         .serializedPayload(Base64.getEncoder().encodeToString(x)))
                 .toList();

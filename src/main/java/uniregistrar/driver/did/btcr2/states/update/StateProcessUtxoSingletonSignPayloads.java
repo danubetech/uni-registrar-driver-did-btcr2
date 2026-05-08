@@ -9,14 +9,11 @@ import com.danubetech.keyformats.jose.JWK;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import foundation.identity.did.DID;
-import foundation.identity.did.DIDDocument;
 import foundation.identity.did.parser.ParserException;
 import io.ipfs.api.AddArgs;
 import io.ipfs.api.MerkleNode;
 import io.ipfs.api.NamedStreamable;
 import io.ipfs.multibase.Multibase;
-import jakarta.json.Json;
-import jakarta.json.JsonPatch;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.crypto.ECKey;
 import org.slf4j.Logger;
@@ -35,7 +32,10 @@ import uniregistrar.openapi.model.*;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.Base64;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public class StateProcessUtxoSingletonSignPayloads {
 
@@ -51,14 +51,6 @@ public class StateProcessUtxoSingletonSignPayloads {
 
         Map<String, Object> didRegistrationMetadata = new LinkedHashMap<>();
         Map<String, Object> didDocumentMetadata = new LinkedHashMap<>();
-
-        // read job
-
-        BTCR2Update btcr2Update = updateJob.btcr2Update() == null ? null : BTCR2Update.fromJson(updateJob.btcr2Update());
-        if (btcr2Update == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'btcr2Update' in jobId");
-
-        Transaction unsignedBeaconSignal = updateJob.unsignedBeaconSignal() == null ? null : Transaction.read(ByteBuffer.wrap(Base64.getDecoder().decode(updateJob.unsignedBeaconSignal())));
-        if (unsignedBeaconSignal == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'unsignedBeaconSignal' in jobId");
 
         // read input DID
 
@@ -76,30 +68,18 @@ public class StateProcessUtxoSingletonSignPayloads {
         BitcoinConnection bitcoinConnection = bitcoinConnector.getBitcoinConnection(identifierComponents.network());
         if (bitcoinConnection == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_DID, "Unknown network: " + identifierComponents.network());
 
-        // read didSourceDocument and targetVersionId and publishToIpfs options
+        // read job
 
-        DIDDocument didSourceDocument = updateRequest.getOptions() == null || updateRequest.getOptions().getAdditionalProperty("didSourceDocument") == null ? null : DIDDocument.fromJsonObject((Map<String, Object>) updateRequest.getOptions().getAdditionalProperty("didSourceDocument"));
-        Integer targetVersionId = updateRequest.getOptions() == null ? null : (updateRequest.getOptions().getAdditionalProperty("targetVersionId") instanceof String targetVersionIdString ? Integer.parseInt(targetVersionIdString) : (Integer) updateRequest.getOptions().getAdditionalProperty("targetVersionId"));
+        BTCR2Update btcr2Update = updateJob.btcr2Update() == null ? null : BTCR2Update.fromJson(updateJob.btcr2Update());
+        if (btcr2Update == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'btcr2Update' in jobId");
+
+        Transaction unsignedBeaconSignal = updateJob.unsignedBeaconSignal() == null ? null : Transaction.read(ByteBuffer.wrap(Base64.getDecoder().decode(updateJob.unsignedBeaconSignal())));
+        if (unsignedBeaconSignal == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'unsignedBeaconSignal' in jobId");
+
+        // read options
+
         Boolean publishToIpfs = updateRequest.getOptions() == null ? null : (updateRequest.getOptions().getAdditionalProperty("publishToIpfs") == null ? null : (Boolean) updateRequest.getOptions().getAdditionalProperty("publishToIpfs"));
-        if (didSourceDocument == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'didSourceDocument' option");
-        if (targetVersionId == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'targetVersionId' option");
         if (publishToIpfs == null) publishToIpfs = Boolean.TRUE;
-
-        // read input DID document operations and DID documents
-
-        List<String> didDocumentOperations = updateRequest.getDidDocumentOperation() == null ? Collections.emptyList() : updateRequest.getDidDocumentOperation();;
-        List<DIDDocument> didDocuments = updateRequest.getDidDocument() == null ? Collections.emptyList() : updateRequest.getDidDocument().stream().map(x -> jsonMapper.convertValue(x, DIDDocument.class)).toList();
-
-        // read input DID document update operations
-
-        List<Map<String, Object>> jsonPatchesObjects = new LinkedList<>();
-        for (int i=0; i<didDocumentOperations.size(); i++) {
-            String didDocumentOperation = didDocumentOperations.get(i);
-            DIDDocument didDocument = didDocuments.get(i);
-            if (! "patchDidDocument".equals(didDocumentOperation)) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Unsupported DID document operation: " + didDocumentOperation);
-            jsonPatchesObjects.add(didDocument.getJsonObject());
-        }
-        JsonPatch jsonPatches = Json.createPatch(Json.createArrayBuilder(jsonPatchesObjects).build());
 
         // read verification method public data
 
@@ -135,11 +115,11 @@ public class StateProcessUtxoSingletonSignPayloads {
             throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Signing responses 'utxo*' not found");
         }
 
-        List<byte[]> utxoSingletonSigningResponseSignatures = utxoSingletonSigningResponses.stream().map(SigningResponse::getSignature).map(signature -> Base64.getDecoder().decode(signature)).toList();
+        List<byte[]> utxoSingletonSignatures = utxoSingletonSigningResponses.stream().map(SigningResponse::getSignature).map(signature -> Base64.getDecoder().decode(signature)).toList();
 
         // update()
 
-        UpdateProcessUtxoSingletonSignPayloadsResult updateProcessUtxoSingletonSignPayloadsResult = updateProcessUtxoSingletonSignPayloads.update(bitcoinConnection, did, didSourceDocument, targetVersionId, jsonPatches, btcr2Update, unsignedBeaconSignal, updateECKey, utxoSingletonSigningResponseSignatures, didDocumentMetadata);
+        UpdateProcessUtxoSingletonSignPayloadsResult updateProcessUtxoSingletonSignPayloadsResult = updateProcessUtxoSingletonSignPayloads.update(bitcoinConnection, btcr2Update, unsignedBeaconSignal, updateECKey, utxoSingletonSignatures, didDocumentMetadata);
 
         // publish to IPFS?
 

@@ -61,12 +61,10 @@ public class StateInit {
         if (didSourceDocument == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'didSourceDocument' option");
         if (targetVersionId == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'targetVersionId' option");
 
-        // read input DID document operations and DID documents
+        // read JSON patches
 
-        List<String> didDocumentOperations = updateRequest.getDidDocumentOperation() == null ? Collections.emptyList() : updateRequest.getDidDocumentOperation();;
+        List<String> didDocumentOperations = updateRequest.getDidDocumentOperation() == null ? Collections.emptyList() : updateRequest.getDidDocumentOperation();
         List<DIDDocument> didDocuments = updateRequest.getDidDocument() == null ? Collections.emptyList() : updateRequest.getDidDocument().stream().map(x -> jsonMapper.convertValue(x, DIDDocument.class)).toList();
-
-        // read input DID document update operations
 
         List<Map<String, Object>> jsonPatchesObjects = new LinkedList<>();
         for (int i=0; i<didDocumentOperations.size(); i++) {
@@ -92,7 +90,7 @@ public class StateInit {
 
         // update()
 
-        UpdateInitResult updateInitResult = updateInit.update(bitcoinConnection, did, didSourceDocument, targetVersionId, jsonPatches, verificationMethodId, didDocumentMetadata);
+        UpdateInitResult updateInitResult = updateInit.update(bitcoinConnection, didSourceDocument, targetVersionId, jsonPatches, verificationMethodId, didDocumentMetadata);
 
         // next state
 
