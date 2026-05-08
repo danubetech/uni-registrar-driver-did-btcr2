@@ -41,7 +41,7 @@ public class JsonCanonicalizationAndHash {
         return jsonCanonicalizationAndHash(json);
     }
 
-    public static byte[] jsonCanonicalizationAndHash(Map<String, Object> map) {
+    public static byte[] jsonCanonicalizationAndHash(Map<String, ?> map) {
         String json;
         try {
             json = objectMapper.writeValueAsString(map);

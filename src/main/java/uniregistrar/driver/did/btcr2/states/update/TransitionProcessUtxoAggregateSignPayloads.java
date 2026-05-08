@@ -56,7 +56,7 @@ public class TransitionProcessUtxoAggregateSignPayloads {
         return updateState;
     }
 
-    public static UpdateState transitionToFinished(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, BTCR2Update update, AggregationCohort aggregationCohort, MerkleNode merkleNodeUpdate, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
+    public static UpdateState transitionToFinished(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, BTCR2Update update, AggregationCohort aggregationCohort, MerkleNode merkleNodeUpdate, MerkleNode merkleNodeCasAnnouncement, MerkleNode merkleNodeSmtProof, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
 
         // REGISTRATION STATE: didState.state="finished"
 
@@ -73,6 +73,8 @@ public class TransitionProcessUtxoAggregateSignPayloads {
 
         if (update != null) didDocumentMetadata.put("update", update.getJsonObject());
         if (merkleNodeUpdate != null) didDocumentMetadata.put("updateCid", merkleNodeUpdate.hash.toString());
+        if (merkleNodeCasAnnouncement != null) didDocumentMetadata.put("casAnnouncementCid", merkleNodeCasAnnouncement.hash.toString());
+        if (merkleNodeSmtProof != null) didDocumentMetadata.put("smtProofCid", merkleNodeSmtProof.hash.toString());
 
         // update state
 

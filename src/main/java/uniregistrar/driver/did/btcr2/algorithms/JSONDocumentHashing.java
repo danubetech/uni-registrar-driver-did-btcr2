@@ -34,6 +34,16 @@ public class JSONDocumentHashing {
         return canonicalized;
     }
 
+    public static String jsonDocumentCanonicalizing(Map<String, ?> map) {
+        String json;
+        try {
+            json = jsonMapper.writeValueAsString(map);
+        } catch (JsonProcessingException ex) {
+            throw new IllegalArgumentException(ex.getMessage(), ex);
+        }
+        return jsonDocumentCanonicalizing(json);
+    }
+
     public static byte[] jsonDocumentHashing(String json) {
         String canonicalized = jsonDocumentCanonicalizing(json);
         byte[] hash = SHA256Util.sha256(canonicalized.getBytes(StandardCharsets.UTF_8));

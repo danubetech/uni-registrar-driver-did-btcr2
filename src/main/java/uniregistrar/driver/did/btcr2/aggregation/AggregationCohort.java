@@ -30,6 +30,7 @@ import uniregistrar.RegistrationException;
 import uniregistrar.driver.did.btcr2.appendix.JsonCanonicalizationAndHash;
 import uniregistrar.driver.did.btcr2.beacons.BeaconType;
 import uniregistrar.driver.did.btcr2.crud.update.UpdateActionFundAddressException;
+import uniregistrar.driver.did.btcr2.data.json.CASAnnouncement;
 import uniregistrar.driver.did.btcr2.data.json.SMTProof;
 import uniregistrar.driver.did.btcr2.util.BytesArray;
 import uniregistrar.driver.did.btcr2.util.MultiCodecUtil;
@@ -313,24 +314,6 @@ public class AggregationCohort {
         // Once the Aggregation Participant is satisfied that the Beacon Signal only announces the BTCR2 Updates they submitted for DIDs they control,
         // they partially sign the Bitcoin transaction according to the signing algorithm specified in [BIP327].
 
-/*        fr.acinq.bitcoin.Transaction transaction = fr.acinq.bitcoin.Transaction.read(this.unsignedBeaconSignal.serialize());
-
-          this.utxoAggregateSignPayloads = IntStream.range(0, beaconAddressUtxos.size())
-                .mapToObj(i -> {
-                    Either<Throwable, Session> either = Musig2.taprootSession(
-                            transaction,
-                            i,
-                            beaconAddressUtxos.stream().map(txOut -> new fr.acinq.bitcoin.TxOut(new Satoshi(txOut.value()), txOut.scriptBytes())).toList(),
-                            this.getParticipantPublicKeys().stream().map(BytesArray::bytes).map(fr.acinq.bitcoin.PublicKey::parse).toList(),
-                            this.getMusig2PublicNonces().values().stream().map(BytesArray::bytes).map(IndividualNonce::new).toList(),
-                            null);
-                    if (log.isDebugEnabled()) log.debug("Taproot session result: {}, {}, {}", either, either.getLeft(), either.getRight());
-                    if (either.isLeft()) throw new RuntimeException(either.getLeft());
-                    else if (either.isRight()) return either.getRight().toByteArray();
-                    else throw new IllegalStateException("Invalid result: " + either);
-                })
-                .toList();*/
-
         this.utxoAggregateSignPayloads = new TreeMap<>();
         for (int i=0; i<this.updatesSize(); i++) {
             List<BytesArray> participantUtxoAggregateSignPayloads = this.utxoAggregateSignPayloads.computeIfAbsent(i, x -> new ArrayList<>());
@@ -369,13 +352,7 @@ public class AggregationCohort {
 
         // The Signal Bytes included in a CAS Beacon Signal is the SHA-256 hash of the Beacon Announcement Map.
 
-        byte[] signalBytes = JsonCanonicalizationAndHash.jsonCanonicalizationAndHash(this.casBeaconAnnouncementMap
-                .entrySet()
-                .stream()
-                .collect(
-                        Collectors.toMap(
-                                x -> x.getKey().toString(),
-                                x -> Base64.getUrlEncoder().withoutPadding().encodeToString(x.getValue().bytes()))));
+        byte[] signalBytes = JsonCanonicalizationAndHash.jsonCanonicalizationAndHash(this.getCasAnnouncement());
         if (log.isDebugEnabled()) log.debug("Determined signal bytes for CAS: " + Hex.encodeHexString(signalBytes));
         return signalBytes;
     }
@@ -399,7 +376,7 @@ public class AggregationCohort {
 
         // The Signal Bytes of an SMT Beacon Signal is the 32 byte SMT root.
 
-        byte[] signalBytes = new byte[32]; /* TODO */
+        byte[] signalBytes = JsonCanonicalizationAndHash.jsonCanonicalizationAndHash(jsonMapper.convertValue(this.getSmtProof(), Map.class));
         if (log.isDebugEnabled()) log.debug("Determined signal bytes for SMT: " + Hex.encodeHexString(signalBytes));
         return signalBytes;
     }
@@ -410,6 +387,14 @@ public class AggregationCohort {
             case SMT -> this.getSmtUpdateHashes().values().stream().toList();
             default -> throw new IllegalStateException("Unexpected value: " + this.getBeaconType());
         };
+    }
+
+    public CASAnnouncement getCasAnnouncement() {
+        return new CASAnnouncement(this.getCasBeaconAnnouncementMap().entrySet().stream().collect(Collectors.toMap(x -> x.getKey().getDidString(), x -> Base64.getUrlEncoder().withoutPadding().encodeToString(x.getValue().bytes()))));
+    }
+
+    public SMTProof getSmtProof() {
+        return new SMTProof(); /* TODO */
     }
 
     public void setCasDid(int participantIndex, DID participantCasDid) {

@@ -1,6 +1,7 @@
 package uniregistrar.driver.did.btcr2.crud.update;
 
 import com.danubetech.btc.connection.BitcoinConnection;
+import foundation.identity.did.DID;
 import foundation.identity.did.DIDDocument;
 import org.apache.commons.codec.binary.Hex;
 import org.bitcoinj.base.Coin;
@@ -10,13 +11,19 @@ import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
 import uniregistrar.driver.did.btcr2.aggregation.AggregationCohort;
 import uniregistrar.driver.did.btcr2.aggregation.AggregationService;
+import uniregistrar.driver.did.btcr2.data.json.CASAnnouncement;
+import uniregistrar.driver.did.btcr2.data.json.SMTProof;
 import uniregistrar.driver.did.btcr2.data.jsonld.BTCR2Update;
 import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.driver.did.btcr2.util.BytesArray;
+import uniregistrar.driver.did.btcr2.util.SHA256Util;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /*
  * Update
@@ -69,7 +76,7 @@ public class UpdateProcessUtxoAggregateSignPayloads {
         this.ipfsConnection = ipfsConnection;
     }
 
-    public UpdateProcessUtxoAggregateSignPayloadsResult update(BitcoinConnection bitcoinConnection, DIDDocument didSourceDocument, BTCR2Update update, URI verificationMethodId, Transaction unsignedBeaconSignal, String aggregationCohortId, List<byte[]> utxoAggregateSignatures, Map<String, Object> didDocumentMetadata) throws RegistrationException, UpdateActionCompleteAggregationSignaturesException {
+    public UpdateProcessUtxoAggregateSignPayloadsResult update(BitcoinConnection bitcoinConnection, DID did, DIDDocument didSourceDocument, BTCR2Update update, URI verificationMethodId, Transaction unsignedBeaconSignal, String aggregationCohortId, List<byte[]> utxoAggregateSignatures, Map<String, Object> didDocumentMetadata) throws RegistrationException, UpdateActionCompleteAggregationSignaturesException {
 
         // find aggregation cohort
 
@@ -107,7 +114,10 @@ public class UpdateProcessUtxoAggregateSignPayloads {
 
         // result
 
-        UpdateProcessUtxoAggregateSignPayloadsResult updateProcessUtxoAggregateSignPayloads = new UpdateProcessUtxoAggregateSignPayloadsResult(update, aggregationCohort);
+        CASAnnouncement casAnnouncement = aggregationCohort.getCasAnnouncement();
+        SMTProof smtProof = aggregationCohort.getSmtProof();
+
+        UpdateProcessUtxoAggregateSignPayloadsResult updateProcessUtxoAggregateSignPayloads = new UpdateProcessUtxoAggregateSignPayloadsResult(update, casAnnouncement, smtProof, aggregationCohort);
         if (log.isDebugEnabled()) log.debug("Update: " + updateProcessUtxoAggregateSignPayloads);
         return updateProcessUtxoAggregateSignPayloads;
     }
