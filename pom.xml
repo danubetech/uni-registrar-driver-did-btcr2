@@ -39,7 +39,7 @@
         <!-- Dependency Versions -->
 
         <jcl-over-slf4j.version>2.0.17</jcl-over-slf4j.version>
-        <log4j-slf4j2-impl.version>2.25.4</log4j-slf4j2-impl.version>
+        <log4j-slf4j2-impl.version>2.26.0</log4j-slf4j2-impl.version>
 	</properties>
 
     <profiles>
@@ -172,7 +172,7 @@
         <dependency>
             <groupId>com.danubetech</groupId>
             <artifactId>key-formats-java</artifactId>
-            <version>1.31.0</version>
+            <version>1.32.0</version>
         </dependency>
         <dependency>
             <groupId>decentralized-identity</groupId>
