@@ -21,7 +21,6 @@ import fr.acinq.bitcoin.crypto.musig2.IndividualNonce;
 import fr.acinq.bitcoin.crypto.musig2.Musig2;
 import fr.acinq.bitcoin.crypto.musig2.SecretNonce;
 import fr.acinq.bitcoin.utils.Either;
-import jakarta.json.JsonPatch;
 import kotlin.Pair;
 import org.apache.commons.codec.binary.Hex;
 import org.bitcoinj.base.Address;
@@ -30,7 +29,6 @@ import org.bitcoinj.base.Sha256Hash;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptBuilder;
-import org.bitcoinj.uri.BitcoinURI;
 import org.bitcoinj.uri.BitcoinURIParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,7 +104,7 @@ public class UpdateProcessUpdateSignPayload {
         this.ipfsConnection = ipfsConnection;
     }
 
-    public UpdateProcessUpdateSignPayloadResult update(BitcoinConnection bitcoinConnection, DID did, BTCR2Update btcr2Update, URI verificationMethodId, DIDDocument didSourceDocument, URI beaconServiceId, String beaconServiceType, byte[] updateSignature, Map<String, Object> didDocumentMetadata) throws RegistrationException, UpdateActionFundAddressException, UpdateActionCompleteAggregationUpdatesException {
+    public UpdateProcessUpdateSignPayloadResult update(BitcoinConnection bitcoinConnection, DID did, BTCR2Update update, URI verificationMethodId, DIDDocument didSourceDocument, URI beaconServiceId, String beaconServiceType, byte[] updateSignature, Map<String, Object> didDocumentMetadata) throws RegistrationException, UpdateActionFundAddressException, UpdateActionCompleteAggregationUpdatesException {
 
         /*
          * Construct BTCR2 Signed Update
@@ -147,7 +145,7 @@ public class UpdateProcessUpdateSignPayload {
 
         try {
 
-            JsonLDUtils.jsonLdRemove(btcr2Update, DataIntegrityKeywords.JSONLD_TERM_PROOF);
+            JsonLDUtils.jsonLdRemove(update, DataIntegrityKeywords.JSONLD_TERM_PROOF);
 
             cryptosuite.setSigner(new ByteSigner(JWSAlgorithm.ES256KS) {
                 @Override
@@ -156,7 +154,7 @@ public class UpdateProcessUpdateSignPayload {
                     return updateSignature;
                 }
             });
-            cryptosuite.sign(btcr2Update, true, false);
+            cryptosuite.sign(update, true, false);
         } catch (IOException | GeneralSecurityException | JsonLDException ex) {
             throw new RegistrationException("Cannot sign the BTCR2 Update: " + ex.getMessage(), ex);
         }
@@ -187,8 +185,8 @@ public class UpdateProcessUpdateSignPayload {
         if (! BeaconType.isValid(beaconService)) throw new RegistrationException("INVALID_DID_UPDATE", "Invalid beacon service: " + beaconService);
 
         UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayloadResult = switch (BeaconType.fromServiceType(beaconService.getType())) {
-            case SINGLETON -> announceToSingletonBeacon(bitcoinConnection, btcr2Update, beaconService);
-            case CAS, SMT -> announceToAggregateBeacon(bitcoinConnection, did, didSourceDocument, btcr2Update, verificationMethodId, beaconService);
+            case SINGLETON -> announceToSingletonBeacon(bitcoinConnection, update, beaconService);
+            case CAS, SMT -> announceToAggregateBeacon(bitcoinConnection, did, didSourceDocument, update, verificationMethodId, beaconService);
         };
 
         // result
@@ -202,12 +200,12 @@ public class UpdateProcessUpdateSignPayload {
      * See https://dcdpr.github.io/did-btcr2/operations/update.html#announcing-to-a-singleton-beacon
      */
 
-    private static UpdateProcessUpdateSignPayloadResult announceToSingletonBeacon(BitcoinConnection bitcoinConnection, BTCR2Update btcr2Update, Service beaconService) throws RegistrationException, UpdateActionFundAddressException {
+    private static UpdateProcessUpdateSignPayloadResult announceToSingletonBeacon(BitcoinConnection bitcoinConnection, BTCR2Update update, Service beaconService) throws RegistrationException, UpdateActionFundAddressException {
 
         // A BTCR2 Update Announcement for a Singleton Beacon is the BTCR2 Signed Update
         // hashed with the JSON Document Hashing algorithm.
 
-        byte[] updateAnnouncement = JSONDocumentHashing.jsonDocumentHashing(btcr2Update);
+        byte[] updateAnnouncement = JSONDocumentHashing.jsonDocumentHashing(update);
         if (log.isDebugEnabled()) log.debug("updateAnnouncement: " + Hex.encodeHexString(updateAnnouncement));
 
         // This 32-byte SHA-256 hash is used as the Signal Bytes when constructing a Beacon Signal Bitcoin transaction.
@@ -254,7 +252,7 @@ public class UpdateProcessUpdateSignPayload {
 
         // result
 
-        return new UpdateProcessUpdateSignPayloadResult(btcr2Update, unsignedBeaconSignal, utxoSingletonSignPayloads, null, null);
+        return new UpdateProcessUpdateSignPayloadResult(update, unsignedBeaconSignal, utxoSingletonSignPayloads, null, null);
     }
 
     /*
@@ -262,7 +260,7 @@ public class UpdateProcessUpdateSignPayload {
      * See https://dcdpr.github.io/did-btcr2/operations/update.html#announcing-to-an-aggregate-beacon
      */
 
-    private static UpdateProcessUpdateSignPayloadResult announceToAggregateBeacon(BitcoinConnection bitcoinConnection, DID did, DIDDocument didSourceDocument, BTCR2Update btcr2Update, URI verificationMethodId, Service beaconService) throws RegistrationException, UpdateActionCompleteAggregationUpdatesException, UpdateActionFundAddressException {
+    private static UpdateProcessUpdateSignPayloadResult announceToAggregateBeacon(BitcoinConnection bitcoinConnection, DID did, DIDDocument didSourceDocument, BTCR2Update update, URI verificationMethodId, Service beaconService) throws RegistrationException, UpdateActionCompleteAggregationUpdatesException, UpdateActionFundAddressException {
 
         // find aggregation cohort
 
@@ -281,8 +279,8 @@ public class UpdateProcessUpdateSignPayload {
         BeaconType beaconType = BeaconType.fromServiceType(beaconService.getType());
 
         switch (beaconType) {
-            case CAS -> updateAggregateBeaconCAS(aggregationCohort, participantIndex, did, btcr2Update);
-            case SMT -> updateAggregateBeaconSMT(aggregationCohort, participantIndex, did,  btcr2Update, /* TODO */ null);
+            case CAS -> updateAggregateBeaconCAS(aggregationCohort, participantIndex, did, update);
+            case SMT -> updateAggregateBeaconSMT(aggregationCohort, participantIndex, did, update, /* TODO */ null);
             default -> throw new IllegalStateException("Invalid beacon type: " + beaconType);
         };
 
@@ -304,10 +302,10 @@ public class UpdateProcessUpdateSignPayload {
 
         // result
 
-        return new UpdateProcessUpdateSignPayloadResult(btcr2Update, unsignedBeaconSignal, null, utxoAggregateSignPayloads, aggregationCohort);
+        return new UpdateProcessUpdateSignPayloadResult(update, unsignedBeaconSignal, null, utxoAggregateSignPayloads, aggregationCohort);
     }
 
-    private static void updateAggregateBeaconCAS(AggregationCohort aggregationCohort, int participantIndex, DID did, BTCR2Update btcr2Update) {
+    private static void updateAggregateBeaconCAS(AggregationCohort aggregationCohort, int participantIndex, DID did, BTCR2Update update) {
 
         // For a CAS Beacon:
 
@@ -317,7 +315,7 @@ public class UpdateProcessUpdateSignPayload {
 
         // updateHash: The SHA-256 hash of the BTCR2 Update to be included, created with the JSON Document Hashing algorithm.
 
-        byte[] updateHash = JSONDocumentHashing.jsonDocumentHashing(btcr2Update);
+        byte[] updateHash = JSONDocumentHashing.jsonDocumentHashing(update);
 
         aggregationCohort.setCasUpdateHash(participantIndex, BytesArray.bytesArray(updateHash));
 
@@ -335,7 +333,7 @@ public class UpdateProcessUpdateSignPayload {
         aggregationCohort.setMusig2IndividualNonce(participantIndex, BytesArray.bytesArray(pair.component2().toByteArray()));
     }
 
-    private static void updateAggregateBeaconSMT(AggregationCohort aggregationCohort, int participantIndex, DID did, BTCR2Update btcr2Update, byte[] nonce) {
+    private static void updateAggregateBeaconSMT(AggregationCohort aggregationCohort, int participantIndex, DID did, BTCR2Update update, byte[] nonce) {
 
         // For an SMT Beacon:
 
@@ -354,7 +352,7 @@ public class UpdateProcessUpdateSignPayload {
             // If a nonce is used: hash(hash(nonce) + json_document_hash(update))
 
             byte[] bytes1 = SHA256Util.sha256(nonce);
-            byte[] bytes2 = JSONDocumentHashing.jsonDocumentHashing(btcr2Update);
+            byte[] bytes2 = JSONDocumentHashing.jsonDocumentHashing(update);
             byte[] bytes = new byte[bytes1.length + bytes2.length];
             System.arraycopy(bytes1, 0, bytes, 0, bytes1.length);
             System.arraycopy(bytes2, 0, bytes, bytes1.length, bytes2.length);
@@ -363,7 +361,7 @@ public class UpdateProcessUpdateSignPayload {
 
             // If a nonce is not used: json_document_hash(update)
 
-            updateHash = JSONDocumentHashing.jsonDocumentHashing(btcr2Update);
+            updateHash = JSONDocumentHashing.jsonDocumentHashing(update);
         }
 
         aggregationCohort.setSmtUpdateHash(participantIndex, BytesArray.bytesArray(updateHash));

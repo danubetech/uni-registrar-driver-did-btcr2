@@ -94,6 +94,6 @@ public class StateInit {
 
         // next state
 
-        return TransitionInit.transitionToUpdateSignPayload(bitcoinConnection, ipfsConnection, updateInitResult.verificationMethodId(), updateInitResult.btcr2Update(), updateInitResult.updateSignPayload(), didRegistrationMetadata, didDocumentMetadata);
+        return TransitionInit.transitionToUpdateSignPayload(bitcoinConnection, ipfsConnection, updateInitResult.verificationMethodId(), updateInitResult.update(), updateInitResult.updateSignPayload(), didRegistrationMetadata, didDocumentMetadata);
     }
 }

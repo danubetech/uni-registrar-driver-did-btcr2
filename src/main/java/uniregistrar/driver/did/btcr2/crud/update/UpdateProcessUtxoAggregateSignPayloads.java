@@ -69,7 +69,7 @@ public class UpdateProcessUtxoAggregateSignPayloads {
         this.ipfsConnection = ipfsConnection;
     }
 
-    public UpdateProcessUtxoAggregateSignPayloadsResult update(BitcoinConnection bitcoinConnection, DIDDocument didSourceDocument, BTCR2Update btcr2Update, URI verificationMethodId, Transaction unsignedBeaconSignal, String aggregationCohortId, List<byte[]> utxoAggregateSignatures, Map<String, Object> didDocumentMetadata) throws RegistrationException, UpdateActionCompleteAggregationSignaturesException {
+    public UpdateProcessUtxoAggregateSignPayloadsResult update(BitcoinConnection bitcoinConnection, DIDDocument didSourceDocument, BTCR2Update update, URI verificationMethodId, Transaction unsignedBeaconSignal, String aggregationCohortId, List<byte[]> utxoAggregateSignatures, Map<String, Object> didDocumentMetadata) throws RegistrationException, UpdateActionCompleteAggregationSignaturesException {
 
         // find aggregation cohort
 
@@ -107,7 +107,7 @@ public class UpdateProcessUtxoAggregateSignPayloads {
 
         // result
 
-        UpdateProcessUtxoAggregateSignPayloadsResult updateProcessUtxoAggregateSignPayloads = new UpdateProcessUtxoAggregateSignPayloadsResult(btcr2Update, aggregationCohort);
+        UpdateProcessUtxoAggregateSignPayloadsResult updateProcessUtxoAggregateSignPayloads = new UpdateProcessUtxoAggregateSignPayloadsResult(update, aggregationCohort);
         if (log.isDebugEnabled()) log.debug("Update: " + updateProcessUtxoAggregateSignPayloads);
         return updateProcessUtxoAggregateSignPayloads;
     }

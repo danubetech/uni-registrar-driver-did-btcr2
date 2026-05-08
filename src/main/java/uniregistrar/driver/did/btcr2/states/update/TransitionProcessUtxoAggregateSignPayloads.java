@@ -17,12 +17,12 @@ import java.util.Map;
 
 public class TransitionProcessUtxoAggregateSignPayloads {
 
-    public static UpdateState transitionToUtxoAggregateSignPayloadsCompleteAggregationSignatures(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, BTCR2Update btcr2Update, Transaction unsignedBeaconSignal, AggregationCohort aggregationCohort, List<byte[]> utxoAggregateSignPayloads, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
+    public static UpdateState transitionToUtxoAggregateSignPayloadsCompleteAggregationSignatures(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, BTCR2Update update, Transaction unsignedBeaconSignal, AggregationCohort aggregationCohort, List<byte[]> utxoAggregateSignPayloads, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
 
         // REGISTRATION STATE: jobId
 
         UpdateJob updateJob = new UpdateJob(
-                btcr2Update.toJson(),
+                update.toJson(),
                 null,
                 Base64.getEncoder().encodeToString(unsignedBeaconSignal.serialize()),
                 null,
@@ -56,7 +56,7 @@ public class TransitionProcessUtxoAggregateSignPayloads {
         return updateState;
     }
 
-    public static UpdateState transitionToFinished(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, BTCR2Update btcr2Update, AggregationCohort aggregationCohort, MerkleNode merkleNode, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
+    public static UpdateState transitionToFinished(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, BTCR2Update update, AggregationCohort aggregationCohort, MerkleNode merkleNodeUpdate, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
 
         // REGISTRATION STATE: didState.state="finished"
 
@@ -71,8 +71,8 @@ public class TransitionProcessUtxoAggregateSignPayloads {
 
         // REGISTRATION STATE: didDocumentMetadata
 
-        if (btcr2Update != null) didDocumentMetadata.put("update", btcr2Update.getJsonObject());
-        if (merkleNode != null) didDocumentMetadata.put("updateCid", merkleNode.hash.toString());
+        if (update != null) didDocumentMetadata.put("update", update.getJsonObject());
+        if (merkleNodeUpdate != null) didDocumentMetadata.put("updateCid", merkleNodeUpdate.hash.toString());
 
         // update state
 

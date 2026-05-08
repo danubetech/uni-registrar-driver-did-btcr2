@@ -122,8 +122,8 @@ public class UpdateInit {
 
         // Let update be the result of parsing the rendered template as JSON.
 
-        BTCR2Update btcr2Update = BTCR2Update.fromJson(updateString);
-        if (log.isDebugEnabled()) log.debug("btcr2Update: " + btcr2Update);
+        BTCR2Update update = BTCR2Update.fromJson(updateString);
+        if (log.isDebugEnabled()) log.debug("update: " + update);
 
         /*
          * Construct BTCR2 Signed Update
@@ -168,7 +168,7 @@ public class UpdateInit {
 
             final AtomicReference<byte[]> reference = new AtomicReference<>();
 
-            JsonLDUtils.jsonLdRemove(btcr2Update, DataIntegrityKeywords.JSONLD_TERM_PROOF);
+            JsonLDUtils.jsonLdRemove(update, DataIntegrityKeywords.JSONLD_TERM_PROOF);
 
             cryptosuite.setSigner(new ByteSigner(JWSAlgorithm.ES256KS) {
                 @Override
@@ -178,7 +178,7 @@ public class UpdateInit {
                     return new byte[0];
                 }
             });
-            cryptosuite.sign(btcr2Update, false, false);
+            cryptosuite.sign(update, false, false);
 
             updateSignPayload = reference.get();
         } catch (IOException | GeneralSecurityException | JsonLDException ex) {
@@ -187,7 +187,7 @@ public class UpdateInit {
 
         // result
 
-        UpdateInitResult updateInitResult = new UpdateInitResult(verificationMethodId, btcr2Update, updateSignPayload);
+        UpdateInitResult updateInitResult = new UpdateInitResult(verificationMethodId, update, updateSignPayload);
         if (log.isDebugEnabled()) log.debug("Update: " + updateInitResult);
         return updateInitResult;
     }

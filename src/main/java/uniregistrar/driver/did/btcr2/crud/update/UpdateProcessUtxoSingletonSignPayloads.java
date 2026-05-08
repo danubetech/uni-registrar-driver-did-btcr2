@@ -38,7 +38,7 @@ public class UpdateProcessUtxoSingletonSignPayloads {
         this.ipfsConnection = ipfsConnection;
     }
 
-    public UpdateProcessUtxoSingletonSignPayloadsResult update(BitcoinConnection bitcoinConnection, BTCR2Update btcr2Update, Transaction unsignedBeaconSignal, ECKey updateECKey, List<byte[]> utxoSingletonSignatures, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public UpdateProcessUtxoSingletonSignPayloadsResult update(BitcoinConnection bitcoinConnection, BTCR2Update update, Transaction unsignedBeaconSignal, ECKey updateECKey, List<byte[]> utxoSingletonSignatures, Map<String, Object> didDocumentMetadata) throws RegistrationException {
 
         // The Beacon Signal is signed by the private key that controls the Beacon Address
 
@@ -66,7 +66,7 @@ public class UpdateProcessUtxoSingletonSignPayloads {
 
         // result
 
-        UpdateProcessUtxoSingletonSignPayloadsResult updateProcessUtxoSingletonSignPayloadsResult = new UpdateProcessUtxoSingletonSignPayloadsResult(btcr2Update);
+        UpdateProcessUtxoSingletonSignPayloadsResult updateProcessUtxoSingletonSignPayloadsResult = new UpdateProcessUtxoSingletonSignPayloadsResult(update);
         if (log.isDebugEnabled()) log.debug("Update: " + updateProcessUtxoSingletonSignPayloadsResult);
         return updateProcessUtxoSingletonSignPayloadsResult;
     }

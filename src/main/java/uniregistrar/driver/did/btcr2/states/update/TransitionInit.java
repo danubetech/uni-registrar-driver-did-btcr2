@@ -48,12 +48,12 @@ public class TransitionInit {
         return updateState;
     }
 
-    public static UpdateState transitionToUpdateSignPayload(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, URI verificationMethodId, BTCR2Update btcr2Update, byte[] updateSignPayload, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public static UpdateState transitionToUpdateSignPayload(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, URI verificationMethodId, BTCR2Update update, byte[] updateSignPayload, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
 
         // REGISTRATION STATE: jobId
 
         UpdateJob updateJob = new UpdateJob(
-                btcr2Update.toJson(),
+                update.toJson(),
                 Base64.getEncoder().encodeToString(updateSignPayload),
                 null,
                 null,

@@ -70,8 +70,8 @@ public class StateProcessUtxoSingletonSignPayloads {
 
         // read job
 
-        BTCR2Update btcr2Update = updateJob.btcr2Update() == null ? null : BTCR2Update.fromJson(updateJob.btcr2Update());
-        if (btcr2Update == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'btcr2Update' in jobId");
+        BTCR2Update update = updateJob.update() == null ? null : BTCR2Update.fromJson(updateJob.update());
+        if (update == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'update' in jobId");
 
         Transaction unsignedBeaconSignal = updateJob.unsignedBeaconSignal() == null ? null : Transaction.read(ByteBuffer.wrap(Base64.getDecoder().decode(updateJob.unsignedBeaconSignal())));
         if (unsignedBeaconSignal == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'unsignedBeaconSignal' in jobId");
@@ -119,24 +119,24 @@ public class StateProcessUtxoSingletonSignPayloads {
 
         // update()
 
-        UpdateProcessUtxoSingletonSignPayloadsResult updateProcessUtxoSingletonSignPayloadsResult = updateProcessUtxoSingletonSignPayloads.update(bitcoinConnection, btcr2Update, unsignedBeaconSignal, updateECKey, utxoSingletonSignatures, didDocumentMetadata);
+        UpdateProcessUtxoSingletonSignPayloadsResult updateProcessUtxoSingletonSignPayloadsResult = updateProcessUtxoSingletonSignPayloads.update(bitcoinConnection, update, unsignedBeaconSignal, updateECKey, utxoSingletonSignatures, didDocumentMetadata);
 
         // publish to IPFS?
 
-        MerkleNode merkleNode = null;
-        if (publishToIpfs && ipfsConnection != null && updateProcessUtxoSingletonSignPayloadsResult.btcr2Update() != null) {
+        MerkleNode merkleNodeUpdate = null;
+        if (publishToIpfs && ipfsConnection != null && updateProcessUtxoSingletonSignPayloadsResult.update() != null) {
             try {
-                byte[] ipfsPayload = JSONDocumentHashing.jsonDocumentCanonicalizing(updateProcessUtxoSingletonSignPayloadsResult.btcr2Update().toJson()).getBytes(StandardCharsets.UTF_8);
+                byte[] ipfsPayload = JSONDocumentHashing.jsonDocumentCanonicalizing(updateProcessUtxoSingletonSignPayloadsResult.update().toJson()).getBytes(StandardCharsets.UTF_8);
                 AddArgs addArgs = AddArgs.Builder.newInstance().setCidVersion(1).setRawLeaves().setHash("sha2-256").setPin().build();
-                merkleNode = ipfsConnection.getIpfs().add(new NamedStreamable.ByteArrayWrapper(ipfsPayload), addArgs).getFirst();
+                merkleNodeUpdate = ipfsConnection.getIpfs().add(new NamedStreamable.ByteArrayWrapper(ipfsPayload), addArgs).getFirst();
             } catch (IOException ex) {
                 throw new RegistrationException(RegistrationException.ERROR_INTERNAL_ERROR, "Cannot publish to IPFS: " + ex.getMessage(), ex);
             }
-            if (log.isDebugEnabled()) log.debug("Published btcr2Update to IPFS: " + merkleNode.hash);
+            if (log.isDebugEnabled()) log.debug("Published update to IPFS: " + merkleNodeUpdate.hash);
         }
 
         // next state
 
-        return TransitionProcessUtxoSingletonSignPayloads.transitionToFinished(bitcoinConnection, ipfsConnection, updateProcessUtxoSingletonSignPayloadsResult.btcr2Update(), merkleNode, didRegistrationMetadata, didDocumentMetadata);
+        return TransitionProcessUtxoSingletonSignPayloads.transitionToFinished(bitcoinConnection, ipfsConnection, updateProcessUtxoSingletonSignPayloadsResult.update(), merkleNodeUpdate, didRegistrationMetadata, didDocumentMetadata);
     }
 }

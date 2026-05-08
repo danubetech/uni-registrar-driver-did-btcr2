@@ -22,12 +22,12 @@ import java.util.Map;
 
 public class TransitionProcessUpdateSignPayload {
 
-    public static UpdateState transitionToUpdateSignPayloadFundAddress(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, BTCR2Update btcr2Update, byte[] updateSignPayload, Address address, Coin minimumValue, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public static UpdateState transitionToUpdateSignPayloadFundAddress(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, BTCR2Update update, byte[] updateSignPayload, Address address, Coin minimumValue, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
 
         // REGISTRATION STATE: jobId
 
         UpdateJob updateJob = new UpdateJob(
-                btcr2Update.toJson(),
+                update.toJson(),
                 Base64.getEncoder().encodeToString(updateSignPayload),
                 null,
                 null,
@@ -62,12 +62,12 @@ public class TransitionProcessUpdateSignPayload {
         return updateState;
     }
 
-    public static UpdateState transitionToUpdateSignPayloadCompleteAggregationUpdates(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, BTCR2Update btcr2Update, byte[] updateSignPayload, AggregationCohort aggregationCohort, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
+    public static UpdateState transitionToUpdateSignPayloadCompleteAggregationUpdates(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, BTCR2Update update, byte[] updateSignPayload, AggregationCohort aggregationCohort, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
 
         // REGISTRATION STATE: jobId
 
         UpdateJob updateJob = new UpdateJob(
-                btcr2Update.toJson(),
+                update.toJson(),
                 Base64.getEncoder().encodeToString(updateSignPayload),
                 null,
                 null,
@@ -101,12 +101,12 @@ public class TransitionProcessUpdateSignPayload {
         return updateState;
     }
 
-    public static UpdateState transitionToUtxoSingletonSignPayloads(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, BTCR2Update btcr2Update, Transaction unsignedBeaconSignal, List<byte[]> utxoSingletonSignPayloads, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public static UpdateState transitionToUtxoSingletonSignPayloads(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, BTCR2Update update, Transaction unsignedBeaconSignal, List<byte[]> utxoSingletonSignPayloads, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
 
         // REGISTRATION STATE: jobId
 
         UpdateJob updateJob = new UpdateJob(
-                btcr2Update.toJson(),
+                update.toJson(),
                 null,
                 Base64.getEncoder().encodeToString(unsignedBeaconSignal.serialize()),
                 utxoSingletonSignPayloads.stream().map(x -> Base64.getEncoder().encodeToString(x)).toList(),
@@ -152,12 +152,12 @@ public class TransitionProcessUpdateSignPayload {
         return updateState;
     }
 
-    public static UpdateState transitionToUtxoAggregateSignPayloads(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, BTCR2Update btcr2Update, Transaction unsignedBeaconSignal, List<byte[]> utxoAggregateSignPayloads, AggregationCohort aggregationCohort, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public static UpdateState transitionToUtxoAggregateSignPayloads(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, BTCR2Update update, Transaction unsignedBeaconSignal, List<byte[]> utxoAggregateSignPayloads, AggregationCohort aggregationCohort, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
 
         // REGISTRATION STATE: jobId
 
         UpdateJob updateJob = new UpdateJob(
-                btcr2Update.toJson(),
+                update.toJson(),
                 null,
                 Base64.getEncoder().encodeToString(unsignedBeaconSignal.serialize()),
                 null,

@@ -199,20 +199,20 @@ public class StateInit {
 
         // publish to IPFS?
 
-        MerkleNode merkleNode = null;
+        MerkleNode merkleNodeGenesisDocument = null;
         if (publishToIpfs && ipfsConnection != null && createInitResult.genesisDocument() != null) {
             try {
                 byte[] ipfsPayload = JSONDocumentHashing.jsonDocumentCanonicalizing(createInitResult.genesisDocument().toJson()).getBytes(StandardCharsets.UTF_8);
                 AddArgs addArgs = AddArgs.Builder.newInstance().setCidVersion(1).setRawLeaves().setHash("sha2-256").setPin().build();
-                merkleNode = ipfsConnection.getIpfs().add(new NamedStreamable.ByteArrayWrapper(ipfsPayload), addArgs).getFirst();
+                merkleNodeGenesisDocument = ipfsConnection.getIpfs().add(new NamedStreamable.ByteArrayWrapper(ipfsPayload), addArgs).getFirst();
             } catch (IOException ex) {
                 throw new RegistrationException(RegistrationException.ERROR_INTERNAL_ERROR, "Cannot publish to IPFS: " + ex.getMessage(), ex);
             }
-            if (log.isDebugEnabled()) log.debug("Published genesisDocument to IPFS: " + merkleNode.hash);
+            if (log.isDebugEnabled()) log.debug("Published genesisDocument to IPFS: " + merkleNodeGenesisDocument.hash);
         }
 
         // next state
 
-        return TransitionInit.transitionToFinished(bitcoinConnection, ipfsConnection, aggregationCohort, createInitResult.initialKey(), createInitResult.genesisDocument(), createInitResult.did(), merkleNode, didRegistrationMetadata, didDocumentMetadata);
+        return TransitionInit.transitionToFinished(bitcoinConnection, ipfsConnection, aggregationCohort, createInitResult.initialKey(), createInitResult.genesisDocument(), createInitResult.did(), merkleNodeGenesisDocument, didRegistrationMetadata, didDocumentMetadata);
     }
 }

@@ -78,7 +78,7 @@ public class TransitionInit {
         return createState;
     }
 
-    public static CreateState transitionToFinished(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, AggregationCohort aggregationCohort, byte[] initialKey, DIDDocument genesisDocument, DID did, MerkleNode merkleNode, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
+    public static CreateState transitionToFinished(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, AggregationCohort aggregationCohort, byte[] initialKey, DIDDocument genesisDocument, DID did, MerkleNode merkleNodeGenesisDocument, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
 
         // REGISTRATION STATE: jobId
 
@@ -123,7 +123,7 @@ public class TransitionInit {
 
         if (initialKey != null) didDocumentMetadata.put("initialKey", Hex.encodeHexString(initialKey));
         if (genesisDocument != null) didDocumentMetadata.put("genesisDocument", genesisDocument.toMap());
-        if (merkleNode != null) didDocumentMetadata.put("genesisDocumentCid", merkleNode.hash.toString());
+        if (merkleNodeGenesisDocument != null) didDocumentMetadata.put("genesisDocumentCid", merkleNodeGenesisDocument.hash.toString());
 
         // create() state
 
