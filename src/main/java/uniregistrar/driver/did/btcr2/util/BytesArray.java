@@ -1,5 +1,7 @@
 package uniregistrar.driver.did.btcr2.util;
 
+import org.apache.commons.codec.binary.Hex;
+
 import java.util.Arrays;
 
 public class BytesArray {
@@ -33,7 +35,7 @@ public class BytesArray {
     @Override
     public String toString() {
         return "BytesArray{" +
-                "bytes=" + Arrays.toString(bytes) +
+                "bytes=" + Hex.encodeHexString(bytes) +
                 '}';
     }
 }

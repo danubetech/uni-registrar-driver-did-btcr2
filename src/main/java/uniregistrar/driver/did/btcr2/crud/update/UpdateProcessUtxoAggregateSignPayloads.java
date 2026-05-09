@@ -125,7 +125,8 @@ public class UpdateProcessUtxoAggregateSignPayloads {
 
         byte[] beaconSignalBytes = beaconSignal.serialize();
         if (log.isDebugEnabled()) log.debug("Broadcasting beacon signal: " + Hex.encodeHexString(beaconSignalBytes));
-        bitcoinConnection.broadcastRawTransaction(beaconSignalBytes);
+        String broadcastResult = bitcoinConnection.broadcastRawTransaction(beaconSignalBytes);
+        if (log.isDebugEnabled()) log.debug("Broadcasting beacon signal result: " + broadcastResult);
 
         // result
 

@@ -187,7 +187,7 @@
         <dependency>
             <groupId>com.danubetech</groupId>
             <artifactId>btc-common-java</artifactId>
-            <version>0.6.0</version>
+            <version>0.7-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.github.ipfs</groupId>
