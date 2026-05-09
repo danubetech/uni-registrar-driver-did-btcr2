@@ -27,11 +27,23 @@ public class AggregationService {
 
     // for now for testing
     private static void checkTestAggregationCohorts() {
-        if (! containsAggregationCohort("cohort-mutinynet-01")) {
-            addAggregationCohort(new AggregationCohort("cohort-mutinynet-01", Network.mutinynet, 2, BeaconType.CAS, ScriptType.P2TR));
+        if (! containsAggregationCohort("cohort-mutinynet-cas-1")) {
+            addAggregationCohort(new AggregationCohort("cohort-mutinynet-cas-1", Network.mutinynet, 1, BeaconType.CAS, ScriptType.P2TR));
         }
-        if (! containsAggregationCohort("cohort-mutinynet-02")) {
-            addAggregationCohort(new AggregationCohort("cohort-mutinynet-02", Network.mutinynet, 2, BeaconType.SMT, ScriptType.P2TR));
+        if (! containsAggregationCohort("cohort-mutinynet-smt-1")) {
+            addAggregationCohort(new AggregationCohort("cohort-mutinynet-smt-1", Network.mutinynet, 1, BeaconType.SMT, ScriptType.P2TR));
+        }
+        if (! containsAggregationCohort("cohort-mutinynet-cas-2")) {
+            addAggregationCohort(new AggregationCohort("cohort-mutinynet-cas-2", Network.mutinynet, 2, BeaconType.CAS, ScriptType.P2TR));
+        }
+        if (! containsAggregationCohort("cohort-mutinynet-smt-2")) {
+            addAggregationCohort(new AggregationCohort("cohort-mutinynet-smt-2", Network.mutinynet, 2, BeaconType.SMT, ScriptType.P2TR));
+        }
+        if (! containsAggregationCohort("cohort-mutinynet-cas-3")) {
+            addAggregationCohort(new AggregationCohort("cohort-mutinynet-cas-3", Network.mutinynet, 2, BeaconType.CAS, ScriptType.P2TR));
+        }
+        if (! containsAggregationCohort("cohort-mutinynet-smt-3")) {
+            addAggregationCohort(new AggregationCohort("cohort-mutinynet-smt-3", Network.mutinynet, 2, BeaconType.SMT, ScriptType.P2TR));
         }
     }
 
