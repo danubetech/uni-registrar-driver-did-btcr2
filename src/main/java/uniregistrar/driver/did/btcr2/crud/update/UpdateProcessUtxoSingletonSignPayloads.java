@@ -44,7 +44,7 @@ public class UpdateProcessUtxoSingletonSignPayloads {
 
         Transaction beaconSignal = unsignedBeaconSignal;
 
-        for (int i = 0; i<beaconSignal.getInputs().size(); i++) {
+        for (int i=0; i<beaconSignal.getInputs().size(); i++) {
             TransactionInput transactionInput = beaconSignal.getInput(i);
             byte[] utxoSingletonSignature = utxoSingletonSignatures.get(i);
             byte[] r = new byte[32];

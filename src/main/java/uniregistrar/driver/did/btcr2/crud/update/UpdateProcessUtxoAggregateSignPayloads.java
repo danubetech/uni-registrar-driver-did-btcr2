@@ -112,7 +112,7 @@ public class UpdateProcessUtxoAggregateSignPayloads {
 
         Transaction beaconSignal = unsignedBeaconSignal;
 
-        for (int i = 0; i<beaconSignal.getInputs().size(); i++) {
+        for (int i=0; i<beaconSignal.getInputs().size(); i++) {
             TransactionInput transactionInput = beaconSignal.getInput(i);
             byte[] musig2AggregatedSignature = aggregationCohort.getMusig2AggregatedSignatures().get(i).bytes();
             TransactionWitness transactionWitness = TransactionWitness.of(musig2AggregatedSignature);
