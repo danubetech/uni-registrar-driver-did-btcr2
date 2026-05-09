@@ -130,7 +130,7 @@ public class StateProcessUtxoAggregateSignPayloads {
                 AddArgs addArgs = AddArgs.Builder.newInstance().setCidVersion(1).setRawLeaves().setHash("sha2-256").setPin().build();
                 merkleNodeUpdate = ipfsConnection.getIpfs().add(new NamedStreamable.ByteArrayWrapper(ipfsPayload), addArgs).getFirst();
             } catch (IOException ex) {
-                throw new RegistrationException(RegistrationException.ERROR_INTERNAL_ERROR, "Cannot publish to IPFS: " + ex.getMessage(), ex);
+                throw new RegistrationException(RegistrationException.ERROR_INTERNAL_ERROR, "Cannot publish update to IPFS: " + ex.getMessage(), ex);
             }
             if (log.isDebugEnabled()) log.debug("Published update to IPFS: " + merkleNodeUpdate.hash);
         }
@@ -140,7 +140,7 @@ public class StateProcessUtxoAggregateSignPayloads {
                 AddArgs addArgs = AddArgs.Builder.newInstance().setCidVersion(1).setRawLeaves().setHash("sha2-256").setPin().build();
                 merkleNodeCasAnnouncement = ipfsConnection.getIpfs().add(new NamedStreamable.ByteArrayWrapper(ipfsPayload), addArgs).getFirst();
             } catch (IOException ex) {
-                throw new RegistrationException(RegistrationException.ERROR_INTERNAL_ERROR, "Cannot publish to IPFS: " + ex.getMessage(), ex);
+                throw new RegistrationException(RegistrationException.ERROR_INTERNAL_ERROR, "Cannot publish casAnnouncement to IPFS: " + ex.getMessage(), ex);
             }
             if (log.isDebugEnabled()) log.debug("Published casAnnouncement to IPFS: " + merkleNodeCasAnnouncement.hash);
         }
@@ -150,7 +150,7 @@ public class StateProcessUtxoAggregateSignPayloads {
                 AddArgs addArgs = AddArgs.Builder.newInstance().setCidVersion(1).setRawLeaves().setHash("sha2-256").setPin().build();
                 merkleNodeSmtProof = ipfsConnection.getIpfs().add(new NamedStreamable.ByteArrayWrapper(ipfsPayload), addArgs).getFirst();
             } catch (IOException ex) {
-                throw new RegistrationException(RegistrationException.ERROR_INTERNAL_ERROR, "Cannot publish to IPFS: " + ex.getMessage(), ex);
+                throw new RegistrationException(RegistrationException.ERROR_INTERNAL_ERROR, "Cannot publish smtProof to IPFS: " + ex.getMessage(), ex);
             }
             if (log.isDebugEnabled()) log.debug("Published smtProof to IPFS: " + merkleNodeSmtProof.hash);
         }

@@ -6,6 +6,11 @@ import foundation.identity.did.DIDDocument;
 import org.apache.commons.codec.binary.Hex;
 import org.bitcoinj.base.Coin;
 import org.bitcoinj.core.Transaction;
+import org.bitcoinj.core.TransactionInput;
+import org.bitcoinj.core.TransactionWitness;
+import org.bitcoinj.crypto.ECKey;
+import org.bitcoinj.crypto.TransactionSignature;
+import org.bitcoinj.script.ScriptBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
@@ -16,14 +21,11 @@ import uniregistrar.driver.did.btcr2.data.json.SMTProof;
 import uniregistrar.driver.did.btcr2.data.jsonld.BTCR2Update;
 import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.driver.did.btcr2.util.BytesArray;
-import uniregistrar.driver.did.btcr2.util.SHA256Util;
 
+import java.math.BigInteger;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /*
  * Update
@@ -106,16 +108,29 @@ public class UpdateProcessUtxoAggregateSignPayloads {
             aggregationCohort.aggregateSignatures(bitcoinConnection);
         }
 
-        // and broadcast to the Bitcoin network.
+        // The result is a signed Bitcoin transaction.
 
-        byte[] beaconSignalBytes = null /* TODO beaconSignal.serialize() */;
-        /* TODO if (log.isDebugEnabled()) log.debug("Broadcasting beacon signal: " + Hex.encodeHexString(beaconSignalBytes));
-        bitcoinConnection.broadcastRawTransaction(beaconSignalBytes); */
+        Transaction beaconSignal = unsignedBeaconSignal;
+
+        for (int i = 0; i<beaconSignal.getInputs().size(); i++) {
+            TransactionInput transactionInput = beaconSignal.getInput(i);
+            byte[] musig2AggregatedSignature = aggregationCohort.getMusig2AggregatedSignatures().get(i).bytes();
+            TransactionWitness transactionWitness = TransactionWitness.of(musig2AggregatedSignature);
+            TransactionInput signedTransactionInput = transactionInput.withWitness(transactionWitness);
+            beaconSignal.replaceInput(i, signedTransactionInput);
+        }
+        if (log.isDebugEnabled()) log.debug("beaconSignal after signing: {}", beaconSignal);
+
+        // The Aggregation Service then broadcasts this transaction onto the Bitcoin network.
+
+        byte[] beaconSignalBytes = beaconSignal.serialize();
+        if (log.isDebugEnabled()) log.debug("Broadcasting beacon signal: " + Hex.encodeHexString(beaconSignalBytes));
+        bitcoinConnection.broadcastRawTransaction(beaconSignalBytes);
 
         // result
 
-        CASAnnouncement casAnnouncement = aggregationCohort.getCasAnnouncement();
-        SMTProof smtProof = aggregationCohort.getSmtProof();
+        CASAnnouncement casAnnouncement = aggregationCohort.generateCasAnnouncement();
+        SMTProof smtProof = aggregationCohort.generateSmtProof();
 
         UpdateProcessUtxoAggregateSignPayloadsResult updateProcessUtxoAggregateSignPayloads = new UpdateProcessUtxoAggregateSignPayloadsResult(update, casAnnouncement, smtProof, aggregationCohort);
         if (log.isDebugEnabled()) log.debug("Update: " + updateProcessUtxoAggregateSignPayloads);

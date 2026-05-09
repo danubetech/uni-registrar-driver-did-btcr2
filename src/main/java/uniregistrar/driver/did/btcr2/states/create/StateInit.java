@@ -206,7 +206,7 @@ public class StateInit {
                 AddArgs addArgs = AddArgs.Builder.newInstance().setCidVersion(1).setRawLeaves().setHash("sha2-256").setPin().build();
                 merkleNodeGenesisDocument = ipfsConnection.getIpfs().add(new NamedStreamable.ByteArrayWrapper(ipfsPayload), addArgs).getFirst();
             } catch (IOException ex) {
-                throw new RegistrationException(RegistrationException.ERROR_INTERNAL_ERROR, "Cannot publish to IPFS: " + ex.getMessage(), ex);
+                throw new RegistrationException(RegistrationException.ERROR_INTERNAL_ERROR, "Cannot publish genesisDocument to IPFS: " + ex.getMessage(), ex);
             }
             if (log.isDebugEnabled()) log.debug("Published genesisDocument to IPFS: " + merkleNodeGenesisDocument.hash);
         }

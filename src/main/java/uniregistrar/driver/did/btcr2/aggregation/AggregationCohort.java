@@ -352,7 +352,7 @@ public class AggregationCohort {
 
         // The Signal Bytes included in a CAS Beacon Signal is the SHA-256 hash of the Beacon Announcement Map.
 
-        byte[] signalBytes = JsonCanonicalizationAndHash.jsonCanonicalizationAndHash(this.getCasAnnouncement());
+        byte[] signalBytes = JsonCanonicalizationAndHash.jsonCanonicalizationAndHash(this.generateCasAnnouncement());
         if (log.isDebugEnabled()) log.debug("Determined signal bytes for CAS: " + Hex.encodeHexString(signalBytes));
         return signalBytes;
     }
@@ -376,7 +376,7 @@ public class AggregationCohort {
 
         // The Signal Bytes of an SMT Beacon Signal is the 32 byte SMT root.
 
-        byte[] signalBytes = JsonCanonicalizationAndHash.jsonCanonicalizationAndHash(jsonMapper.convertValue(this.getSmtProof(), Map.class));
+        byte[] signalBytes = JsonCanonicalizationAndHash.jsonCanonicalizationAndHash(jsonMapper.convertValue(this.generateSmtProof(), Map.class));
         if (log.isDebugEnabled()) log.debug("Determined signal bytes for SMT: " + Hex.encodeHexString(signalBytes));
         return signalBytes;
     }
@@ -389,11 +389,13 @@ public class AggregationCohort {
         };
     }
 
-    public CASAnnouncement getCasAnnouncement() {
+    public CASAnnouncement generateCasAnnouncement() {
+        if (! BeaconType.CAS.equals(this.getBeaconType())) return null;
         return new CASAnnouncement(this.getCasBeaconAnnouncementMap().entrySet().stream().collect(Collectors.toMap(x -> x.getKey().getDidString(), x -> Base64.getUrlEncoder().withoutPadding().encodeToString(x.getValue().bytes()))));
     }
 
-    public SMTProof getSmtProof() {
+    public SMTProof generateSmtProof() {
+        if (! BeaconType.SMT.equals(this.getBeaconType())) return null;
         return new SMTProof(); /* TODO */
     }
 
