@@ -97,13 +97,13 @@ public class DidBtcr2Driver implements Driver {
 
         // execute operation
 
-        if (updateJob == null || (updateJob.updateSignPayload() == null && updateJob.utxoSingletonSignPayloads() == null)) {
+        if (updateJob == null || (updateJob.updateSignPayload() == null && updateJob.utxoSingletonSignPayloads() == null && updateJob.utxoAggregateSignPayloads() == null)) {
             return uniregistrar.driver.did.btcr2.states.update.StateInit.update(updateJob, updateRequest, this.getUpdateInit(), this.getBitcoinConnector(), this.getIpfsConnection());
         } else if (updateJob.updateSignPayload() != null && updateJob.utxoSingletonSignPayloads() == null && updateJob.utxoAggregateSignPayloads() == null) {
             return uniregistrar.driver.did.btcr2.states.update.StateProcessUpdateSignPayload.update(updateJob, updateRequest, this.getUpdateProcessUpdateSignPayload(), this.getBitcoinConnector(), this.getIpfsConnection());
-        } else if (updateJob.updateSignPayload() == null && updateJob.utxoSingletonSignPayloads() != null) {
+        } else if (updateJob.utxoSingletonSignPayloads() != null) {
             return StateProcessUtxoSingletonSignPayloads.update(updateJob, updateRequest, this.getUpdateProcessUtxoSingletonSignPayloads(), this.getBitcoinConnector(), this.getIpfsConnection());
-        } else if (updateJob.updateSignPayload() == null && updateJob.utxoAggregateSignPayloads() != null) {
+        } else if (updateJob.utxoAggregateSignPayloads() != null) {
             return StateProcessUtxoAggregateSignPayloads.update(updateJob, updateRequest, this.getUpdateProcessUtxoAggregateSignPayloads(), this.getBitcoinConnector(), this.getIpfsConnection());
         } else {
             throw new RegistrationException("Invalid state for job " + updateJob);
