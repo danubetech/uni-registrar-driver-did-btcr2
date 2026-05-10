@@ -39,6 +39,7 @@ import uniregistrar.driver.did.btcr2.util.MultiCodecUtil;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -60,6 +61,7 @@ public class AggregationCohort {
     private ArrayList<BytesArray> participantPublicKeys = new ArrayList<>();
 
     private Address beaconAddress;
+    private byte[] musig2NonceSessionId;
 
     // For a CAS Beacon:
 
@@ -123,6 +125,7 @@ public class AggregationCohort {
         metadataCohort.put("isCohortFinalized", this.isCohortFinalized());
         metadataCohort.put("participantPublicKeys", this.getParticipantPublicKeys().stream().map(BytesArray::bytes).map(Hex::encodeHexString).toList());
         metadataCohort.put("beaconAddress", this.getBeaconAddress() == null ? null : this.getBeaconAddress().toString());
+        metadataCohort.put("musig2NonceSessionId", this.getMusig2NonceSessionId() == null ? null : Hex.encodeHexString(this.getMusig2NonceSessionId()));
         Map<String, Object> metadataUpdates = (Map<String, Object>) metadata.computeIfAbsent("updates", x -> new LinkedHashMap<>());
         metadataUpdates.put("updatesSize", this.updatesSize());
         metadataUpdates.put("isUpdatesCompleted", this.isUpdatesCompleted());
@@ -187,7 +190,12 @@ public class AggregationCohort {
             default -> throw new IllegalStateException("Invalid script type, not supported for aggregation cohort: " + this.getScriptType());
         };
 
-        if (log.isDebugEnabled()) log.debug("For script tyoe " + this.getScriptType() + " and size " + this.cohortSize() + " finalized cohort with beacon address: " + this.getBeaconAddress());
+        SecureRandom random = new SecureRandom();
+        byte[] bytes = new byte[32];
+        random.nextBytes(bytes);
+        this.musig2NonceSessionId = bytes;
+
+        if (log.isDebugEnabled()) log.debug("For script tyoe " + this.getScriptType() + " and size " + this.cohortSize() + " finalized cohort with beacon address " + this.getBeaconAddress() + " and nonce sessionId " + Hex.encodeHexString(this.getMusig2NonceSessionId()));
     }
 
     public boolean containsParticipantPublicKey(byte[] participantPublicKey) {
@@ -553,6 +561,10 @@ public class AggregationCohort {
         return beaconAddress;
     }
 
+    public byte[] getMusig2NonceSessionId() {
+        return musig2NonceSessionId;
+    }
+
     public Map<Integer, DID> getCasDids() {
         return casDids;
     }
@@ -629,12 +641,12 @@ public class AggregationCohort {
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         AggregationCohort that = (AggregationCohort) o;
-        return maxSize == that.maxSize && Objects.equals(id, that.id) && network == that.network && beaconType == that.beaconType && scriptType == that.scriptType && Objects.equals(participantPublicKeys, that.participantPublicKeys) && Objects.equals(beaconAddress, that.beaconAddress) && Objects.equals(casDids, that.casDids) && Objects.equals(casUpdateHashes, that.casUpdateHashes) && Objects.equals(smtDidIndexes, that.smtDidIndexes) && Objects.equals(smtUpdateHashes, that.smtUpdateHashes) && Objects.equals(smtNonces, that.smtNonces) && Objects.equals(musig2SecretNonces, that.musig2SecretNonces) && Objects.equals(musig2PublicNonces, that.musig2PublicNonces) && Objects.equals(casBeaconAnnouncementMap, that.casBeaconAnnouncementMap) && Objects.equals(smtProofs, that.smtProofs) && Objects.equals(unsignedBeaconSignal, that.unsignedBeaconSignal) && Objects.deepEquals(musig2AggregatedNonce, that.musig2AggregatedNonce) && Objects.deepEquals(signalBytes, that.signalBytes) && Objects.equals(beaconAddressUtxos, that.beaconAddressUtxos) && Objects.equals(utxoAggregateSignPayloads, that.utxoAggregateSignPayloads) && Objects.equals(utxoAggregateSignatures, that.utxoAggregateSignatures) && Objects.equals(musig2AggregatedSignatures, that.musig2AggregatedSignatures) && Objects.equals(broadcastRawTransactionId, that.broadcastRawTransactionId);
+        return maxSize == that.maxSize && Objects.equals(id, that.id) && network == that.network && beaconType == that.beaconType && scriptType == that.scriptType && Objects.equals(participantPublicKeys, that.participantPublicKeys) && Objects.equals(beaconAddress, that.beaconAddress) && Objects.deepEquals(musig2NonceSessionId, that.musig2NonceSessionId) && Objects.equals(casDids, that.casDids) && Objects.equals(casUpdateHashes, that.casUpdateHashes) && Objects.equals(smtDidIndexes, that.smtDidIndexes) && Objects.equals(smtUpdateHashes, that.smtUpdateHashes) && Objects.equals(smtNonces, that.smtNonces) && Objects.equals(musig2SecretNonces, that.musig2SecretNonces) && Objects.equals(musig2PublicNonces, that.musig2PublicNonces) && Objects.equals(casBeaconAnnouncementMap, that.casBeaconAnnouncementMap) && Objects.equals(smtProofs, that.smtProofs) && Objects.equals(unsignedBeaconSignal, that.unsignedBeaconSignal) && Objects.deepEquals(musig2AggregatedNonce, that.musig2AggregatedNonce) && Objects.deepEquals(signalBytes, that.signalBytes) && Objects.equals(beaconAddressUtxos, that.beaconAddressUtxos) && Objects.equals(utxoAggregateSignPayloads, that.utxoAggregateSignPayloads) && Objects.equals(utxoAggregateSignatures, that.utxoAggregateSignatures) && Objects.equals(musig2AggregatedSignatures, that.musig2AggregatedSignatures) && Objects.equals(broadcastRawTransactionId, that.broadcastRawTransactionId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, network, maxSize, beaconType, scriptType, participantPublicKeys, beaconAddress, casDids, casUpdateHashes, smtDidIndexes, smtUpdateHashes, smtNonces, musig2SecretNonces, musig2PublicNonces, casBeaconAnnouncementMap, smtProofs, unsignedBeaconSignal, Arrays.hashCode(musig2AggregatedNonce), Arrays.hashCode(signalBytes), beaconAddressUtxos, utxoAggregateSignPayloads, utxoAggregateSignatures, musig2AggregatedSignatures, broadcastRawTransactionId);
+        return Objects.hash(id, network, maxSize, beaconType, scriptType, participantPublicKeys, beaconAddress, Arrays.hashCode(musig2NonceSessionId), casDids, casUpdateHashes, smtDidIndexes, smtUpdateHashes, smtNonces, musig2SecretNonces, musig2PublicNonces, casBeaconAnnouncementMap, smtProofs, unsignedBeaconSignal, Arrays.hashCode(musig2AggregatedNonce), Arrays.hashCode(signalBytes), beaconAddressUtxos, utxoAggregateSignPayloads, utxoAggregateSignatures, musig2AggregatedSignatures, broadcastRawTransactionId);
     }
 
     @Override
@@ -647,6 +659,7 @@ public class AggregationCohort {
                 ", scriptType=" + scriptType +
                 ", participantPublicKeys=" + participantPublicKeys +
                 ", beaconAddress=" + beaconAddress +
+                ", musig2NonceSessionId=" + Arrays.toString(musig2NonceSessionId) +
                 ", casDids=" + casDids +
                 ", casUpdateHashes=" + casUpdateHashes +
                 ", smtDidIndexes=" + smtDidIndexes +
