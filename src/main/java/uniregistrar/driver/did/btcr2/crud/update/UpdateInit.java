@@ -5,7 +5,6 @@ import com.danubetech.dataintegrity.jsonld.DataIntegrityKeywords;
 import com.danubetech.dataintegrity.signer.DataIntegrityProofLdSigner;
 import com.danubetech.keyformats.crypto.ByteSigner;
 import com.danubetech.keyformats.jose.JWSAlgorithm;
-import foundation.identity.did.DID;
 import foundation.identity.did.DIDDocument;
 import foundation.identity.did.VerificationMethod;
 import foundation.identity.did.validation.Validation;

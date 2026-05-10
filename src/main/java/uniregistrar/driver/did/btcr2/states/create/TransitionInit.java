@@ -7,7 +7,6 @@ import io.ipfs.api.MerkleNode;
 import org.apache.commons.codec.binary.Hex;
 import uniregistrar.driver.did.btcr2.aggregation.AggregationCohort;
 import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
-import uniregistrar.driver.did.btcr2.util.BytesArray;
 import uniregistrar.openapi.model.*;
 
 import java.util.Collections;

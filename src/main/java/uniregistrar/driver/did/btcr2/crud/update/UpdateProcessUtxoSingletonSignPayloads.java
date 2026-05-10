@@ -1,9 +1,6 @@
 package uniregistrar.driver.did.btcr2.crud.update;
 
 import com.danubetech.btc.connection.BitcoinConnection;
-import foundation.identity.did.DID;
-import foundation.identity.did.DIDDocument;
-import jakarta.json.JsonPatch;
 import org.apache.commons.codec.binary.Hex;
 import org.bitcoinj.base.Coin;
 import org.bitcoinj.core.Transaction;
