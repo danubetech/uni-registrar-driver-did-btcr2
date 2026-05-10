@@ -405,37 +405,30 @@ public class AggregationCohort {
     }
 
     public void setCasDid(int participantIndex, DID participantCasDid) {
-        if (this.isUpdatesAggregated()) throw new IllegalStateException("Aggregation updates " + this.getId() + " already aggregated.");
         this.getCasDids().put(participantIndex, participantCasDid);
     }
 
     public void setCasUpdateHash(int participantIndex, BytesArray participantCasUpdateHash) {
-        if (this.isUpdatesAggregated()) throw new IllegalStateException("Aggregation updates " + this.getId() + " already aggregated.");
         this.getCasUpdateHashes().put(participantIndex, participantCasUpdateHash);
     }
 
     public void setSmtDidIndex(int participantIndex, BytesArray participantSmtDidIndex) {
-        if (this.isUpdatesAggregated()) throw new IllegalStateException("Aggregation updates " + this.getId() + " already aggregated.");
         this.getSmtDidIndexes().put(participantIndex, participantSmtDidIndex);
     }
 
     public void setSmtUpdateHash(int participantIndex, BytesArray participantSmtUpdateHash) {
-        if (this.isUpdatesAggregated()) throw new IllegalStateException("Aggregation updates " + this.getId() + " already aggregated.");
         this.getSmtUpdateHashes().put(participantIndex, participantSmtUpdateHash);
     }
 
     public void setSmtNonce(int participantIndex, BytesArray participantSmtNonce) {
-        if (this.isUpdatesAggregated()) throw new IllegalStateException("Aggregation updates " + this.getId() + " already aggregated.");
         this.getSmtNonces().put(participantIndex, participantSmtNonce);
     }
 
     public void setMusig2SecretNonce(int participantIndex, BytesArray participantMusig2SecretNonce) {
-        if (this.isUpdatesAggregated()) throw new IllegalStateException("Aggregation updates " + this.getId() + " already aggregated.");
         this.getMusig2SecretNonces().put(participantIndex, participantMusig2SecretNonce);
     }
 
     public void setMusig2IndividualNonce(int participantIndex, BytesArray participantMusig2IndividualNonce) {
-        if (this.isUpdatesAggregated()) throw new IllegalStateException("Aggregation updates " + this.getId() + " already aggregated.");
         this.getMusig2PublicNonces().put(participantIndex, participantMusig2IndividualNonce);
     }
 
@@ -487,7 +480,6 @@ public class AggregationCohort {
     }
 
     public void setUtxoAggregateSignatures(int participantIndex, List<BytesArray> utxoAggregateSignatures) {
-        if (this.isSignaturesAggregated()) throw new IllegalStateException("Aggregation signatures " + this.getId() + " already aggregated.");
         this.getUtxoAggregateSignatures().put(participantIndex, utxoAggregateSignatures);
     }
 
