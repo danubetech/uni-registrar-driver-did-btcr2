@@ -125,15 +125,15 @@ public class UpdateProcessUtxoAggregateSignPayloads {
 
         byte[] beaconSignalBytes = beaconSignal.serialize();
         if (log.isDebugEnabled()) log.debug("Broadcasting beacon signal: " + Hex.encodeHexString(beaconSignalBytes));
-        String broadcastResult = bitcoinConnection.broadcastRawTransaction(beaconSignalBytes);
-        if (log.isDebugEnabled()) log.debug("Broadcasting beacon signal result: " + broadcastResult);
+        String txId = bitcoinConnection.broadcastRawTransaction(beaconSignalBytes);
+        if (log.isDebugEnabled()) log.debug("Transaction from beacon signal result: " + txId);
 
         // result
 
         CASAnnouncement casAnnouncement = aggregationCohort.generateCasAnnouncement();
         SMTProof smtProof = aggregationCohort.generateSmtProof();
 
-        UpdateProcessUtxoAggregateSignPayloadsResult updateProcessUtxoAggregateSignPayloads = new UpdateProcessUtxoAggregateSignPayloadsResult(update, casAnnouncement, smtProof, aggregationCohort);
+        UpdateProcessUtxoAggregateSignPayloadsResult updateProcessUtxoAggregateSignPayloads = new UpdateProcessUtxoAggregateSignPayloadsResult(update, txId, casAnnouncement, smtProof, aggregationCohort);
         if (log.isDebugEnabled()) log.debug("Update: " + updateProcessUtxoAggregateSignPayloads);
         return updateProcessUtxoAggregateSignPayloads;
     }

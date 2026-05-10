@@ -62,12 +62,12 @@ public class UpdateProcessUtxoSingletonSignPayloads {
 
         byte[] beaconSignalBytes = beaconSignal.serialize();
         if (log.isDebugEnabled()) log.debug("Broadcasting beacon signal: " + Hex.encodeHexString(beaconSignalBytes));
-        String broadcastResult = bitcoinConnection.broadcastRawTransaction(beaconSignalBytes);
-        if (log.isDebugEnabled()) log.debug("Broadcasting beacon signal result: " + broadcastResult);
+        String txId = bitcoinConnection.broadcastRawTransaction(beaconSignalBytes);
+        if (log.isDebugEnabled()) log.debug("Transaction from beacon signal result: " + txId);
 
         // result
 
-        UpdateProcessUtxoSingletonSignPayloadsResult updateProcessUtxoSingletonSignPayloadsResult = new UpdateProcessUtxoSingletonSignPayloadsResult(update);
+        UpdateProcessUtxoSingletonSignPayloadsResult updateProcessUtxoSingletonSignPayloadsResult = new UpdateProcessUtxoSingletonSignPayloadsResult(update, txId);
         if (log.isDebugEnabled()) log.debug("Update: " + updateProcessUtxoSingletonSignPayloadsResult);
         return updateProcessUtxoSingletonSignPayloadsResult;
     }

@@ -137,6 +137,6 @@ public class StateProcessUtxoSingletonSignPayloads {
 
         // next state
 
-        return TransitionProcessUtxoSingletonSignPayloads.transitionToFinished(bitcoinConnection, ipfsConnection, updateProcessUtxoSingletonSignPayloadsResult.update(), merkleNodeUpdate, didRegistrationMetadata, didDocumentMetadata);
+        return TransitionProcessUtxoSingletonSignPayloads.transitionToFinished(bitcoinConnection, ipfsConnection, updateProcessUtxoSingletonSignPayloadsResult.update(), updateProcessUtxoSingletonSignPayloadsResult.txId(), merkleNodeUpdate, didRegistrationMetadata, didDocumentMetadata);
     }
 }

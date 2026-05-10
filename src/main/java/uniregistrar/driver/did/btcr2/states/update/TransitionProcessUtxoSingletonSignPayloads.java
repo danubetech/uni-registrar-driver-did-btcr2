@@ -11,7 +11,7 @@ import java.util.Map;
 
 public class TransitionProcessUtxoSingletonSignPayloads {
 
-    public static UpdateState transitionToFinished(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, BTCR2Update update, MerkleNode merkleNodeUpdate, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
+    public static UpdateState transitionToFinished(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, BTCR2Update update, String txId, MerkleNode merkleNodeUpdate, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
 
         // REGISTRATION STATE: didState.state="finished"
 
@@ -26,6 +26,7 @@ public class TransitionProcessUtxoSingletonSignPayloads {
         // REGISTRATION STATE: didDocumentMetadata
 
         if (update != null) didDocumentMetadata.put("update", update.getJsonObject());
+        if (txId != null) didDocumentMetadata.put("txId", txId);
         if (merkleNodeUpdate != null) didDocumentMetadata.put("updateCid", merkleNodeUpdate.hash.toString());
 
         // update state
