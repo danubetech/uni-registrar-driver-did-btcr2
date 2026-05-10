@@ -322,8 +322,9 @@ public class UpdateProcessUpdateSignPayload {
         // MuSig2 Nonce: A MuSig2 nonce constructed according to the nonce generation algorithm specified in [BIP327].
 
         SecureRandom random = new SecureRandom();
-        byte[] bytes = new byte[32];
-        random.nextBytes(bytes);
+        //byte[] bytes = new byte[32];
+        //random.nextBytes(bytes);
+        byte[] bytes = SHA256Util.sha256("test".getBytes());
         ByteVector32 sessionId = new ByteVector32(bytes);
         PublicKey participantPublicKey = PublicKey.parse(aggregationCohort.getParticipantPublicKeys().get(participantIndex).bytes());
         List<PublicKey> participantPublicKeys = aggregationCohort.getParticipantPublicKeys().stream().map(BytesArray::bytes).map(PublicKey::parse).toList();
