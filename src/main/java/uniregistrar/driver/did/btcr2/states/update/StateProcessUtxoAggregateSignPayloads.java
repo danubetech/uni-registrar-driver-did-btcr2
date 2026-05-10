@@ -157,6 +157,6 @@ public class StateProcessUtxoAggregateSignPayloads {
 
         // next state
 
-        return TransitionProcessUtxoAggregateSignPayloads.transitionToFinished(bitcoinConnection, ipfsConnection, updateProcessUtxoAggregateSignPayloadsResult.txId(), updateProcessUtxoAggregateSignPayloadsResult.update(), updateProcessUtxoAggregateSignPayloadsResult.casAnnouncement(), updateProcessUtxoAggregateSignPayloadsResult.smtProof(), updateProcessUtxoAggregateSignPayloadsResult.aggregationCohort(), merkleNodeUpdate, merkleNodeCasAnnouncement, merkleNodeSmtProof, didRegistrationMetadata, didDocumentMetadata);
+        return TransitionProcessUtxoAggregateSignPayloads.transitionToFinished(bitcoinConnection, ipfsConnection, updateProcessUtxoAggregateSignPayloadsResult.broadcastRawTransactionId(), updateProcessUtxoAggregateSignPayloadsResult.update(), updateProcessUtxoAggregateSignPayloadsResult.casAnnouncement(), updateProcessUtxoAggregateSignPayloadsResult.smtProof(), updateProcessUtxoAggregateSignPayloadsResult.aggregationCohort(), merkleNodeUpdate, merkleNodeCasAnnouncement, merkleNodeSmtProof, didRegistrationMetadata, didDocumentMetadata);
     }
 }

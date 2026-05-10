@@ -104,32 +104,20 @@ public class UpdateProcessUtxoAggregateSignPayloads {
             aggregationCohort.aggregateSignatures(bitcoinConnection);
         }
 
-        // The result is a signed Bitcoin transaction.
-
-        Transaction beaconSignal = unsignedBeaconSignal;
-
-        for (int i=0; i<beaconSignal.getInputs().size(); i++) {
-            TransactionInput transactionInput = beaconSignal.getInput(i);
-            byte[] musig2AggregatedSignature = aggregationCohort.getMusig2AggregatedSignatures().get(i).bytes();
-            TransactionWitness transactionWitness = TransactionWitness.of(musig2AggregatedSignature);
-            TransactionInput signedTransactionInput = transactionInput.withWitness(transactionWitness).withoutScriptBytes();
-            beaconSignal.replaceInput(i, signedTransactionInput);
-        }
-        if (log.isDebugEnabled()) log.debug("beaconSignal after signing: {}", beaconSignal);
-
         // The Aggregation Service then broadcasts this transaction onto the Bitcoin network.
 
-        byte[] beaconSignalBytes = beaconSignal.serialize();
-        if (log.isDebugEnabled()) log.debug("Broadcasting beacon signal: " + Hex.encodeHexString(beaconSignalBytes));
-        String txId = bitcoinConnection.broadcastRawTransaction(beaconSignalBytes);
-        if (log.isDebugEnabled()) log.debug("Transaction from beacon signal result: " + txId);
+        String broadcastRawTransactionId = null;
+
+        if (! aggregationCohort.isRawTransactionBroadcast()) {
+            broadcastRawTransactionId = aggregationCohort.broadcastRawTransaction(bitcoinConnection);
+        }
 
         // result
 
         CASAnnouncement casAnnouncement = aggregationCohort.generateCasAnnouncement();
         SMTProof smtProof = aggregationCohort.generateSmtProof();
 
-        UpdateProcessUtxoAggregateSignPayloadsResult updateProcessUtxoAggregateSignPayloads = new UpdateProcessUtxoAggregateSignPayloadsResult(txId, update, casAnnouncement, smtProof, aggregationCohort);
+        UpdateProcessUtxoAggregateSignPayloadsResult updateProcessUtxoAggregateSignPayloads = new UpdateProcessUtxoAggregateSignPayloadsResult(broadcastRawTransactionId, update, casAnnouncement, smtProof, aggregationCohort);
         if (log.isDebugEnabled()) log.debug("Update: " + updateProcessUtxoAggregateSignPayloads);
         return updateProcessUtxoAggregateSignPayloads;
     }

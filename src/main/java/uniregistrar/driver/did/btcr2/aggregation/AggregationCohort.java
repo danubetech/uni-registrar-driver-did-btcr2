@@ -19,6 +19,8 @@ import io.ipfs.multibase.Multibase;
 import org.apache.commons.codec.binary.Hex;
 import org.bitcoinj.base.*;
 import org.bitcoinj.core.Transaction;
+import org.bitcoinj.core.TransactionInput;
+import org.bitcoinj.core.TransactionWitness;
 import org.bitcoinj.crypto.ECKey;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptBuilder;
@@ -98,6 +100,8 @@ public class AggregationCohort {
 
     private List<BytesArray> musig2AggregatedSignatures;
 
+    private String broadcastRawTransactionId;
+
     public AggregationCohort(String id, Network network, int maxSize, BeaconType beaconType, ScriptType scriptType) {
         this.id = id;
         this.network = network;
@@ -135,6 +139,7 @@ public class AggregationCohort {
         metadataSignatures.put("isSignaturesAggregated", this.isSignaturesAggregated());
         metadataSignatures.put("utxoAggregateSignatures", this.getUtxoAggregateSignatures() == null ? null : this.getUtxoAggregateSignatures().values().stream().map(x -> x.stream().map(BytesArray::bytes).map(Hex::encodeHexString).toList()).toList());
         metadataSignatures.put("musig2AggregatedSignatures", this.getMusig2AggregatedSignatures() == null ? null : this.getMusig2AggregatedSignatures().stream().map(BytesArray::bytes).map(Hex::encodeHexString).toList());
+        metadata.put("broadcastRawTransactionId", this.getBroadcastRawTransactionId());
         return Map.of("aggregationCohort", metadata);
     }
 
@@ -157,8 +162,8 @@ public class AggregationCohort {
 
     public void finalizeCohort(BitcoinConnector bitcoinConnector) {
 
-        if (! isCohortCompleted()) throw new IllegalStateException("Aggregation cohort " + this.getId() + " not yet completed.");
-        if (isCohortFinalized()) throw new IllegalStateException("Aggregation cohort " + this.getId() + " already finalized.");
+        if (! this.isCohortCompleted()) throw new IllegalStateException("Aggregation cohort " + this.getId() + " not yet completed.");
+        if (this.isCohortFinalized()) throw new IllegalStateException("Aggregation cohort " + this.getId() + " already finalized.");
 
         this.beaconAddress = switch (this.getScriptType()) {
             case P2SH -> {
@@ -193,7 +198,7 @@ public class AggregationCohort {
     }
 
     public void addParticipantPublicKey(byte[] participantPublicKey) {
-        if (isCohortCompleted()) throw new IllegalStateException("Aggregation cohort " + this.getId() + " already completed.");
+        if (this.isCohortCompleted()) throw new IllegalStateException("Aggregation cohort " + this.getId() + " already completed.");
         BytesArray participantPublicKeyBytesArray = BytesArray.bytesArray(participantPublicKey);
         if (log.isDebugEnabled()) log.debug("Adding participant public key " + Hex.encodeHexString(participantPublicKeyBytesArray.bytes()) + " to " + this.getParticipantPublicKeys().stream().map(BytesArray::bytes).map(Hex::encodeHexString).toList() + " (size now " + this.cohortSize() + ")");
         this.getParticipantPublicKeys().add(participantPublicKeyBytesArray);
@@ -232,21 +237,21 @@ public class AggregationCohort {
     }
 
     public URI toAggregateServiceId() {
-        if (! isCohortFinalized()) throw new IllegalStateException("Aggregation cohort " + this.getId() + " not yet finalized.");
+        if (! this.isCohortFinalized()) throw new IllegalStateException("Aggregation cohort " + this.getId() + " not yet finalized.");
         URI aggregateServiceId = URI.create("#" + this.getId());
         if (log.isDebugEnabled()) log.debug("Aggregate service ID: " + aggregateServiceId);
         return aggregateServiceId;
     }
 
     public String toAggregateServiceType() {
-        if (! isCohortFinalized()) throw new IllegalStateException("Aggregation cohort " + this.getId() + " not yet finalized.");
+        if (! this.isCohortFinalized()) throw new IllegalStateException("Aggregation cohort " + this.getId() + " not yet finalized.");
         String aggregateServiceType = this.getBeaconType().getServiceType();
         if (log.isDebugEnabled()) log.debug("Aggregate service type: " + aggregateServiceType);
         return aggregateServiceType;
     }
 
     public URI toAggregateServiceEndpoint() {
-        if (! isCohortFinalized()) throw new IllegalStateException("Aggregation cohort " + this.getId() + " not yet finalized.");
+        if (! this.isCohortFinalized()) throw new IllegalStateException("Aggregation cohort " + this.getId() + " not yet finalized.");
         URI aggregateServiceEndpoint = URI.create(BitcoinURI.convertToBitcoinURI(this.getBeaconAddress(), null, null, null));
         if (log.isDebugEnabled()) log.debug("Aggregate service endpoint: " + aggregateServiceEndpoint);
         return aggregateServiceEndpoint;
@@ -271,8 +276,8 @@ public class AggregationCohort {
 
     public void aggregateUpdates(BitcoinConnection bitcoinConnection) throws UpdateActionFundAddressException {
 
-        if (! isUpdatesCompleted()) throw new IllegalStateException("Aggregation updates " + this.getId() + " not yet completed.");
-        if (isUpdatesAggregated()) throw new IllegalStateException("Aggregation updates " + this.getId() + " already aggregated.");
+        if (! this.isUpdatesCompleted()) throw new IllegalStateException("Aggregation updates " + this.getId() + " not yet completed.");
+        if (this.isUpdatesAggregated()) throw new IllegalStateException("Aggregation updates " + this.getId() + " already aggregated.");
 
         if (this.updatesSize() != this.cohortSize()) throw new IllegalStateException("Aggregation updates number " + this.updatesSize() + " is different from " + this.cohortSize());
 
@@ -400,30 +405,37 @@ public class AggregationCohort {
     }
 
     public void setCasDid(int participantIndex, DID participantCasDid) {
+        if (this.isUpdatesAggregated()) throw new IllegalStateException("Aggregation updates " + this.getId() + " already aggregated.");
         this.getCasDids().put(participantIndex, participantCasDid);
     }
 
     public void setCasUpdateHash(int participantIndex, BytesArray participantCasUpdateHash) {
+        if (this.isUpdatesAggregated()) throw new IllegalStateException("Aggregation updates " + this.getId() + " already aggregated.");
         this.getCasUpdateHashes().put(participantIndex, participantCasUpdateHash);
     }
 
     public void setSmtDidIndex(int participantIndex, BytesArray participantSmtDidIndex) {
+        if (this.isUpdatesAggregated()) throw new IllegalStateException("Aggregation updates " + this.getId() + " already aggregated.");
         this.getSmtDidIndexes().put(participantIndex, participantSmtDidIndex);
     }
 
     public void setSmtUpdateHash(int participantIndex, BytesArray participantSmtUpdateHash) {
+        if (this.isUpdatesAggregated()) throw new IllegalStateException("Aggregation updates " + this.getId() + " already aggregated.");
         this.getSmtUpdateHashes().put(participantIndex, participantSmtUpdateHash);
     }
 
     public void setSmtNonce(int participantIndex, BytesArray participantSmtNonce) {
+        if (this.isUpdatesAggregated()) throw new IllegalStateException("Aggregation updates " + this.getId() + " already aggregated.");
         this.getSmtNonces().put(participantIndex, participantSmtNonce);
     }
 
     public void setMusig2SecretNonce(int participantIndex, BytesArray participantMusig2SecretNonce) {
+        if (this.isUpdatesAggregated()) throw new IllegalStateException("Aggregation updates " + this.getId() + " already aggregated.");
         this.getMusig2SecretNonces().put(participantIndex, participantMusig2SecretNonce);
     }
 
     public void setMusig2IndividualNonce(int participantIndex, BytesArray participantMusig2IndividualNonce) {
+        if (this.isUpdatesAggregated()) throw new IllegalStateException("Aggregation updates " + this.getId() + " already aggregated.");
         this.getMusig2PublicNonces().put(participantIndex, participantMusig2IndividualNonce);
     }
 
@@ -446,8 +458,8 @@ public class AggregationCohort {
 
     public void aggregateSignatures(BitcoinConnection bitcoinConnection)  {
 
-        if (! isSignaturesCompleted()) throw new IllegalStateException("Aggregation signatures " + this.getId() + " not yet completed.");
-        if (isSignaturesAggregated()) throw new IllegalStateException("Aggregation signatures " + this.getId() + " already aggregated.");
+        if (! this.isSignaturesCompleted()) throw new IllegalStateException("Aggregation signatures " + this.getId() + " not yet completed.");
+        if (this.isSignaturesAggregated()) throw new IllegalStateException("Aggregation signatures " + this.getId() + " already aggregated.");
 
         if (this.signaturesSize() != this.cohortSize()) throw new IllegalStateException("Aggregation signatures number " + this.signaturesSize() + " is different from " + this.cohortSize());
 
@@ -459,7 +471,7 @@ public class AggregationCohort {
         this.musig2AggregatedSignatures = new ArrayList<>();
         for (int i=0; i<beaconSignal.getInputs().size(); i++) {
             final int inputIndex = i;
-            Either<Throwable, ByteVector64> either = Musig2.aggregateTaprootSignatures(
+            Either<Throwable, ByteVector64> musig2AggregatedSignature = Musig2.aggregateTaprootSignatures(
                     this.getUtxoAggregateSignatures().values().stream().map(x -> x.get(inputIndex)).map(BytesArray::bytes).map(ByteVector32::new).toList(),
                     fr.acinq.bitcoin.Transaction.read(beaconSignal.serialize()),
                     inputIndex,
@@ -467,15 +479,54 @@ public class AggregationCohort {
                     this.getParticipantPublicKeys().stream().map(BytesArray::bytes).map(fr.acinq.bitcoin.PublicKey::parse).toList(),
                     this.getMusig2PublicNonces().values().stream().map(BytesArray::bytes).map(IndividualNonce::new).toList(),
                     null);
-            if (log.isDebugEnabled()) log.debug("Taproot session result: {}, {}, {}", either, either.getLeft(), either.getRight());
-            if (either.isLeft()) throw new RuntimeException(either.getLeft());
-            else if (either.isRight()) this.musig2AggregatedSignatures.add(BytesArray.bytesArray(either.getRight().toByteArray()));
-            else throw new IllegalStateException("Invalid result: " + either);
+            if (log.isDebugEnabled()) log.debug("Taproot session result: {}, {}, {}", musig2AggregatedSignature, musig2AggregatedSignature.getLeft(), musig2AggregatedSignature.getRight());
+            if (musig2AggregatedSignature.isLeft()) throw new RuntimeException(musig2AggregatedSignature.getLeft());
+            else if (musig2AggregatedSignature.isRight()) this.musig2AggregatedSignatures.add(BytesArray.bytesArray(musig2AggregatedSignature.getRight().toByteArray()));
+            else throw new IllegalStateException("Invalid result: " + musig2AggregatedSignature);
         }
     }
 
     public void setUtxoAggregateSignatures(int participantIndex, List<BytesArray> utxoAggregateSignatures) {
+        if (this.isSignaturesAggregated()) throw new IllegalStateException("Aggregation signatures " + this.getId() + " already aggregated.");
         this.getUtxoAggregateSignatures().put(participantIndex, utxoAggregateSignatures);
+    }
+
+    /*
+     * Step 4: Broadcast Aggregated Signal
+     * See https://dcdpr.github.io/did-btcr2/beacons/aggregate-beacons.html#step-4-broadcast-aggregated-signal
+     */
+
+    public boolean isRawTransactionBroadcast() {
+        return this.getBroadcastRawTransactionId() != null;
+    }
+
+    public String broadcastRawTransaction(BitcoinConnection bitcoinConnection) {
+
+        if (this.isRawTransactionBroadcast()) throw new IllegalStateException("Raw Bitcoin transaction already broadcast.");
+
+        // The result is a signed Bitcoin transaction.
+
+        Transaction beaconSignal = this.getUnsignedBeaconSignal();
+
+        for (int i=0; i<beaconSignal.getInputs().size(); i++) {
+            TransactionInput transactionInput = beaconSignal.getInput(i);
+            byte[] musig2AggregatedSignature = this.getMusig2AggregatedSignatures().get(i).bytes();
+            TransactionWitness transactionWitness = TransactionWitness.of(musig2AggregatedSignature);
+            TransactionInput signedTransactionInput = transactionInput.withWitness(transactionWitness).withoutScriptBytes();
+            beaconSignal.replaceInput(i, signedTransactionInput);
+        }
+        if (log.isDebugEnabled()) log.debug("beaconSignal after signing: {}", beaconSignal);
+
+        // The Aggregation Service then broadcasts this transaction onto the Bitcoin network.
+
+        byte[] beaconSignalBytes = beaconSignal.serialize();
+        if (log.isDebugEnabled()) log.debug("Broadcasting beacon signal: " + Hex.encodeHexString(beaconSignalBytes));
+        this.broadcastRawTransactionId = bitcoinConnection.broadcastRawTransaction(beaconSignalBytes);
+        if (log.isDebugEnabled()) log.debug("Transaction from beacon signal result: " + this.getBroadcastRawTransactionId());
+
+        // done
+
+        return this.getBroadcastRawTransactionId();
     }
 
     /*
@@ -574,6 +625,10 @@ public class AggregationCohort {
         return musig2AggregatedSignatures;
     }
 
+    public String getBroadcastRawTransactionId() {
+        return broadcastRawTransactionId;
+    }
+
     /*
      * Object methods
      */
@@ -582,12 +637,12 @@ public class AggregationCohort {
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         AggregationCohort that = (AggregationCohort) o;
-        return maxSize == that.maxSize && Objects.equals(id, that.id) && network == that.network && beaconType == that.beaconType && scriptType == that.scriptType && Objects.equals(participantPublicKeys, that.participantPublicKeys) && Objects.equals(beaconAddress, that.beaconAddress) && Objects.equals(casDids, that.casDids) && Objects.equals(casUpdateHashes, that.casUpdateHashes) && Objects.equals(smtDidIndexes, that.smtDidIndexes) && Objects.equals(smtUpdateHashes, that.smtUpdateHashes) && Objects.equals(smtNonces, that.smtNonces) && Objects.equals(musig2SecretNonces, that.musig2SecretNonces) && Objects.equals(musig2PublicNonces, that.musig2PublicNonces) && Objects.equals(casBeaconAnnouncementMap, that.casBeaconAnnouncementMap) && Objects.equals(smtProofs, that.smtProofs) && Objects.equals(unsignedBeaconSignal, that.unsignedBeaconSignal) && Objects.deepEquals(musig2AggregatedNonce, that.musig2AggregatedNonce) && Objects.deepEquals(signalBytes, that.signalBytes) && Objects.equals(beaconAddressUtxos, that.beaconAddressUtxos) && Objects.equals(utxoAggregateSignPayloads, that.utxoAggregateSignPayloads) && Objects.equals(utxoAggregateSignatures, that.utxoAggregateSignatures) && Objects.equals(musig2AggregatedSignatures, that.musig2AggregatedSignatures);
+        return maxSize == that.maxSize && Objects.equals(id, that.id) && network == that.network && beaconType == that.beaconType && scriptType == that.scriptType && Objects.equals(participantPublicKeys, that.participantPublicKeys) && Objects.equals(beaconAddress, that.beaconAddress) && Objects.equals(casDids, that.casDids) && Objects.equals(casUpdateHashes, that.casUpdateHashes) && Objects.equals(smtDidIndexes, that.smtDidIndexes) && Objects.equals(smtUpdateHashes, that.smtUpdateHashes) && Objects.equals(smtNonces, that.smtNonces) && Objects.equals(musig2SecretNonces, that.musig2SecretNonces) && Objects.equals(musig2PublicNonces, that.musig2PublicNonces) && Objects.equals(casBeaconAnnouncementMap, that.casBeaconAnnouncementMap) && Objects.equals(smtProofs, that.smtProofs) && Objects.equals(unsignedBeaconSignal, that.unsignedBeaconSignal) && Objects.deepEquals(musig2AggregatedNonce, that.musig2AggregatedNonce) && Objects.deepEquals(signalBytes, that.signalBytes) && Objects.equals(beaconAddressUtxos, that.beaconAddressUtxos) && Objects.equals(utxoAggregateSignPayloads, that.utxoAggregateSignPayloads) && Objects.equals(utxoAggregateSignatures, that.utxoAggregateSignatures) && Objects.equals(musig2AggregatedSignatures, that.musig2AggregatedSignatures) && Objects.equals(broadcastRawTransactionId, that.broadcastRawTransactionId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, network, maxSize, beaconType, scriptType, participantPublicKeys, beaconAddress, casDids, casUpdateHashes, smtDidIndexes, smtUpdateHashes, smtNonces, musig2SecretNonces, musig2PublicNonces, casBeaconAnnouncementMap, smtProofs, unsignedBeaconSignal, Arrays.hashCode(musig2AggregatedNonce), Arrays.hashCode(signalBytes), beaconAddressUtxos, utxoAggregateSignPayloads, utxoAggregateSignatures, musig2AggregatedSignatures);
+        return Objects.hash(id, network, maxSize, beaconType, scriptType, participantPublicKeys, beaconAddress, casDids, casUpdateHashes, smtDidIndexes, smtUpdateHashes, smtNonces, musig2SecretNonces, musig2PublicNonces, casBeaconAnnouncementMap, smtProofs, unsignedBeaconSignal, Arrays.hashCode(musig2AggregatedNonce), Arrays.hashCode(signalBytes), beaconAddressUtxos, utxoAggregateSignPayloads, utxoAggregateSignatures, musig2AggregatedSignatures, broadcastRawTransactionId);
     }
 
     @Override
@@ -616,6 +671,7 @@ public class AggregationCohort {
                 ", utxoAggregateSignPayloads=" + utxoAggregateSignPayloads +
                 ", utxoAggregateSignatures=" + utxoAggregateSignatures +
                 ", musig2AggregatedSignatures=" + musig2AggregatedSignatures +
+                ", broadcastRawTransactionId='" + broadcastRawTransactionId + '\'' +
                 '}';
     }
 }
