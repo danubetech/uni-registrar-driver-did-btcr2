@@ -16,7 +16,7 @@ import java.util.Map;
 
 public class TransitionInit {
 
-    public static UpdateState transitionToInitGetVerificationMethod(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public static UpdateState transitionToInitGetVerificationMethod(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
 
         // REGISTRATION STATE: verification method template
 
@@ -48,7 +48,7 @@ public class TransitionInit {
         return updateState;
     }
 
-    public static UpdateState transitionToUpdateSignPayload(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, URI verificationMethodId, BTCR2Update update, byte[] updateSignPayload, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public static UpdateState transitionToUpdateSignPayload(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, URI verificationMethodId, BTCR2Update update, byte[] updateSignPayload, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
 
         // REGISTRATION STATE: jobId
 

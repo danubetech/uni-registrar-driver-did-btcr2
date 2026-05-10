@@ -18,7 +18,7 @@ public class Execute {
         this.ipfsConnection = ipfsConnection;
     }
 
-    public ExecuteInitResult execute(BitcoinConnection bitcoinConnection, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public ExecuteInitResult execute(BitcoinConnection bitcoinConnection) throws RegistrationException {
 
         // done
 

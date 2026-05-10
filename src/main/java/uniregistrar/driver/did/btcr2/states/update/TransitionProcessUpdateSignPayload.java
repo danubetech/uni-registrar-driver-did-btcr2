@@ -22,7 +22,7 @@ import java.util.Map;
 
 public class TransitionProcessUpdateSignPayload {
 
-    public static UpdateState transitionToUpdateSignPayloadFundAddress(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, BTCR2Update update, byte[] updateSignPayload, Address address, Coin minimumValue, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public static UpdateState transitionToUpdateSignPayloadFundAddress(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, BTCR2Update update, byte[] updateSignPayload, Address address, Coin minimumValue, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
 
         // REGISTRATION STATE: jobId
 
@@ -101,7 +101,7 @@ public class TransitionProcessUpdateSignPayload {
         return updateState;
     }
 
-    public static UpdateState transitionToUtxoSingletonSignPayloads(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, BTCR2Update update, Transaction unsignedBeaconSignal, List<byte[]> utxoSingletonSignPayloads, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public static UpdateState transitionToUtxoSingletonSignPayloads(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, BTCR2Update update, Transaction unsignedBeaconSignal, List<byte[]> utxoSingletonSignPayloads, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
 
         // REGISTRATION STATE: jobId
 

@@ -119,7 +119,7 @@ public class StateProcessUtxoSingletonSignPayloads {
 
         // update()
 
-        UpdateProcessUtxoSingletonSignPayloadsResult updateProcessUtxoSingletonSignPayloadsResult = updateProcessUtxoSingletonSignPayloads.update(bitcoinConnection, update, unsignedBeaconSignal, updateECKey, utxoSingletonSignatures, didDocumentMetadata);
+        UpdateProcessUtxoSingletonSignPayloadsResult updateProcessUtxoSingletonSignPayloadsResult = updateProcessUtxoSingletonSignPayloads.update(bitcoinConnection, update, unsignedBeaconSignal, updateECKey, utxoSingletonSignatures);
 
         // publish to IPFS?
 

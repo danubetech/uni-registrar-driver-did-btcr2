@@ -104,7 +104,7 @@ public class UpdateProcessUpdateSignPayload {
         this.ipfsConnection = ipfsConnection;
     }
 
-    public UpdateProcessUpdateSignPayloadResult update(BitcoinConnection bitcoinConnection, DID did, BTCR2Update update, URI verificationMethodId, DIDDocument didSourceDocument, URI beaconServiceId, String beaconServiceType, byte[] updateSignature, Map<String, Object> didDocumentMetadata) throws RegistrationException, UpdateActionFundAddressException, UpdateActionCompleteAggregationUpdatesException {
+    public UpdateProcessUpdateSignPayloadResult update(BitcoinConnection bitcoinConnection, DID did, BTCR2Update update, URI verificationMethodId, DIDDocument didSourceDocument, URI beaconServiceId, String beaconServiceType, byte[] updateSignature) throws RegistrationException, UpdateActionFundAddressException, UpdateActionCompleteAggregationUpdatesException {
 
         /*
          * Construct BTCR2 Signed Update

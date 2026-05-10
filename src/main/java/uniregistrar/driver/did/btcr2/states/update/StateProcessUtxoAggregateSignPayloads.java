@@ -113,7 +113,7 @@ public class StateProcessUtxoAggregateSignPayloads {
 
         UpdateProcessUtxoAggregateSignPayloadsResult updateProcessUtxoAggregateSignPayloadsResult;
         try {
-            updateProcessUtxoAggregateSignPayloadsResult = updateProcessUtxoAggregateSignPayloads.update(bitcoinConnection, did, didSourceDocument, update, verificationMethodId, unsignedBeaconSignal, aggregationCohortId, utxoAggregateSignatures, didDocumentMetadata);
+            updateProcessUtxoAggregateSignPayloadsResult = updateProcessUtxoAggregateSignPayloads.update(bitcoinConnection, didSourceDocument, update, verificationMethodId, unsignedBeaconSignal, aggregationCohortId, utxoAggregateSignatures);
         } catch (UpdateActionCompleteAggregationSignaturesException ex) {
             // next state
             return TransitionProcessUtxoAggregateSignPayloads.transitionToUtxoAggregateSignPayloadsCompleteAggregationSignatures(bitcoinConnection, ipfsConnection, update, unsignedBeaconSignal, ex.getAggregationCohort(), utxoAggregateSignPayloads, didRegistrationMetadata, didDocumentMetadata);

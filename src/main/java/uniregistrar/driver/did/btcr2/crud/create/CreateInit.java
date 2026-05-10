@@ -31,7 +31,7 @@ public class CreateInit {
         this.ipfsConnection = ipfsConnection;
     }
 
-    public CreateInitResult create(BitcoinConnection bitcoinConnection, byte[] initialKey, DIDDocument genesisDocument, Integer version, Network network, Map<String, Object> didDocumentMetadata) throws RegistrationException {
+    public CreateInitResult create(BitcoinConnection bitcoinConnection, byte[] initialKey, DIDDocument genesisDocument, Integer version, Network network) throws RegistrationException {
 
         // A did:btcr2 identifier encodes a few pieces of information: an indicator for a specific Bitcoin network and a collection of Genesis Bytes.
 

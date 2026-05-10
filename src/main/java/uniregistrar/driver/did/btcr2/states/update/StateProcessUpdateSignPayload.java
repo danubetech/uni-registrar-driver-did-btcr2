@@ -95,7 +95,7 @@ public class StateProcessUpdateSignPayload {
 
         UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayloadResult;
         try {
-            updateProcessUpdateSignPayloadResult = updateProcessUpdateSignPayload.update(bitcoinConnection, did, update, verificationMethodId, didSourceDocument, beaconServiceId, beaconServiceType, updateSignature, didDocumentMetadata);
+            updateProcessUpdateSignPayloadResult = updateProcessUpdateSignPayload.update(bitcoinConnection, did, update, verificationMethodId, didSourceDocument, beaconServiceId, beaconServiceType, updateSignature);
         } catch (UpdateActionFundAddressException ex) {
             // next state
             return TransitionProcessUpdateSignPayload.transitionToUpdateSignPayloadFundAddress(bitcoinConnection, ipfsConnection, update, updateSignPayload, ex.getAddress(), ex.getMinimumValue(), didRegistrationMetadata, didDocumentMetadata);

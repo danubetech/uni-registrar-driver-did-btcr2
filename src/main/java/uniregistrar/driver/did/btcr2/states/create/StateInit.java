@@ -195,7 +195,7 @@ public class StateInit {
 
         // create()
 
-        CreateInitResult createInitResult = createInit.create(bitcoinConnection, unassembledInitialKey, unassembledGenesisDocument, version, network, didDocumentMetadata);
+        CreateInitResult createInitResult = createInit.create(bitcoinConnection, unassembledInitialKey, unassembledGenesisDocument, version, network);
 
         // publish to IPFS?
 
