@@ -1,9 +1,13 @@
 package uniregistrar.driver.did.btcr2.states.update;
 
 import com.danubetech.btc.connection.BitcoinConnection;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.ipfs.api.MerkleNode;
 import org.bitcoinj.core.Transaction;
 import uniregistrar.driver.did.btcr2.aggregation.AggregationCohort;
+import uniregistrar.driver.did.btcr2.data.json.CASAnnouncement;
+import uniregistrar.driver.did.btcr2.data.json.SMTProof;
 import uniregistrar.driver.did.btcr2.data.jsonld.BTCR2Update;
 import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.driver.did.btcr2.job.UpdateJob;
@@ -16,6 +20,10 @@ import java.util.List;
 import java.util.Map;
 
 public class TransitionProcessUtxoAggregateSignPayloads {
+
+    private static final JsonMapper jsonMapper = JsonMapper.builder()
+            .defaultPropertyInclusion(JsonInclude.Value.ALL_NON_NULL)
+            .build();
 
     public static UpdateState transitionToUtxoAggregateSignPayloadsCompleteAggregationSignatures(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, BTCR2Update update, Transaction unsignedBeaconSignal, AggregationCohort aggregationCohort, List<byte[]> utxoAggregateSignPayloads, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
 
@@ -56,7 +64,7 @@ public class TransitionProcessUtxoAggregateSignPayloads {
         return updateState;
     }
 
-    public static UpdateState transitionToFinished(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, BTCR2Update update, String txId, AggregationCohort aggregationCohort, MerkleNode merkleNodeUpdate, MerkleNode merkleNodeCasAnnouncement, MerkleNode merkleNodeSmtProof, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
+    public static UpdateState transitionToFinished(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, String txId, BTCR2Update update, CASAnnouncement casAnnouncement, SMTProof smtProof, AggregationCohort aggregationCohort, MerkleNode merkleNodeUpdate, MerkleNode merkleNodeCasAnnouncement, MerkleNode merkleNodeSmtProof, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
 
         // REGISTRATION STATE: didState.state="finished"
 
@@ -71,8 +79,10 @@ public class TransitionProcessUtxoAggregateSignPayloads {
 
         // REGISTRATION STATE: didDocumentMetadata
 
-        if (update != null) didDocumentMetadata.put("update", update.getJsonObject());
         if (txId != null) didDocumentMetadata.put("txId", txId);
+        if (update != null) didDocumentMetadata.put("update", update.getJsonObject());
+        if (casAnnouncement != null) didDocumentMetadata.put("casAnnouncement", casAnnouncement);
+        if (smtProof != null) didDocumentMetadata.put("smtProof", jsonMapper.convertValue(smtProof, Map.class));
         if (merkleNodeUpdate != null) didDocumentMetadata.put("updateCid", merkleNodeUpdate.hash.toString());
         if (merkleNodeCasAnnouncement != null) didDocumentMetadata.put("casAnnouncementCid", merkleNodeCasAnnouncement.hash.toString());
         if (merkleNodeSmtProof != null) didDocumentMetadata.put("smtProofCid", merkleNodeSmtProof.hash.toString());

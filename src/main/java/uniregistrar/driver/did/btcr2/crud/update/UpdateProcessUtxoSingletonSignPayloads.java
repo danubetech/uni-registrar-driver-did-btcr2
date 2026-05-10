@@ -67,7 +67,7 @@ public class UpdateProcessUtxoSingletonSignPayloads {
 
         // result
 
-        UpdateProcessUtxoSingletonSignPayloadsResult updateProcessUtxoSingletonSignPayloadsResult = new UpdateProcessUtxoSingletonSignPayloadsResult(update, txId);
+        UpdateProcessUtxoSingletonSignPayloadsResult updateProcessUtxoSingletonSignPayloadsResult = new UpdateProcessUtxoSingletonSignPayloadsResult(txId, update);
         if (log.isDebugEnabled()) log.debug("Update: " + updateProcessUtxoSingletonSignPayloadsResult);
         return updateProcessUtxoSingletonSignPayloadsResult;
     }

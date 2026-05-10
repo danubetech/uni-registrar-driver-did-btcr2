@@ -133,7 +133,7 @@ public class UpdateProcessUtxoAggregateSignPayloads {
         CASAnnouncement casAnnouncement = aggregationCohort.generateCasAnnouncement();
         SMTProof smtProof = aggregationCohort.generateSmtProof();
 
-        UpdateProcessUtxoAggregateSignPayloadsResult updateProcessUtxoAggregateSignPayloads = new UpdateProcessUtxoAggregateSignPayloadsResult(update, txId, casAnnouncement, smtProof, aggregationCohort);
+        UpdateProcessUtxoAggregateSignPayloadsResult updateProcessUtxoAggregateSignPayloads = new UpdateProcessUtxoAggregateSignPayloadsResult(txId, update, casAnnouncement, smtProof, aggregationCohort);
         if (log.isDebugEnabled()) log.debug("Update: " + updateProcessUtxoAggregateSignPayloads);
         return updateProcessUtxoAggregateSignPayloads;
     }
