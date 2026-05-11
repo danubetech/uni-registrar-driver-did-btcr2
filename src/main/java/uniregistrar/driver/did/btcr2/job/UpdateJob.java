@@ -10,11 +10,11 @@ public record UpdateJob(String update, String updateSignPayload, String unsigned
 
     private static final JsonMapper jsonMapper = JsonMapper.builder().build();
 
-    public static UpdateJob fromJsonObject(Map<String, Object> jsonObject) {
-        return jsonMapper.convertValue(jsonObject, UpdateJob.class);
+    public static UpdateJob fromMap(Map<String, Object> map) {
+        return jsonMapper.convertValue(map, UpdateJob.class);
     }
 
-    public Map<String, Object> toJsonObject() {
+    public Map<String, Object> toMap() {
         return jsonMapper.convertValue(this, Map.class);
     }
 }

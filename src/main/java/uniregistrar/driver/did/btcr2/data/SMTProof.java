@@ -1,9 +1,17 @@
-package uniregistrar.driver.did.btcr2.data.json;
+package uniregistrar.driver.did.btcr2.data;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public class SMTProof {
+
+    private static final JsonMapper jsonMapper = JsonMapper.builder()
+            .defaultPropertyInclusion(JsonInclude.Value.ALL_NON_NULL)
+            .build();
 
     private String id;
     private String nonce;
@@ -12,6 +20,10 @@ public class SMTProof {
     private List<String> hashes;
 
     public SMTProof() {
+    }
+
+    public Map<String, Object> toMap() {
+        return jsonMapper.convertValue(this, Map.class);
     }
 
     public String getId() {

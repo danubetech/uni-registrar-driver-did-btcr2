@@ -2,7 +2,6 @@ package uniregistrar.driver.did.btcr2.states.update;
 
 import com.danubetech.btc.connection.BitcoinConnection;
 import com.danubetech.keyformats.jose.JWSAlgorithm;
-import uniregistrar.RegistrationException;
 import uniregistrar.driver.did.btcr2.data.jsonld.BTCR2Update;
 import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.driver.did.btcr2.job.UpdateJob;
@@ -60,7 +59,7 @@ public class TransitionInit {
                 null,
                 null);
 
-        Map<String, Object> jobId = updateJob.toJsonObject();
+        Map<String, Object> jobId = updateJob.toMap();
 
         // REGISTRATION STATE: signing request
 

@@ -32,8 +32,8 @@ import uniregistrar.RegistrationException;
 import uniregistrar.driver.did.btcr2.appendix.JsonCanonicalizationAndHash;
 import uniregistrar.driver.did.btcr2.beacons.BeaconType;
 import uniregistrar.driver.did.btcr2.crud.update.UpdateActionFundAddressException;
-import uniregistrar.driver.did.btcr2.data.json.CASAnnouncement;
-import uniregistrar.driver.did.btcr2.data.json.SMTProof;
+import uniregistrar.driver.did.btcr2.data.CASAnnouncement;
+import uniregistrar.driver.did.btcr2.data.SMTProof;
 import uniregistrar.driver.did.btcr2.util.BytesArray;
 import uniregistrar.driver.did.btcr2.util.MultiCodecUtil;
 
@@ -389,7 +389,7 @@ public class AggregationCohort {
 
         // The Signal Bytes of an SMT Beacon Signal is the 32 byte SMT root.
 
-        byte[] signalBytes = JsonCanonicalizationAndHash.jsonCanonicalizationAndHash(jsonMapper.convertValue(this.generateSmtProof(), Map.class));
+        byte[] signalBytes = JsonCanonicalizationAndHash.jsonCanonicalizationAndHash(this.generateSmtProof().toMap());
         if (log.isDebugEnabled()) log.debug("Determined signal bytes for SMT: " + Hex.encodeHexString(signalBytes));
         return signalBytes;
     }

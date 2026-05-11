@@ -66,7 +66,7 @@ public class DidBtcr2Driver implements Driver {
 
         // restore job
 
-        CreateJob createJob = jobId == null ? null : CreateJob.fromJsonObject(jobId);
+        CreateJob createJob = jobId == null ? null : CreateJob.fromMap(jobId);
 
         // execute operation
 
@@ -93,7 +93,7 @@ public class DidBtcr2Driver implements Driver {
 
         // restore job
 
-        UpdateJob updateJob = jobId == null ? null : UpdateJob.fromJsonObject(jobId);
+        UpdateJob updateJob = jobId == null ? null : UpdateJob.fromMap(jobId);
 
         // execute operation
 

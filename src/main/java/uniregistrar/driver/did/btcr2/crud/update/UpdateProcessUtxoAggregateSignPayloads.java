@@ -1,27 +1,22 @@
 package uniregistrar.driver.did.btcr2.crud.update;
 
 import com.danubetech.btc.connection.BitcoinConnection;
-import foundation.identity.did.DID;
 import foundation.identity.did.DIDDocument;
-import org.apache.commons.codec.binary.Hex;
 import org.bitcoinj.base.Coin;
 import org.bitcoinj.core.Transaction;
-import org.bitcoinj.core.TransactionInput;
-import org.bitcoinj.core.TransactionWitness;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
 import uniregistrar.driver.did.btcr2.aggregation.AggregationCohort;
 import uniregistrar.driver.did.btcr2.aggregation.AggregationService;
-import uniregistrar.driver.did.btcr2.data.json.CASAnnouncement;
-import uniregistrar.driver.did.btcr2.data.json.SMTProof;
+import uniregistrar.driver.did.btcr2.data.CASAnnouncement;
+import uniregistrar.driver.did.btcr2.data.SMTProof;
 import uniregistrar.driver.did.btcr2.data.jsonld.BTCR2Update;
 import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.driver.did.btcr2.util.BytesArray;
 
 import java.net.URI;
 import java.util.List;
-import java.util.Map;
 
 /*
  * Update

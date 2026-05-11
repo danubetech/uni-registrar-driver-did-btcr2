@@ -146,7 +146,7 @@ public class StateProcessUtxoAggregateSignPayloads {
         }
         if (publishToIpfs && ipfsConnection != null && updateProcessUtxoAggregateSignPayloadsResult.smtProof() != null) {
             try {
-                byte[] ipfsPayload = JSONDocumentHashing.jsonDocumentCanonicalizing(jsonMapper.convertValue(updateProcessUtxoAggregateSignPayloadsResult.smtProof(), Map.class)).getBytes(StandardCharsets.UTF_8);
+                byte[] ipfsPayload = JSONDocumentHashing.jsonDocumentCanonicalizing(updateProcessUtxoAggregateSignPayloadsResult.smtProof().toMap()).getBytes(StandardCharsets.UTF_8);
                 AddArgs addArgs = AddArgs.Builder.newInstance().setCidVersion(1).setRawLeaves().setHash("sha2-256").setPin().build();
                 merkleNodeSmtProof = ipfsConnection.getIpfs().add(new NamedStreamable.ByteArrayWrapper(ipfsPayload), addArgs).getFirst();
             } catch (IOException ex) {

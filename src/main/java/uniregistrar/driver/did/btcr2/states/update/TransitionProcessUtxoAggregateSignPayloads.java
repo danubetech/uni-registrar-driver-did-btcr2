@@ -6,8 +6,8 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.ipfs.api.MerkleNode;
 import org.bitcoinj.core.Transaction;
 import uniregistrar.driver.did.btcr2.aggregation.AggregationCohort;
-import uniregistrar.driver.did.btcr2.data.json.CASAnnouncement;
-import uniregistrar.driver.did.btcr2.data.json.SMTProof;
+import uniregistrar.driver.did.btcr2.data.CASAnnouncement;
+import uniregistrar.driver.did.btcr2.data.SMTProof;
 import uniregistrar.driver.did.btcr2.data.jsonld.BTCR2Update;
 import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.driver.did.btcr2.job.UpdateJob;
@@ -37,7 +37,7 @@ public class TransitionProcessUtxoAggregateSignPayloads {
                 utxoAggregateSignPayloads.stream().map(x -> Base64.getEncoder().encodeToString(x)).toList(),
                 aggregationCohort.getId());
 
-        Map<String, Object> jobId = updateJob.toJsonObject();
+        Map<String, Object> jobId = updateJob.toMap();
 
         // REGISTRATION STATE: didState.state="action"
 
@@ -82,7 +82,7 @@ public class TransitionProcessUtxoAggregateSignPayloads {
         if (txId != null) didDocumentMetadata.put("txId", txId);
         if (update != null) didDocumentMetadata.put("update", update.getJsonObject());
         if (casAnnouncement != null) didDocumentMetadata.put("casAnnouncement", casAnnouncement);
-        if (smtProof != null) didDocumentMetadata.put("smtProof", jsonMapper.convertValue(smtProof, Map.class));
+        if (smtProof != null) didDocumentMetadata.put("smtProof", smtProof.toMap());
         if (merkleNodeUpdate != null) didDocumentMetadata.put("updateCid", merkleNodeUpdate.hash.toString());
         if (merkleNodeCasAnnouncement != null) didDocumentMetadata.put("casAnnouncementCid", merkleNodeCasAnnouncement.hash.toString());
         if (merkleNodeSmtProof != null) didDocumentMetadata.put("smtProofCid", merkleNodeSmtProof.hash.toString());

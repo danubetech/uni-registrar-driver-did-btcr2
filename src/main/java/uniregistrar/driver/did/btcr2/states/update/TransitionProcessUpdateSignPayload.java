@@ -34,7 +34,7 @@ public class TransitionProcessUpdateSignPayload {
                 null,
                 null);
 
-        Map<String, Object> jobId = updateJob.toJsonObject();
+        Map<String, Object> jobId = updateJob.toMap();
 
         // REGISTRATION STATE: didState.state="action"
 
@@ -74,7 +74,7 @@ public class TransitionProcessUpdateSignPayload {
                 null,
                 null);
 
-        Map<String, Object> jobId = updateJob.toJsonObject();
+        Map<String, Object> jobId = updateJob.toMap();
 
         // REGISTRATION STATE: didState.state="action"
 
@@ -113,7 +113,7 @@ public class TransitionProcessUpdateSignPayload {
                 null,
                 null);
 
-        Map<String, Object> jobId = updateJob.toJsonObject();
+        Map<String, Object> jobId = updateJob.toMap();
 
         // REGISTRATION STATE: signing request
 
@@ -164,7 +164,7 @@ public class TransitionProcessUpdateSignPayload {
                 utxoAggregateSignPayloads.stream().map(x -> Base64.getEncoder().encodeToString(x)).toList(),
                 aggregationCohort.getId());
 
-        Map<String, Object> jobId = updateJob.toJsonObject();
+        Map<String, Object> jobId = updateJob.toMap();
 
         // REGISTRATION STATE: signing request
 
