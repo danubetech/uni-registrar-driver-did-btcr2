@@ -7,7 +7,8 @@ import java.util.Map;
 
 public class CreateJob {
 
-    private static final JsonMapper jsonMapper = JsonMapper.builder().build();
+    private static final JsonMapper jsonMapper = JsonMapper.builder()
+            .build();
 
     public static CreateJob fromMap(Map<String, Object> map) {
         return jsonMapper.convertValue(map, CreateJob.class);

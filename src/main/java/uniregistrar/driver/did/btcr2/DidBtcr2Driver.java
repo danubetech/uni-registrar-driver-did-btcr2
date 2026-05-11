@@ -28,7 +28,8 @@ public class DidBtcr2Driver implements Driver {
 
 	private static final Logger log = LoggerFactory.getLogger(DidBtcr2Driver.class);
 
-    private static final JsonMapper jsonMapper = JsonMapper.builder().build();
+    private static final JsonMapper jsonMapper = JsonMapper.builder()
+            .build();
 
 	private Map<String, Object> properties;
 

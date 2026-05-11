@@ -21,7 +21,8 @@ public class JSONDocumentHashing {
 
     private static final Logger log = LoggerFactory.getLogger(JSONDocumentHashing.class);
 
-    private static final JsonMapper jsonMapper = JsonMapper.builder().build();
+    private static final JsonMapper jsonMapper = JsonMapper.builder()
+            .build();
 
     public static String jsonDocumentCanonicalizing(String json) {
         String canonicalized;

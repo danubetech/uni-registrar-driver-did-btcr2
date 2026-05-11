@@ -41,10 +41,6 @@ public class StateProcessUtxoSingletonSignPayloads {
 
     private static final Logger log = LoggerFactory.getLogger(StateProcessUtxoSingletonSignPayloads.class);
 
-    private static final JsonMapper jsonMapper = JsonMapper.builder()
-            .defaultPropertyInclusion(JsonInclude.Value.ALL_NON_NULL)
-            .build();
-
     public static UpdateState update(UpdateJob updateJob, UpdateRequest updateRequest, UpdateProcessUtxoSingletonSignPayloads updateProcessUtxoSingletonSignPayloads, BitcoinConnector bitcoinConnector, IPFSConnection ipfsConnection) throws RegistrationException {
 
         // prepare didRegistrationMetadata and didDocumentMetadata

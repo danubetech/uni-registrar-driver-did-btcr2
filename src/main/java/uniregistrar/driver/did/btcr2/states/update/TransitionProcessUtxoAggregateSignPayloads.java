@@ -21,10 +21,6 @@ import java.util.Map;
 
 public class TransitionProcessUtxoAggregateSignPayloads {
 
-    private static final JsonMapper jsonMapper = JsonMapper.builder()
-            .defaultPropertyInclusion(JsonInclude.Value.ALL_NON_NULL)
-            .build();
-
     public static UpdateState transitionToUtxoAggregateSignPayloadsCompleteAggregationSignatures(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, BTCR2Update update, Transaction unsignedBeaconSignal, AggregationCohort aggregationCohort, List<byte[]> utxoAggregateSignPayloads, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
 
         // REGISTRATION STATE: jobId

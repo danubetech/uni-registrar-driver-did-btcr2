@@ -45,8 +45,6 @@ public class StateInit {
             .defaultPropertyInclusion(JsonInclude.Value.ALL_NON_NULL)
             .build();
 
-    public static final int STATE = 0;
-
     public static CreateState create(CreateJob createJob, CreateRequest createRequest, CreateInit createInit, BitcoinConnector bitcoinConnector, IPFSConnection ipfsConnection) throws RegistrationException {
 
         // prepare didRegistrationMetadata and didDocumentMetadata

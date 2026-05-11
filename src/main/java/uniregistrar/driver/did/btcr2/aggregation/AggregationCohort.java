@@ -47,10 +47,10 @@ public class AggregationCohort {
 
     private static final Logger log = LoggerFactory.getLogger(AggregationCohort.class);
 
-    private static final JsonMapper jsonMapper = JsonMapper.builder().build();
+    private static final JsonMapper jsonMapper = JsonMapper.builder()
+            .build();
 
     private static final Coin BITCOIN_FEE = Coin.valueOf(100);
-    private static final int SCHNORR_PUBLIC_KEY_SIZE = 32;
 
     private final String id;
     private final Network network;
