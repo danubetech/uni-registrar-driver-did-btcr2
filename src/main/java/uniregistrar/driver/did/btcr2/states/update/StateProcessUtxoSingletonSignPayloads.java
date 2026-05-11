@@ -6,8 +6,6 @@ import com.danubetech.btc.syntax.IdentifierComponents;
 import com.danubetech.keyformats.JWK_to_PublicKey;
 import com.danubetech.keyformats.PublicKeyBytes;
 import com.danubetech.keyformats.jose.JWK;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import foundation.identity.did.DID;
 import foundation.identity.did.parser.ParserException;
 import io.ipfs.api.AddArgs;

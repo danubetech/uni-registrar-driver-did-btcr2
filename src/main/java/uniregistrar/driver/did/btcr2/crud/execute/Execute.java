@@ -6,8 +6,6 @@ import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
 import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 
-import java.util.Map;
-
 public class Execute {
 
     private static final Logger log = LoggerFactory.getLogger(Execute.class);

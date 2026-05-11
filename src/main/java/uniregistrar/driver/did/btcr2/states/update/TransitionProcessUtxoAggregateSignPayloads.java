@@ -1,8 +1,6 @@
 package uniregistrar.driver.did.btcr2.states.update;
 
 import com.danubetech.btc.connection.BitcoinConnection;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.ipfs.api.MerkleNode;
 import org.bitcoinj.core.Transaction;
 import uniregistrar.driver.did.btcr2.aggregation.AggregationCohort;

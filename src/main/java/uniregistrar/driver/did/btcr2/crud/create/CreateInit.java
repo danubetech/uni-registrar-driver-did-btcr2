@@ -14,8 +14,6 @@ import uniregistrar.driver.did.btcr2.appendix.JsonCanonicalizationAndHash;
 import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.driver.did.btcr2.syntax.DidBtcr2IdentifierEncoding;
 
-import java.util.Map;
-
 /*
  * Create
  * See https://dcdpr.github.io/did-btcr2/operations/create.html#create

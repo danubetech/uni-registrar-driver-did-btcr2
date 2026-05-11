@@ -16,7 +16,6 @@ import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 
 import java.math.BigInteger;
 import java.util.List;
-import java.util.Map;
 
 /*
  * Update

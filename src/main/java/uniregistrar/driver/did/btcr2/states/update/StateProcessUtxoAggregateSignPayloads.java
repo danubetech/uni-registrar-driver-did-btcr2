@@ -3,8 +3,6 @@ package uniregistrar.driver.did.btcr2.states.update;
 import com.danubetech.btc.connection.BitcoinConnection;
 import com.danubetech.btc.connection.BitcoinConnector;
 import com.danubetech.btc.syntax.IdentifierComponents;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import foundation.identity.did.DID;
 import foundation.identity.did.DIDDocument;
 import foundation.identity.did.parser.ParserException;
