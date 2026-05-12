@@ -107,7 +107,7 @@ See https://identity.foundation/did-registration/#options.
     "publishToIpfs": true,
     "generateInitialKey": true,
     "generateStandardBeacons": false,
-    "generateAggregateBeacon": true    
+    "generateAggregateBeacon": "cohort-mutinynet-cas-2"    
 }
 ```
 
