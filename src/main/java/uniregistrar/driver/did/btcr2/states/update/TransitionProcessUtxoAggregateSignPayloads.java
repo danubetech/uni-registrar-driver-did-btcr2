@@ -11,6 +11,7 @@ import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.driver.did.btcr2.job.UpdateJob;
 import uniregistrar.openapi.model.DidStateAction;
 import uniregistrar.openapi.model.DidStateFinished;
+import uniregistrar.openapi.model.DidStateWait;
 import uniregistrar.openapi.model.UpdateState;
 
 import java.util.Base64;
@@ -33,12 +34,12 @@ public class TransitionProcessUtxoAggregateSignPayloads {
 
         Map<String, Object> jobId = updateJob.toMap();
 
-        // REGISTRATION STATE: didState.state="action"
+        // REGISTRATION STATE: didState.state="wait"
 
-        DidStateAction didStateAction = new DidStateAction();
-        didStateAction.setState("action");
-        didStateAction.setAction("completeAggregationSignatures");
-        didStateAction.putAdditionalProperty("aggregationCohort", aggregationCohort.getId());
+        DidStateWait didStateWait = new DidStateWait();
+        didStateWait.setState("wait");
+        didStateWait.setWait("completeAggregationSignatures");
+        didStateWait.putAdditionalProperty("aggregationCohort", aggregationCohort.getId());
 
         // REGISTRATION STATE: didRegistrationMetadata
 
@@ -49,7 +50,7 @@ public class TransitionProcessUtxoAggregateSignPayloads {
         // create() state
 
         UpdateState updateState = new UpdateState();
-        updateState.setDidState(didStateAction);
+        updateState.setDidState(didStateWait);
         updateState.setDidRegistrationMetadata(didRegistrationMetadata);
         updateState.setDidDocumentMetadata(didDocumentMetadata);
 

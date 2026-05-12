@@ -10,10 +10,7 @@ import uniregistrar.driver.did.btcr2.aggregation.AggregationCohort;
 import uniregistrar.driver.did.btcr2.data.jsonld.BTCR2Update;
 import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.driver.did.btcr2.job.UpdateJob;
-import uniregistrar.openapi.model.DidStateAction;
-import uniregistrar.openapi.model.RegistrarStateJobId;
-import uniregistrar.openapi.model.SigningRequest;
-import uniregistrar.openapi.model.UpdateState;
+import uniregistrar.openapi.model.*;
 
 import java.util.Base64;
 import java.util.LinkedHashMap;
@@ -76,12 +73,12 @@ public class TransitionProcessUpdateSignPayload {
 
         Map<String, Object> jobId = updateJob.toMap();
 
-        // REGISTRATION STATE: didState.state="action"
+        // REGISTRATION STATE: didState.state="wait"
 
-        DidStateAction didStateAction = new DidStateAction();
-        didStateAction.setState("action");
-        didStateAction.setAction("completeAggregationUpdates");
-        didStateAction.putAdditionalProperty("aggregationCohort", aggregationCohort.getId());
+        DidStateWait didStateWait = new DidStateWait();
+        didStateWait.setState("wait");
+        didStateWait.setWait("completeAggregationUpdates");
+        didStateWait.putAdditionalProperty("aggregationCohort", aggregationCohort.getId());
 
         // REGISTRATION STATE: didRegistrationMetadata
 
@@ -92,7 +89,7 @@ public class TransitionProcessUpdateSignPayload {
         // create() state
 
         UpdateState updateState = new UpdateState();
-        updateState.setDidState(didStateAction);
+        updateState.setDidState(didStateWait);
         updateState.setDidRegistrationMetadata(didRegistrationMetadata);
         updateState.setDidDocumentMetadata(didDocumentMetadata);
 

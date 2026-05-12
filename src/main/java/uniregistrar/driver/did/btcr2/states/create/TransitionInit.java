@@ -52,12 +52,12 @@ public class TransitionInit {
 
     public static CreateState transitionToInitCompleteAggregationCohort(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, AggregationCohort aggregationCohort, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
 
-        // REGISTRATION STATE: didState.state="action"
+        // REGISTRATION STATE: didState.state="wait"
 
-        DidStateAction didStateAction = new DidStateAction();
-        didStateAction.setState("action");
-        didStateAction.setAction("completeAggregationCohort");
-        didStateAction.putAdditionalProperty("aggregationCohort", aggregationCohort.getId());
+        DidStateWait didStateWait = new DidStateWait();
+        didStateWait.setState("wait");
+        didStateWait.setWait("completeAggregationCohort");
+        didStateWait.putAdditionalProperty("aggregationCohort", aggregationCohort.getId());
 
         // REGISTRATION STATE: didRegistrationMetadata
 
@@ -68,7 +68,7 @@ public class TransitionInit {
         // create() state
 
         CreateState createState = new CreateState();
-        createState.setDidState(didStateAction);
+        createState.setDidState(didStateWait);
         createState.setDidRegistrationMetadata(didRegistrationMetadata);
         createState.setDidDocumentMetadata(didDocumentMetadata);
 
