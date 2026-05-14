@@ -86,7 +86,7 @@ The driver recognizes the following environment variables:
 
 ### `uniregistrar_driver_did_btcr2_ipfs`
 
-* Specifies a MultiAddress of an IPFS connection to be used as CAS.
+* Specifies a MultiAddress if an IPFS connection to be used as CAS.
 * Default value: `/ip4/127.0.0.1/tcp/5001`
 
 ### `uniregistrar_driver_did_btcr2_ipfsTimeout`
@@ -115,7 +115,7 @@ See https://identity.foundation/did-registration/#options.
   * Default value: `1`
 * `version`: The name of the network where a DID should be registered. Values depend on `bitcoinConnections` environment variable, but are typically: `bitcoin`, `testnet3`, `signet`, `mutinynet`.
   * Default value: `bitcoin`
-* `publishToIpfs`: This boolean option indicates whether the genesis DID document should be published to IPFS. This is only available of an IPFS connection is configured.
+* `publishToIpfs`: This boolean option indicates whether the genesis DID document should be published to IPFS. This is only available if an IPFS connection is configured.
   * Default value: `true`
 * `generateInitialKey`: This boolean option indicates whether a default initial keypair with ID `#initialKey` should be generated.
   * Default value: `true`
@@ -144,5 +144,5 @@ See https://identity.foundation/did-registration/#options.
   * Default value: none - can optionally be provided
 * `beaconServiceType`: The type of the beacon service that should be used for announcing updates.
   * Default value: none - can optionally be provided
-* `publishToIpfs`: This boolean option indicates whether the update should be published to IPFS. This is only available of an IPFS connection is configured.
+* `publishToIpfs`: This boolean option indicates whether the update should be published to IPFS. This is only available if an IPFS connection is configured.
   * Default value: `true`
