@@ -1,5 +1,7 @@
 package uniregistrar.driver.did.btcr2.data;
 
+import org.apache.commons.codec.binary.Hex;
+
 import java.math.BigInteger;
 import java.util.*;
 
@@ -29,11 +31,11 @@ public record SmtProof(
     @Override
     public String toString() {
         return "SmtProof{" +
-                "rootHash=" + Arrays.toString(rootHash) +
+                "rootHash=" + Hex.encodeHexString(rootHash) +
                 ", index=" + index +
-                ", leafHash=" + Arrays.toString(leafHash) +
+                ", leafHash=" + Hex.encodeHexString(leafHash) +
                 ", collapsed=" + collapsed +
-                ", hashes=" + hashes +
+                ", hashes=" + (hashes == null ? null : hashes.stream().map(Hex::encodeHexString).toList()) +
                 '}';
     }
 }
