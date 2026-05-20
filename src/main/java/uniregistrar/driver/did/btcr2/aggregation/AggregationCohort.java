@@ -400,9 +400,12 @@ public class AggregationCohort {
             BytesArray updateHash = this.getSmtUpdateHashes().get(i);
             if (log.isDebugEnabled()) log.debug("Inserting didIndex {} with updateHash {}", Base64.getUrlEncoder().withoutPadding().encodeToString(didIndex.bytes()), Base64.getUrlEncoder().withoutPadding().encodeToString(updateHash.bytes()));
             sparseMerkleTree.insertUpdate(didIndex.bytes(), updateHash.bytes());
-            if (log.isDebugEnabled()) log.debug("Generating proof for didIndex {} with updateHash {}", Hex.encodeHexString(didIndex.bytes()), Base64.getUrlEncoder().withoutPadding().encodeToString(updateHash.bytes()));
+        }
+        for (int i=0; i<this.updatesSize(); i++) {
+            BytesArray didIndex = this.getSmtDidIndexes().get(i);
+            if (log.isDebugEnabled()) log.debug("Generating proof for didIndex {}", Hex.encodeHexString(didIndex.bytes()));
             SmtProof smtProof = sparseMerkleTree.generateProofForIndex(didIndex.bytes());
-            if (log.isDebugEnabled()) log.debug("Generated proof for didIndex {} with updateHash {}: {}", Hex.encodeHexString(didIndex.bytes()), Base64.getUrlEncoder().withoutPadding().encodeToString(updateHash.bytes()), smtProof.toString());
+            if (log.isDebugEnabled()) log.debug("Generated proof for didIndex {}: {}", Hex.encodeHexString(didIndex.bytes()), smtProof.toString());
             this.smtProofs.put(didIndex, smtProof);
         }
 
