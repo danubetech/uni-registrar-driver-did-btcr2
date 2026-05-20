@@ -38,8 +38,8 @@ curl -X POST "http://localhost:9080/1.0/create?method=btcr2" \
        "didDocument" : {
          "@context": ["https://www.w3.org/TR/did-1.1", "https://btcr2.dev/context/v1"],
          "verificationMethod" : [ {
-           "type" : "Multikey",
            "id" : "#initialKey",
+           "type" : "Multikey",
            "publicKeyMultibase" : "zQ3shrogQZQDjQe6boF6Sas9occwW7rZVVLR3qQ85qt7JHXq4"
          } ],
          "assertionMethod" : [ "#initialKey" ],
