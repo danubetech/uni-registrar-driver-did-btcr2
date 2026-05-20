@@ -26,6 +26,7 @@ import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptBuilder;
 import org.bitcoinj.script.ScriptPattern;
 import org.bitcoinj.uri.BitcoinURI;
+import org.bouncycastle.util.encoders.Base64Encoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
@@ -373,6 +374,7 @@ public class AggregationCohort {
         for (int i=0; i<this.updatesSize(); i++) {
             DID did = this.getCasDids().get(i);
             BytesArray updateHash = this.getCasUpdateHashes().get(i);
+            if (log.isDebugEnabled()) log.debug("Inserting did {} with updateHash {}", did, Base64.getUrlEncoder().withoutPadding().encodeToString(updateHash.bytes()));
             this.casBeaconAnnouncementMap.put(did, updateHash);
         }
 
@@ -398,8 +400,11 @@ public class AggregationCohort {
         for (int i=0; i<this.updatesSize(); i++) {
             BytesArray didIndex = this.getSmtDidIndexes().get(i);
             BytesArray updateHash = this.getSmtUpdateHashes().get(i);
+            if (log.isDebugEnabled()) log.debug("Inserting didIndex {} with updateHash {}", Base64.getUrlEncoder().withoutPadding().encodeToString(didIndex.bytes()), Base64.getUrlEncoder().withoutPadding().encodeToString(updateHash.bytes()));
             sparseMerkleTree.insertUpdate(didIndex.bytes(), updateHash.bytes());
+            if (log.isDebugEnabled()) log.debug("Generating proof for didIndex {} with updateHash {}", Base64.getUrlEncoder().withoutPadding().encodeToString(didIndex.bytes()), Base64.getUrlEncoder().withoutPadding().encodeToString(updateHash.bytes()));
             SmtProof smtProof = sparseMerkleTree.generateProofForIndex(didIndex.bytes());
+            if (log.isDebugEnabled()) log.debug("Generated proof for didIndex {} with updateHash {}: {}", Base64.getUrlEncoder().withoutPadding().encodeToString(didIndex.bytes()), Base64.getUrlEncoder().withoutPadding().encodeToString(updateHash.bytes()), smtProof.toDisplayString());
             this.smtProofs.put(didIndex, smtProof);
         }
 
