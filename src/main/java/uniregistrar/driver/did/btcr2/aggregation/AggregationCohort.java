@@ -26,7 +26,6 @@ import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptBuilder;
 import org.bitcoinj.script.ScriptPattern;
 import org.bitcoinj.uri.BitcoinURI;
-import org.bouncycastle.util.encoders.Base64Encoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
@@ -34,7 +33,6 @@ import uniregistrar.driver.did.btcr2.appendix.JsonCanonicalizationAndHash;
 import uniregistrar.driver.did.btcr2.beacons.BeaconType;
 import uniregistrar.driver.did.btcr2.crud.update.UpdateActionFundAddressException;
 import uniregistrar.driver.did.btcr2.data.CASAnnouncement;
-import uniregistrar.driver.did.btcr2.data.SMTProof;
 import uniregistrar.driver.did.btcr2.data.SmtProof;
 import uniregistrar.driver.did.btcr2.data.SparseMerkleTree;
 import uniregistrar.driver.did.btcr2.util.BytesArray;
@@ -388,9 +386,9 @@ public class AggregationCohort {
     private byte[] signalBytesSmt() {
 
         // For SMT Beacons, the Aggregation Service constructs a Sparse Merkle Tree (SMT) whose leaves
-        // pair each registered nonce with the value submitted for that nonce.
-        // Every registered nonce MUST appear as a leaf. After constructing the SMT, the Aggregation Service
-        // optimizes the tree and generates SMT Proofs for each nonce to share with the corresponding Aggregation Participant.
+        // pair each registered index with the value submitted for that index.
+        // Every registered index MUST appear as a leaf. After constructing the SMT, the Aggregation Service
+        // optimizes the tree and generates SMT Proofs for each index to share with the corresponding Aggregation Participant.
 
         if (this.updatesSize() != this.getSmtDidIndexes().size()) throw new IllegalStateException("Invalid number of DID indexes: " + this.getSmtDidIndexes().size());
         if (this.updatesSize() != this.getSmtUpdateHashes().size()) throw new IllegalStateException("Invalid number of update hashes: " + this.getSmtUpdateHashes().size());
@@ -404,7 +402,7 @@ public class AggregationCohort {
             sparseMerkleTree.insertUpdate(didIndex.bytes(), updateHash.bytes());
             if (log.isDebugEnabled()) log.debug("Generating proof for didIndex {} with updateHash {}", Base64.getUrlEncoder().withoutPadding().encodeToString(didIndex.bytes()), Base64.getUrlEncoder().withoutPadding().encodeToString(updateHash.bytes()));
             SmtProof smtProof = sparseMerkleTree.generateProofForIndex(didIndex.bytes());
-            if (log.isDebugEnabled()) log.debug("Generated proof for didIndex {} with updateHash {}: {}", Base64.getUrlEncoder().withoutPadding().encodeToString(didIndex.bytes()), Base64.getUrlEncoder().withoutPadding().encodeToString(updateHash.bytes()), smtProof.toDisplayString());
+            if (log.isDebugEnabled()) log.debug("Generated proof for didIndex {} with updateHash {}: {}", Base64.getUrlEncoder().withoutPadding().encodeToString(didIndex.bytes()), Base64.getUrlEncoder().withoutPadding().encodeToString(updateHash.bytes()), smtProof.toString());
             this.smtProofs.put(didIndex, smtProof);
         }
 

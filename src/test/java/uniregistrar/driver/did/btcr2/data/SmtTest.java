@@ -1,5 +1,8 @@
 package uniregistrar.driver.did.btcr2.data;
 
+import org.apache.commons.codec.binary.Hex;
+import uniregistrar.driver.did.btcr2.util.SHA256Util;
+
 import java.math.BigInteger;
 import java.util.*;
 
@@ -137,7 +140,7 @@ public class SmtTest {
     static void testSingleLeaf() {
         section("Single leaf collapses to its own hash");
         SmtTree4 smt = new SmtTree4();
-        byte[] leafHash = SparseMerkleTree.sha256("hello".getBytes());
+        byte[] leafHash = SHA256Util.sha256("hello".getBytes());
         smt.insertAt(5, leafHash);
 
         byte[] root = smt.root4();
@@ -182,7 +185,7 @@ public class SmtTest {
         byte[] expectedRoot = sha256(concat(hash0, hash1));
         assertEq("Root == hash(hash0||hash1)", expectedRoot, smt.root4());
 
-        System.out.println("  root = " + SparseMerkleTree.toHex(smt.root4()));
+        System.out.println("  root = " + Hex.encodeHexString(smt.root4()));
     }
 
     static void testProofVerification() {
@@ -190,12 +193,12 @@ public class SmtTest {
 
         SmtTree4 smt = buildSpecTree();
         SmtProof proof = smt.generateProof4(13);
-        System.out.println("  " + proof.toDisplayString().replace("\n", "\n  "));
+        System.out.println("  " + proof.toString());
 
         assertTrue("Proof for index 13 verifies", SmtTree4.verify4(proof, smt.root4()));
 
         // Tamper: flip a byte in the leaf hash
-        byte[] tampered = proof.updateId().clone();
+        byte[] tampered = proof.leafHash().clone();
         tampered[0] ^= 0xFF;
         SmtProof bad = new SmtProof(proof.rootHash(), proof.index(), tampered,
                 proof.collapsed(), proof.hashes());
@@ -234,7 +237,7 @@ public class SmtTest {
         smt2.insertNonUpdate(didA, nonceA);
 
         assertEq("Insertion order must not affect root", smt1.rootHash(), smt2.rootHash());
-        System.out.println("  root = " + SparseMerkleTree.toHex(smt1.rootHash()));
+        System.out.println("  root = " + Hex.encodeHexString(smt1.rootHash()));
 
         SmtProof pA = smt1.generateProof(didA);
         assertTrue("Proof for alice verifies", SparseMerkleTree.verifyProof(pA, smt1.rootHash()));
@@ -351,7 +354,7 @@ public class SmtTest {
     }
 
     static BigInteger bi(int v) { return BigInteger.valueOf(v); }
-    static byte[] sha256(byte[] b) { return SparseMerkleTree.sha256(b); }
+    static byte[] sha256(byte[] b) { return SHA256Util.sha256(b); }
     static byte[] concat(byte[] a, byte[] b) { return SparseMerkleTree.concat(a, b); }
 
     static void section(String name) { System.out.println("\n--- " + name + " ---"); }

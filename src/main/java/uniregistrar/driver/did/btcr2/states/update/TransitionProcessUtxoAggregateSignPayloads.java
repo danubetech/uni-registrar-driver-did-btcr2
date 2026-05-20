@@ -5,12 +5,10 @@ import io.ipfs.api.MerkleNode;
 import org.bitcoinj.core.Transaction;
 import uniregistrar.driver.did.btcr2.aggregation.AggregationCohort;
 import uniregistrar.driver.did.btcr2.data.CASAnnouncement;
-import uniregistrar.driver.did.btcr2.data.SMTProof;
 import uniregistrar.driver.did.btcr2.data.SmtProof;
 import uniregistrar.driver.did.btcr2.data.jsonld.BTCR2Update;
 import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.driver.did.btcr2.job.UpdateJob;
-import uniregistrar.openapi.model.DidStateAction;
 import uniregistrar.openapi.model.DidStateFinished;
 import uniregistrar.openapi.model.DidStateWait;
 import uniregistrar.openapi.model.UpdateState;
@@ -78,7 +76,7 @@ public class TransitionProcessUtxoAggregateSignPayloads {
         if (txId != null) didDocumentMetadata.put("txId", txId);
         if (update != null) didDocumentMetadata.put("update", update.getJsonObject());
         if (casAnnouncement != null) didDocumentMetadata.put("casAnnouncement", casAnnouncement);
-        if (smtProof != null) didDocumentMetadata.put("smtProof", smtProof.toMap());
+        if (smtProof != null) didDocumentMetadata.put("smtProof", smtProof.toBtcr2Map());
         if (merkleNodeUpdate != null) didDocumentMetadata.put("updateCid", merkleNodeUpdate.hash.toString());
         if (merkleNodeCasAnnouncement != null) didDocumentMetadata.put("casAnnouncementCid", merkleNodeCasAnnouncement.hash.toString());
 
