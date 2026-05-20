@@ -31,10 +31,10 @@ public record SmtProof(
     @Override
     public String toString() {
         return "SmtProof{" +
-                "rootHash=" + Hex.encodeHexString(rootHash) +
-                ", index=" + index +
-                ", leafHash=" + Hex.encodeHexString(leafHash) +
-                ", collapsed=" + collapsed +
+                "rootHash=" + (rootHash == null ? null : Hex.encodeHexString(rootHash)) +
+                ", index=" + (index == null ? null : Hex.encodeHexString(index.toByteArray())) +
+                ", leafHash=" + (leafHash == null ? null : Hex.encodeHexString(leafHash)) +
+                ", collapsed=" + (collapsed == null ? null : Hex.encodeHexString(collapsed.toByteArray())) +
                 ", hashes=" + (hashes == null ? null : hashes.stream().map(Hex::encodeHexString).toList()) +
                 '}';
     }
