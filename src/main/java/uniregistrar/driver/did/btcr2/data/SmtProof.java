@@ -21,7 +21,7 @@ public record SmtProof(
         Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("id", this.rootHash() == null ? null : encoder.encodeToString(this.rootHash()));
-        map.put("nonce", this.index() == null ? null : encoder.encode(this.index().toByteArray()));
+        map.put("nonce", this.index() == null ? null : encoder.encodeToString(this.index().toByteArray()));
         map.put("updateId", this.leafHash() == null ? null : encoder.encodeToString(this.leafHash()));
         map.put("collapsed", this.collapsed() == null ? null : encoder.encodeToString(this.collapsed().toByteArray()));
         map.put("hashes", this.hashes() == null ? null : this.hashes().stream().map(encoder::encodeToString).toList());
