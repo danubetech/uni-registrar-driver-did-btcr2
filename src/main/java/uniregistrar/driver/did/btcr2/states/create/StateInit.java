@@ -167,6 +167,7 @@ public class StateInit {
 
             if (! aggregationCohort.isCohortFinalized()) {
                 aggregationCohort.finalizeCohort(bitcoinConnector);
+                if (log.isDebugEnabled()) log.debug("Finalized cohort: {}", aggregationCohort.getMetadata());
             }
 
             // This Beacon Address must be sent to all Aggregation Participants with the set of keys used to construct it.

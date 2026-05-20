@@ -157,11 +157,15 @@ public class AggregationCohort {
     }
 
     public boolean isCohortCompleted() {
-        return this.cohortSize() >= this.getMaxSize();
+        boolean cohortCompleted = this.cohortSize() >= this.getMaxSize();
+        if (log.isDebugEnabled()) log.debug("cohortCompleted? {}", cohortCompleted);
+        return cohortCompleted;
     }
 
     public boolean isCohortFinalized() {
-        return this.getBeaconAddress() != null;
+        boolean cohortFinalized = this.getBeaconAddress() != null;
+        if (log.isDebugEnabled()) log.debug("cohortFinalized? {}", cohortFinalized);
+        return cohortFinalized;
     }
 
     public void finalizeCohort(BitcoinConnector bitcoinConnector) {
@@ -276,11 +280,15 @@ public class AggregationCohort {
     }
 
     public boolean isUpdatesCompleted() {
-        return this.updatesSize() >= this.getMaxSize();
+        boolean updatesCompleted = this.updatesSize() >= this.getMaxSize();
+        if (log.isDebugEnabled()) log.debug("updatesCompleted? {}", updatesCompleted);
+        return updatesCompleted;
     }
 
     public boolean isUpdatesAggregated() {
-        return this.getUnsignedBeaconSignal() != null && this.getMusig2AggregatedNonce() != null && this.getSignalBytes() != null;
+        boolean updatesAggregated = this.getUnsignedBeaconSignal() != null && this.getMusig2AggregatedNonce() != null && this.getSignalBytes() != null;
+        if (log.isDebugEnabled()) log.debug("updatesAggregated? {}", updatesAggregated);
+        return updatesAggregated;
     }
 
     public void aggregateUpdates(BitcoinConnection bitcoinConnection) throws UpdateActionFundAddressException {
@@ -294,11 +302,13 @@ public class AggregationCohort {
 
         // Aggregation of updates into a Beacon Signal depends on the type of BTCR2 Beacon.
 
+        if (log.isDebugEnabled()) log.debug("Aggregating signal bytes for beacon type: " + this.getBeaconType());
         this.signalBytes = switch (this.getBeaconType()) {
             case CAS -> this.signalBytesCas();
             case SMT -> this.signalBytesSmt();
             default -> throw new IllegalStateException("Unexpected value: " + this.getBeaconType());
         };
+        if (log.isDebugEnabled()) log.debug("Aggregated signal bytes for beacon type " + this.getBeaconType() + ": " + Hex.encodeHexString(this.getSignalBytes()));
 
         // it aggregates the update announcements into an Unsigned Beacon Signal.
 
@@ -457,11 +467,15 @@ public class AggregationCohort {
     }
 
     public boolean isSignaturesCompleted() {
-        return this.signaturesSize() >= this.getMaxSize();
+        boolean signaturesCompleted = this.signaturesSize() >= this.getMaxSize();
+        if (log.isDebugEnabled()) log.debug("signaturesCompleted? {}", signaturesCompleted);
+        return signaturesCompleted;
     }
 
     public boolean isSignaturesAggregated() {
-        return this.getMusig2AggregatedSignatures() != null && ! this.getMusig2AggregatedSignatures().isEmpty();
+        boolean signaturesAggregated = this.getMusig2AggregatedSignatures() != null && ! this.getMusig2AggregatedSignatures().isEmpty();
+        if (log.isDebugEnabled()) log.debug("signaturesAggregated? {}", signaturesAggregated);
+        return signaturesAggregated;
     }
 
     public void aggregateSignatures(BitcoinConnection bitcoinConnection)  {

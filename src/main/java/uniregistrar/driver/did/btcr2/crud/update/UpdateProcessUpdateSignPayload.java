@@ -276,11 +276,13 @@ public class UpdateProcessUpdateSignPayload {
 
         BeaconType beaconType = BeaconType.fromServiceType(beaconService.getType());
 
+        if (log.isDebugEnabled()) log.debug("Updating aggregate beacon for beacon type: " + beaconType);
         switch (beaconType) {
             case CAS -> updateAggregateBeaconCAS(aggregationCohort, participantIndex, did, update);
             case SMT -> updateAggregateBeaconSMT(aggregationCohort, participantIndex, did, update, smtNonce);
             default -> throw new IllegalStateException("Invalid beacon type: " + beaconType);
         };
+        if (log.isDebugEnabled()) log.debug("Updated aggregate beacon for beacon type: " + beaconType);
 
         // Once responses to an update opportunity are collected
 
@@ -293,6 +295,7 @@ public class UpdateProcessUpdateSignPayload {
 
         if (! aggregationCohort.isUpdatesAggregated()) {
             aggregationCohort.aggregateUpdates(bitcoinConnection);
+            if (log.isDebugEnabled()) log.debug("Aggregated updates: {}", aggregationCohort.getMetadata());
         }
 
         Transaction unsignedBeaconSignal = aggregationCohort.getUnsignedBeaconSignal();

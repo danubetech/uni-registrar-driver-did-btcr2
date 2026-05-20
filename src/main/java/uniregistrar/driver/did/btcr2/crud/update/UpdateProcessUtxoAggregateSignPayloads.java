@@ -99,6 +99,7 @@ public class UpdateProcessUtxoAggregateSignPayloads {
 
         if (! aggregationCohort.isSignaturesAggregated()) {
             aggregationCohort.aggregateSignatures(bitcoinConnection);
+            if (log.isDebugEnabled()) log.debug("Aggregated signatures: {}", aggregationCohort.getMetadata());
         }
 
         // The Aggregation Service then broadcasts this transaction onto the Bitcoin network.
