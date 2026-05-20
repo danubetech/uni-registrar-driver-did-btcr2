@@ -67,6 +67,7 @@ public class StateProcessUpdateSignPayload {
         DIDDocument didSourceDocument = updateRequest.getOptions() == null || updateRequest.getOptions().getAdditionalProperty("didSourceDocument") == null ? null : DIDDocument.fromJsonObject((Map<String, Object>) updateRequest.getOptions().getAdditionalProperty("didSourceDocument"));
         URI beaconServiceId = updateRequest.getOptions() == null ? null : (updateRequest.getOptions().getAdditionalProperty("beaconServiceId") instanceof String beaconServiceIdString ? URI.create(beaconServiceIdString) : null);
         String beaconServiceType = updateRequest.getOptions() == null ? null : (updateRequest.getOptions().getAdditionalProperty("beaconServiceType") instanceof String beaconServiceTypeString ? beaconServiceTypeString : null);
+        byte[] smtNonce = updateRequest.getOptions() == null ? null : (updateRequest.getOptions().getAdditionalProperty("smtNonce") instanceof String smtNonceString ? Base64.getUrlDecoder().decode(smtNonceString) : null);
         if (didSourceDocument == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Missing 'didSourceDocument' option");
 
         // read signing response
@@ -89,7 +90,7 @@ public class StateProcessUpdateSignPayload {
 
         UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayloadResult;
         try {
-            updateProcessUpdateSignPayloadResult = updateProcessUpdateSignPayload.update(bitcoinConnection, did, update, verificationMethodId, didSourceDocument, beaconServiceId, beaconServiceType, updateSignature);
+            updateProcessUpdateSignPayloadResult = updateProcessUpdateSignPayload.update(bitcoinConnection, did, update, verificationMethodId, didSourceDocument, beaconServiceId, beaconServiceType, smtNonce, updateSignature);
         } catch (UpdateActionFundAddressException ex) {
             // next state
             return TransitionProcessUpdateSignPayload.transitionToUpdateSignPayloadFundAddress(bitcoinConnection, ipfsConnection, update, updateSignPayload, ex.getAddress(), ex.getMinimumValue(), didRegistrationMetadata, didDocumentMetadata);

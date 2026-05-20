@@ -102,7 +102,7 @@ public class UpdateProcessUpdateSignPayload {
         this.ipfsConnection = ipfsConnection;
     }
 
-    public UpdateProcessUpdateSignPayloadResult update(BitcoinConnection bitcoinConnection, DID did, BTCR2Update update, URI verificationMethodId, DIDDocument didSourceDocument, URI beaconServiceId, String beaconServiceType, byte[] updateSignature) throws RegistrationException, UpdateActionFundAddressException, UpdateActionCompleteAggregationUpdatesException {
+    public UpdateProcessUpdateSignPayloadResult update(BitcoinConnection bitcoinConnection, DID did, BTCR2Update update, URI verificationMethodId, DIDDocument didSourceDocument, URI beaconServiceId, String beaconServiceType, byte[] smtNonce, byte[] updateSignature) throws RegistrationException, UpdateActionFundAddressException, UpdateActionCompleteAggregationUpdatesException {
 
         /*
          * Construct BTCR2 Signed Update
@@ -184,7 +184,7 @@ public class UpdateProcessUpdateSignPayload {
 
         UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayloadResult = switch (BeaconType.fromServiceType(beaconService.getType())) {
             case SINGLETON -> announceToSingletonBeacon(bitcoinConnection, update, beaconService);
-            case CAS, SMT -> announceToAggregateBeacon(bitcoinConnection, did, didSourceDocument, update, verificationMethodId, beaconService);
+            case CAS, SMT -> announceToAggregateBeacon(bitcoinConnection, did, didSourceDocument, update, verificationMethodId, beaconService, smtNonce);
         };
 
         // result
@@ -258,7 +258,7 @@ public class UpdateProcessUpdateSignPayload {
      * See https://dcdpr.github.io/did-btcr2/operations/update.html#announcing-to-an-aggregate-beacon
      */
 
-    private static UpdateProcessUpdateSignPayloadResult announceToAggregateBeacon(BitcoinConnection bitcoinConnection, DID did, DIDDocument didSourceDocument, BTCR2Update update, URI verificationMethodId, Service beaconService) throws RegistrationException, UpdateActionCompleteAggregationUpdatesException, UpdateActionFundAddressException {
+    private static UpdateProcessUpdateSignPayloadResult announceToAggregateBeacon(BitcoinConnection bitcoinConnection, DID did, DIDDocument didSourceDocument, BTCR2Update update, URI verificationMethodId, Service beaconService, byte[] smtNonce) throws RegistrationException, UpdateActionCompleteAggregationUpdatesException, UpdateActionFundAddressException {
 
         // find aggregation cohort
 
@@ -278,7 +278,7 @@ public class UpdateProcessUpdateSignPayload {
 
         switch (beaconType) {
             case CAS -> updateAggregateBeaconCAS(aggregationCohort, participantIndex, did, update);
-            case SMT -> updateAggregateBeaconSMT(aggregationCohort, participantIndex, did, update, /* TODO */ null);
+            case SMT -> updateAggregateBeaconSMT(aggregationCohort, participantIndex, did, update, smtNonce);
             default -> throw new IllegalStateException("Invalid beacon type: " + beaconType);
         };
 
@@ -327,7 +327,7 @@ public class UpdateProcessUpdateSignPayload {
         aggregationCohort.setMusig2IndividualNonce(participantIndex, BytesArray.bytesArray(pair.component2().toByteArray()));
     }
 
-    private static void updateAggregateBeaconSMT(AggregationCohort aggregationCohort, int participantIndex, DID did, BTCR2Update update, byte[] nonce) {
+    private static void updateAggregateBeaconSMT(AggregationCohort aggregationCohort, int participantIndex, DID did, BTCR2Update update, byte[] smtNonce) {
 
         // For an SMT Beacon:
 
@@ -341,11 +341,11 @@ public class UpdateProcessUpdateSignPayload {
 
         byte[] updateHash;
 
-        if (nonce != null) {
+        if (smtNonce != null) {
 
             // If a nonce is used: hash(hash(nonce) + json_document_hash(update))
 
-            byte[] bytes1 = SHA256Util.sha256(nonce);
+            byte[] bytes1 = SHA256Util.sha256(smtNonce);
             byte[] bytes2 = JSONDocumentHashing.jsonDocumentHashing(update);
             byte[] bytes = new byte[bytes1.length + bytes2.length];
             System.arraycopy(bytes1, 0, bytes, 0, bytes1.length);
@@ -359,7 +359,6 @@ public class UpdateProcessUpdateSignPayload {
         }
 
         aggregationCohort.setSmtUpdateHash(participantIndex, BytesArray.bytesArray(updateHash));
-        aggregationCohort.setSmtNonce(participantIndex, nonce != null ? BytesArray.bytesArray(nonce) : BytesArray.bytesArray(new byte[0]));
 
         // MuSig2 Nonce: A MuSig2 nonce constructed according to the nonce generation algorithm specified in [BIP327].
 

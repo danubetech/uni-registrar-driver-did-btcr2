@@ -6,6 +6,7 @@ import org.bitcoinj.core.Transaction;
 import uniregistrar.driver.did.btcr2.aggregation.AggregationCohort;
 import uniregistrar.driver.did.btcr2.data.CASAnnouncement;
 import uniregistrar.driver.did.btcr2.data.SMTProof;
+import uniregistrar.driver.did.btcr2.data.SmtProof;
 import uniregistrar.driver.did.btcr2.data.jsonld.BTCR2Update;
 import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.driver.did.btcr2.job.UpdateJob;
@@ -59,7 +60,7 @@ public class TransitionProcessUtxoAggregateSignPayloads {
         return updateState;
     }
 
-    public static UpdateState transitionToFinished(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, String txId, BTCR2Update update, CASAnnouncement casAnnouncement, SMTProof smtProof, AggregationCohort aggregationCohort, MerkleNode merkleNodeUpdate, MerkleNode merkleNodeCasAnnouncement, MerkleNode merkleNodeSmtProof, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
+    public static UpdateState transitionToFinished(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, String txId, BTCR2Update update, CASAnnouncement casAnnouncement, SmtProof smtProof, AggregationCohort aggregationCohort, MerkleNode merkleNodeUpdate, MerkleNode merkleNodeCasAnnouncement, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
 
         // REGISTRATION STATE: didState.state="finished"
 
@@ -80,7 +81,6 @@ public class TransitionProcessUtxoAggregateSignPayloads {
         if (smtProof != null) didDocumentMetadata.put("smtProof", smtProof.toMap());
         if (merkleNodeUpdate != null) didDocumentMetadata.put("updateCid", merkleNodeUpdate.hash.toString());
         if (merkleNodeCasAnnouncement != null) didDocumentMetadata.put("casAnnouncementCid", merkleNodeCasAnnouncement.hash.toString());
-        if (merkleNodeSmtProof != null) didDocumentMetadata.put("smtProofCid", merkleNodeSmtProof.hash.toString());
 
         // update state
 

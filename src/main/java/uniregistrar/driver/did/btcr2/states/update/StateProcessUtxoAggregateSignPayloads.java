@@ -107,7 +107,7 @@ public class StateProcessUtxoAggregateSignPayloads {
 
         UpdateProcessUtxoAggregateSignPayloadsResult updateProcessUtxoAggregateSignPayloadsResult;
         try {
-            updateProcessUtxoAggregateSignPayloadsResult = updateProcessUtxoAggregateSignPayloads.update(bitcoinConnection, didSourceDocument, update, verificationMethodId, unsignedBeaconSignal, aggregationCohortId, utxoAggregateSignatures);
+            updateProcessUtxoAggregateSignPayloadsResult = updateProcessUtxoAggregateSignPayloads.update(bitcoinConnection, did, didSourceDocument, update, verificationMethodId, unsignedBeaconSignal, aggregationCohortId, utxoAggregateSignatures);
         } catch (UpdateActionCompleteAggregationSignaturesException ex) {
             // next state
             return TransitionProcessUtxoAggregateSignPayloads.transitionToUtxoAggregateSignPayloadsCompleteAggregationSignatures(bitcoinConnection, ipfsConnection, update, unsignedBeaconSignal, ex.getAggregationCohort(), utxoAggregateSignPayloads, didRegistrationMetadata, didDocumentMetadata);
@@ -117,7 +117,6 @@ public class StateProcessUtxoAggregateSignPayloads {
 
         MerkleNode merkleNodeUpdate = null;
         MerkleNode merkleNodeCasAnnouncement = null;
-        MerkleNode merkleNodeSmtProof = null;
         if (publishToIpfs && ipfsConnection != null && updateProcessUtxoAggregateSignPayloadsResult.update() != null) {
             try {
                 byte[] ipfsPayload = JSONDocumentHashing.jsonDocumentCanonicalizing(updateProcessUtxoAggregateSignPayloadsResult.update().toJson()).getBytes(StandardCharsets.UTF_8);
@@ -138,19 +137,9 @@ public class StateProcessUtxoAggregateSignPayloads {
             }
             if (log.isDebugEnabled()) log.debug("Published casAnnouncement to IPFS: " + merkleNodeCasAnnouncement.hash);
         }
-        if (publishToIpfs && ipfsConnection != null && updateProcessUtxoAggregateSignPayloadsResult.smtProof() != null) {
-            try {
-                byte[] ipfsPayload = JSONDocumentHashing.jsonDocumentCanonicalizing(updateProcessUtxoAggregateSignPayloadsResult.smtProof().toMap()).getBytes(StandardCharsets.UTF_8);
-                AddArgs addArgs = AddArgs.Builder.newInstance().setCidVersion(1).setRawLeaves().setHash("sha2-256").setPin().build();
-                merkleNodeSmtProof = ipfsConnection.getIpfs().add(new NamedStreamable.ByteArrayWrapper(ipfsPayload), addArgs).getFirst();
-            } catch (IOException ex) {
-                throw new RegistrationException(RegistrationException.ERROR_INTERNAL_ERROR, "Cannot publish smtProof to IPFS: " + ex.getMessage(), ex);
-            }
-            if (log.isDebugEnabled()) log.debug("Published smtProof to IPFS: " + merkleNodeSmtProof.hash);
-        }
 
         // next state
 
-        return TransitionProcessUtxoAggregateSignPayloads.transitionToFinished(bitcoinConnection, ipfsConnection, updateProcessUtxoAggregateSignPayloadsResult.broadcastRawTransactionId(), updateProcessUtxoAggregateSignPayloadsResult.update(), updateProcessUtxoAggregateSignPayloadsResult.casAnnouncement(), updateProcessUtxoAggregateSignPayloadsResult.smtProof(), updateProcessUtxoAggregateSignPayloadsResult.aggregationCohort(), merkleNodeUpdate, merkleNodeCasAnnouncement, merkleNodeSmtProof, didRegistrationMetadata, didDocumentMetadata);
+        return TransitionProcessUtxoAggregateSignPayloads.transitionToFinished(bitcoinConnection, ipfsConnection, updateProcessUtxoAggregateSignPayloadsResult.broadcastRawTransactionId(), updateProcessUtxoAggregateSignPayloadsResult.update(), updateProcessUtxoAggregateSignPayloadsResult.casAnnouncement(), updateProcessUtxoAggregateSignPayloadsResult.smtProof(), updateProcessUtxoAggregateSignPayloadsResult.aggregationCohort(), merkleNodeUpdate, merkleNodeCasAnnouncement, didRegistrationMetadata, didDocumentMetadata);
     }
 }

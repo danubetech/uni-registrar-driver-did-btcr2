@@ -123,6 +123,8 @@ See https://identity.foundation/did-registration/#options.
   * Default value: `false`
 * `generateAggregateBeacon`: This string option indicates whether an aggregate beacon service for an aggregation cohort should be generated in the genesis document. The value of this option is the name of the aggregation cohort. This option requires `generateInitialKey: true`.
   * Default value: `null`
+* `smtNonce`: A Base64-encoded nonce to be used for the Update operation.
+  * Default value: `null`
 
 ### `update()` and `deactivate()`
 
