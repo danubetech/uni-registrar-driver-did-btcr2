@@ -11,7 +11,7 @@ import uniregistrar.RegistrationException;
 import uniregistrar.driver.did.btcr2.aggregation.AggregationCohort;
 import uniregistrar.driver.did.btcr2.aggregation.AggregationService;
 import uniregistrar.driver.did.btcr2.data.CASAnnouncement;
-import uniregistrar.driver.did.btcr2.data.SmtProof;
+import uniregistrar.driver.did.btcr2.data.SMTProof;
 import uniregistrar.driver.did.btcr2.data.jsonld.BTCR2Update;
 import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.driver.did.btcr2.util.BytesArray;
@@ -112,7 +112,7 @@ public class UpdateProcessUtxoAggregateSignPayloads {
         // result
 
         CASAnnouncement casAnnouncement = aggregationCohort.returnCasAnnouncement();
-        SmtProof smtProof = aggregationCohort.returnSmtProof(did);
+        SMTProof smtProof = aggregationCohort.returnSmtProof(did);
 
         UpdateProcessUtxoAggregateSignPayloadsResult updateProcessUtxoAggregateSignPayloads = new UpdateProcessUtxoAggregateSignPayloadsResult(broadcastRawTransactionId, update, casAnnouncement, smtProof, aggregationCohort);
         if (log.isDebugEnabled()) log.debug("Update: " + updateProcessUtxoAggregateSignPayloads);

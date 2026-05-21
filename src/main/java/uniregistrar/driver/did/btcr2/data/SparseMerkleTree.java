@@ -133,17 +133,17 @@ public class SparseMerkleTree {
     }
 
     /**
-     * Generate an {@link SmtProof} for the given DID.
+     * Generate an {@link SMTProof} for the given DID.
      *
      * @param did DID to prove membership (or non-membership) for.
      * @return proof usable by a verifier to recompute the root hash.
      */
-    public SmtProof generateProof(String did) {
+    public SMTProof generateProof(String did) {
         return generateProofForIndex(didToIndex(did));
     }
 
     /**
-     * Generate an {@link SmtProof} for an explicit leaf index.
+     * Generate an {@link SMTProof} for an explicit leaf index.
      *
      * <p>Walks from the leaf upward through 256 levels.  At each level it queries
      * the sibling subtree with a single O(log n) range check, so the total cost is
@@ -151,9 +151,9 @@ public class SparseMerkleTree {
      * recomputing the whole tree per level.
      *
      * @param index the leaf position (must be in [0, 2^256)).
-     * @return the {@link SmtProof}.
+     * @return the {@link SMTProof}.
      */
-    public SmtProof generateProofForIndex(BigInteger index) {
+    public SMTProof generateProofForIndex(BigInteger index) {
         byte[] root = rootHash();
         List<byte[]> siblingHashes = new ArrayList<>();
         BigInteger collapsed = BigInteger.ZERO;
@@ -206,9 +206,9 @@ public class SparseMerkleTree {
             hi = parentLo.add(parentSize);
         }
 
-        return new SmtProof(root, index, leaves.get(index), collapsed, siblingHashes);
+        return new SMTProof(root, index, leaves.get(index), collapsed, siblingHashes);
     }
-    public SmtProof generateProofForIndex(byte[] index) {
+    public SMTProof generateProofForIndex(byte[] index) {
         return this.generateProofForIndex(new BigInteger(1, index));
     }
 
@@ -217,13 +217,13 @@ public class SparseMerkleTree {
     // -------------------------------------------------------------------------
 
     /**
-     * Verify an {@link SmtProof} against a known root hash.
+     * Verify an {@link SMTProof} against a known root hash.
      *
      * @param proof    the proof to verify.
      * @param rootHash the expected root hash (e.g. from a Beacon Signal).
      * @return {@code true} if the proof is valid.
      */
-    public static boolean verifyProof(SmtProof proof, byte[] rootHash) {
+    public static boolean verifyProof(SMTProof proof, byte[] rootHash) {
         return verifyProofWithDepth(proof, rootHash, TREE_DEPTH);
     }
 
@@ -231,11 +231,11 @@ public class SparseMerkleTree {
      * Verify a proof for a tree of the given depth.
      * Exposed package-private so the 4-bit test subclass can reuse it.
      */
-    static boolean verifyProofWithDepth(SmtProof proof, byte[] rootHash, int treeDepth) {
-        if (proof.leafHash() == null || isEmpty(proof.leafHash())) return false;
+    static boolean verifyProofWithDepth(SMTProof proof, byte[] rootHash, int treeDepth) {
+        if (proof.updateId() == null || isEmpty(proof.updateId())) return false;
 
-        BigInteger index     = proof.index();
-        byte[]     candidate = proof.leafHash().clone();
+        BigInteger index     = proof.nonce();
+        byte[]     candidate = proof.updateId().clone();
         BigInteger collapsed = proof.collapsed();
         int        hashPtr   = 0;
 

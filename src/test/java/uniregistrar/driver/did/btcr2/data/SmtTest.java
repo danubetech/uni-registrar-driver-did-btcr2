@@ -43,7 +43,7 @@ public class SmtTest {
             return subtreeHash(lo, hi, leaves());
         }
 
-        SmtProof generateProof4(int index) {
+        SMTProof generateProof4(int index) {
             BigInteger idx = BigInteger.valueOf(index);
             byte[] root = root4();
             List<byte[]> siblingHashes = new ArrayList<>();
@@ -74,10 +74,10 @@ public class SmtTest {
                 hi = parentLo.add(parentSize);
             }
 
-            return new SmtProof(root, idx, leaves().get(idx), collapsed, siblingHashes);
+            return new SMTProof(root, idx, leaves().get(idx), collapsed, siblingHashes);
         }
 
-        static boolean verify4(SmtProof proof, byte[] rootHash) {
+        static boolean verify4(SMTProof proof, byte[] rootHash) {
             return verifyProofWithDepth(proof, rootHash, 4);
         }
 
@@ -192,21 +192,21 @@ public class SmtTest {
         section("Proof generation and verification (index 13)");
 
         SmtTree4 smt = buildSpecTree();
-        SmtProof proof = smt.generateProof4(13);
+        SMTProof proof = smt.generateProof4(13);
         System.out.println("  " + proof.toString());
 
         assertTrue("Proof for index 13 verifies", SmtTree4.verify4(proof, smt.root4()));
 
         // Tamper: flip a byte in the leaf hash
-        byte[] tampered = proof.leafHash().clone();
+        byte[] tampered = proof.updateId().clone();
         tampered[0] ^= 0xFF;
-        SmtProof bad = new SmtProof(proof.rootHash(), proof.index(), tampered,
+        SMTProof bad = new SMTProof(proof.id(), proof.nonce(), tampered,
                 proof.collapsed(), proof.hashes());
         assertFalse("Tampered proof must NOT verify", SmtTree4.verify4(bad, smt.root4()));
 
         // Verify all leaves in the spec tree
         for (int idx : new int[]{0, 2, 5, 9, 13, 14}) {
-            SmtProof p = smt.generateProof4(idx);
+            SMTProof p = smt.generateProof4(idx);
             assertTrue("Proof for index " + idx + " verifies", SmtTree4.verify4(p, smt.root4()));
         }
     }
@@ -214,7 +214,7 @@ public class SmtTest {
     static void testNonMembershipProof() {
         section("Non-member proof returns false");
         SmtTree4 smt = buildSpecTree();
-        SmtProof proof = smt.generateProof4(7); // not in tree
+        SMTProof proof = smt.generateProof4(7); // not in tree
         assertFalse("Non-member proof must not verify", SmtTree4.verify4(proof, smt.root4()));
     }
 
@@ -239,10 +239,10 @@ public class SmtTest {
         assertEq("Insertion order must not affect root", smt1.rootHash(), smt2.rootHash());
         System.out.println("  root = " + Hex.encodeHexString(smt1.rootHash()));
 
-        SmtProof pA = smt1.generateProof(didA);
+        SMTProof pA = smt1.generateProof(didA);
         assertTrue("Proof for alice verifies", SparseMerkleTree.verifyProof(pA, smt1.rootHash()));
 
-        SmtProof pB = smt1.generateProof(didB);
+        SMTProof pB = smt1.generateProof(didB);
         assertTrue("Proof for bob (update) verifies", SparseMerkleTree.verifyProof(pB, smt1.rootHash()));
     }
 
@@ -321,7 +321,7 @@ public class SmtTest {
         long t1 = System.currentTimeMillis();
         int verified = 0;
         for (int i = 0; i < 100; i++) {
-            SmtProof p = smt.generateProof(dids[i]);
+            SMTProof p = smt.generateProof(dids[i]);
             if (SparseMerkleTree.verifyProof(p, root)) verified++;
         }
         long proofTime = System.currentTimeMillis() - t1;

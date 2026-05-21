@@ -33,7 +33,7 @@ import uniregistrar.driver.did.btcr2.appendix.JsonCanonicalizationAndHash;
 import uniregistrar.driver.did.btcr2.beacons.BeaconType;
 import uniregistrar.driver.did.btcr2.crud.update.UpdateActionFundAddressException;
 import uniregistrar.driver.did.btcr2.data.CASAnnouncement;
-import uniregistrar.driver.did.btcr2.data.SmtProof;
+import uniregistrar.driver.did.btcr2.data.SMTProof;
 import uniregistrar.driver.did.btcr2.data.SparseMerkleTree;
 import uniregistrar.driver.did.btcr2.util.BytesArray;
 import uniregistrar.driver.did.btcr2.util.MultiCodecUtil;
@@ -86,7 +86,7 @@ public class AggregationCohort {
 
     // For an SMT Beacon, the request signal confirmation message contains:
 
-    private LinkedHashMap<BytesArray, SmtProof> smtProofs = new LinkedHashMap<>();
+    private LinkedHashMap<BytesArray, SMTProof> smtProofs = new LinkedHashMap<>();
 
     // For a CAS Beacon, the request signal confirmation message contains:
     // For an SMT Beacon, the request signal confirmation message contains:
@@ -404,7 +404,7 @@ public class AggregationCohort {
         for (int i=0; i<this.updatesSize(); i++) {
             BytesArray didIndex = this.getSmtDidIndexes().get(i);
             if (log.isDebugEnabled()) log.debug("Generating proof for didIndex {}", Hex.encodeHexString(didIndex.bytes()));
-            SmtProof smtProof = sparseMerkleTree.generateProofForIndex(didIndex.bytes());
+            SMTProof smtProof = sparseMerkleTree.generateProofForIndex(didIndex.bytes());
             if (log.isDebugEnabled()) log.debug("Generated proof for didIndex {}: {}", Hex.encodeHexString(didIndex.bytes()), smtProof.toString());
             this.smtProofs.put(didIndex, smtProof);
         }
@@ -433,7 +433,7 @@ public class AggregationCohort {
         return casAnnouncement;
     }
 
-    public SmtProof returnSmtProof(DID did) {
+    public SMTProof returnSmtProof(DID did) {
         if (! BeaconType.SMT.equals(this.getBeaconType())) return null;
         byte[] didIndex = SHA256Util.sha256(did.getDidString().getBytes(StandardCharsets.UTF_8));
         return this.getSmtProofs().get(BytesArray.bytesArray(didIndex));
@@ -620,7 +620,7 @@ public class AggregationCohort {
         return casBeaconAnnouncementMap;
     }
 
-    public LinkedHashMap<BytesArray, SmtProof> getSmtProofs() {
+    public LinkedHashMap<BytesArray, SMTProof> getSmtProofs() {
         return smtProofs;
     }
 

@@ -5,7 +5,7 @@ import io.ipfs.api.MerkleNode;
 import org.bitcoinj.core.Transaction;
 import uniregistrar.driver.did.btcr2.aggregation.AggregationCohort;
 import uniregistrar.driver.did.btcr2.data.CASAnnouncement;
-import uniregistrar.driver.did.btcr2.data.SmtProof;
+import uniregistrar.driver.did.btcr2.data.SMTProof;
 import uniregistrar.driver.did.btcr2.data.jsonld.BTCR2Update;
 import uniregistrar.driver.did.btcr2.ipfs.IPFSConnection;
 import uniregistrar.driver.did.btcr2.job.UpdateJob;
@@ -58,7 +58,7 @@ public class TransitionProcessUtxoAggregateSignPayloads {
         return updateState;
     }
 
-    public static UpdateState transitionToFinished(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, String txId, BTCR2Update update, CASAnnouncement casAnnouncement, SmtProof smtProof, AggregationCohort aggregationCohort, MerkleNode merkleNodeUpdate, MerkleNode merkleNodeCasAnnouncement, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
+    public static UpdateState transitionToFinished(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, String txId, BTCR2Update update, CASAnnouncement casAnnouncement, SMTProof smtProof, AggregationCohort aggregationCohort, MerkleNode merkleNodeUpdate, MerkleNode merkleNodeCasAnnouncement, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
 
         // REGISTRATION STATE: didState.state="finished"
 
