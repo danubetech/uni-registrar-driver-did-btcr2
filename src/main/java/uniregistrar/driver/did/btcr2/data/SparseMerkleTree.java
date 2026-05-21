@@ -232,19 +232,19 @@ public class SparseMerkleTree {
      * Exposed package-private so the 4-bit test subclass can reuse it.
      */
     static boolean verifyProofWithDepth(SMTProof proof, byte[] rootHash, int treeDepth) {
-        if (proof.updateId() == null || isEmpty(proof.updateId())) return false;
+        if (proof.getUpdateId() == null || isEmpty(proof.getUpdateId())) return false;
 
-        BigInteger index     = proof.nonce();
-        byte[]     candidate = proof.updateId().clone();
-        BigInteger collapsed = proof.collapsed();
+        BigInteger index     = proof.getNonce();
+        byte[]     candidate = proof.getUpdateId().clone();
+        BigInteger collapsed = proof.getCollapsed();
         int        hashPtr   = 0;
 
         for (int level = 0; level < treeDepth; level++) {
             if (collapsed.testBit(level)) {
                 // Sibling was empty at this level; candidate passes through unchanged.
             } else {
-                if (hashPtr >= proof.hashes().size()) return false;
-                byte[] sibHash = proof.hashes().get(hashPtr++);
+                if (hashPtr >= proof.getHashes().size()) return false;
+                byte[] sibHash = proof.getHashes().get(hashPtr++);
 
                 // Level 0 = leaf level; the spec's "collapsed bit from right" convention
                 // means level k corresponds to bit k from the LSB of the index.

@@ -198,10 +198,10 @@ public class SmtTest {
         assertTrue("Proof for index 13 verifies", SmtTree4.verify4(proof, smt.root4()));
 
         // Tamper: flip a byte in the leaf hash
-        byte[] tampered = proof.updateId().clone();
+        byte[] tampered = proof.getUpdateId().clone();
         tampered[0] ^= 0xFF;
-        SMTProof bad = new SMTProof(proof.id(), proof.nonce(), tampered,
-                proof.collapsed(), proof.hashes());
+        SMTProof bad = new SMTProof(proof.getId(), proof.getNonce(), tampered,
+                proof.getCollapsed(), proof.getHashes());
         assertFalse("Tampered proof must NOT verify", SmtTree4.verify4(bad, smt.root4()));
 
         // Verify all leaves in the spec tree

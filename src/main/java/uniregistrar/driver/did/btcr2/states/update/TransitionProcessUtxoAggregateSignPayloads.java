@@ -75,8 +75,8 @@ public class TransitionProcessUtxoAggregateSignPayloads {
 
         if (txId != null) didDocumentMetadata.put("txId", txId);
         if (update != null) didDocumentMetadata.put("update", update.getJsonObject());
-        if (casAnnouncement != null) didDocumentMetadata.put("casAnnouncement", casAnnouncement);
-        if (smtProof != null) didDocumentMetadata.put("smtProof", smtProof.toBtcr2Map());
+        if (casAnnouncement != null) didDocumentMetadata.put("casAnnouncement", casAnnouncement.toMap());
+        if (smtProof != null) didDocumentMetadata.put("smtProof", smtProof.toMap());
         if (merkleNodeUpdate != null) didDocumentMetadata.put("updateCid", merkleNodeUpdate.hash.toString());
         if (merkleNodeCasAnnouncement != null) didDocumentMetadata.put("casAnnouncementCid", merkleNodeCasAnnouncement.hash.toString());
 
