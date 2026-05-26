@@ -5,10 +5,7 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import java.io.IOException;
 import java.io.Reader;
 import java.math.BigInteger;
-import java.util.Base64;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class SMTProof extends LinkedHashMap<String, Object> {
 
@@ -28,9 +25,9 @@ public class SMTProof extends LinkedHashMap<String, Object> {
 
     public SMTProof(byte[] id, BigInteger nonce, byte[] updateId, BigInteger collapsed, List<byte[]> hashes) {
         if (id != null) this.put("id", base64UrlEncoder.encodeToString(id));
-        if (nonce != null) this.put("nonce", base64UrlEncoder.encodeToString(nonce.toByteArray()));
+        if (nonce != null) this.put("nonce", base64UrlEncoder.encodeToString(stripLeadingZero(nonce.toByteArray())));
         if (updateId != null) this.put("updateId", base64UrlEncoder.encodeToString(updateId));
-        if (collapsed != null) this.put("collapsed", base64UrlEncoder.encodeToString(collapsed.toByteArray()));
+        if (collapsed != null) this.put("collapsed", base64UrlEncoder.encodeToString(stripLeadingZero(collapsed.toByteArray())));
         if (hashes != null) this.put("hashes", hashes.stream().map(base64UrlEncoder::encodeToString).toList());
     }
 
@@ -40,6 +37,15 @@ public class SMTProof extends LinkedHashMap<String, Object> {
 
     public Map<String, Object> toMap() {
         return this;
+    }
+
+    private static byte[] stripLeadingZero(byte[] bytes) {
+        if (bytes == null) return null;
+        if (bytes.length == 33 && bytes[0] == 0) {
+            return Arrays.copyOfRange(bytes, 1, bytes.length);
+        } else {
+            return bytes;
+        }
     }
 
     public byte[] getId() {
