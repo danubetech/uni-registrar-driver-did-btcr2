@@ -404,7 +404,7 @@ public class AggregationCohort {
         for (int i=0; i<this.updatesSize(); i++) {
             BytesArray didIndex = this.getSmtDidIndexes().get(i);
             if (log.isDebugEnabled()) log.debug("Generating proof for didIndex {}", Hex.encodeHexString(didIndex.bytes()));
-            SMTProof smtProof = sparseMerkleTree.generateProofForIndex(didIndex.bytes());
+            SMTProof smtProof = sparseMerkleTree.generateProof(didIndex.bytes());
             if (log.isDebugEnabled()) log.debug("Generated proof for didIndex {}: {}", Hex.encodeHexString(didIndex.bytes()), smtProof.toString());
             this.smtProofs.put(didIndex, smtProof);
         }
