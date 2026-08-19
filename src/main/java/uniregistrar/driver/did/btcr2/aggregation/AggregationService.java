@@ -16,44 +16,41 @@ import uniregistrar.driver.did.btcr2.crud.update.UpdateProcessUpdateSignPayload;
 
 import java.net.URI;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class AggregationService {
 
     private static final Logger log = LoggerFactory.getLogger(UpdateProcessUpdateSignPayload.class);
 
+    private static final Pattern COHORT_ID_PATTERN = Pattern.compile("^cohort-([a-z0-9]+)-([a-z0-9]{3})-([0-9]+)$");
+
     private static final Cache<String, AggregationCohort> aggregationCohorts = Caffeine.newBuilder()
             .expireAfterAccess(10, TimeUnit.MINUTES)
             .build();
 
-    // for now for testing
-    private static void checkTestAggregationCohorts() {
-        if (! containsAggregationCohort("cohort-mutinynet-cas-1")) {
-            addAggregationCohort(new AggregationCohort("cohort-mutinynet-cas-1", Network.mutinynet, 1, BeaconType.CAS, ScriptType.P2TR));
-        }
-        if (! containsAggregationCohort("cohort-mutinynet-smt-1")) {
-            addAggregationCohort(new AggregationCohort("cohort-mutinynet-smt-1", Network.mutinynet, 1, BeaconType.SMT, ScriptType.P2TR));
-        }
-        if (! containsAggregationCohort("cohort-mutinynet-cas-2")) {
-            addAggregationCohort(new AggregationCohort("cohort-mutinynet-cas-2", Network.mutinynet, 2, BeaconType.CAS, ScriptType.P2TR));
-        }
-        if (! containsAggregationCohort("cohort-mutinynet-smt-2")) {
-            addAggregationCohort(new AggregationCohort("cohort-mutinynet-smt-2", Network.mutinynet, 2, BeaconType.SMT, ScriptType.P2TR));
-        }
-        if (! containsAggregationCohort("cohort-mutinynet-cas-3")) {
-            addAggregationCohort(new AggregationCohort("cohort-mutinynet-cas-3", Network.mutinynet, 2, BeaconType.CAS, ScriptType.P2TR));
-        }
-        if (! containsAggregationCohort("cohort-mutinynet-smt-3")) {
-            addAggregationCohort(new AggregationCohort("cohort-mutinynet-smt-3", Network.mutinynet, 2, BeaconType.SMT, ScriptType.P2TR));
-        }
-    }
-
-    public static void addAggregationCohort(AggregationCohort aggregationCohort) {
+    private static void addAggregationCohort(AggregationCohort aggregationCohort) {
         aggregationCohorts.put(aggregationCohort.getId(), aggregationCohort);
     }
 
     public static AggregationCohort getAggregationCohort(String id) {
-        checkTestAggregationCohorts();
-        return aggregationCohorts.getIfPresent(id);
+        Matcher matcher = COHORT_ID_PATTERN.matcher(id);
+        if (! matcher.matches()) throw new IllegalArgumentException("Invalid aggregation cohort ID: " + id);
+        String networkString = matcher.group(1);
+        String maxSizeString = matcher.group(2);
+        Network network;
+        int maxSize;
+        try {
+            network = Network.valueOf(networkString);
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("Invalid aggregation network string: " + networkString);
+        }
+        try {
+            maxSize = Integer.parseInt(maxSizeString);
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("Invalid aggregation size string: " + maxSizeString);
+        }
+        return aggregationCohorts.get(id, (aggregationCohortId) -> new AggregationCohort(aggregationCohortId, network, maxSize, BeaconType.SMT, ScriptType.P2TR));
     }
 
     public static boolean containsAggregationCohort(String id) {
