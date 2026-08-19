@@ -37,8 +37,10 @@ public class AggregationService {
         Matcher matcher = COHORT_ID_PATTERN.matcher(id);
         if (! matcher.matches()) throw new IllegalArgumentException("Invalid aggregation cohort ID: " + id);
         String networkString = matcher.group(1);
-        String maxSizeString = matcher.group(2);
+        String beaconTypeString = matcher.group(2);
+        String maxSizeString = matcher.group(3);
         Network network;
+        BeaconType beaconType;
         int maxSize;
         try {
             network = Network.valueOf(networkString);
@@ -46,11 +48,20 @@ public class AggregationService {
             throw new IllegalArgumentException("Invalid aggregation network string: " + networkString);
         }
         try {
+            beaconType = switch (beaconTypeString) {
+                case "cas" -> BeaconType.CAS;
+                case "smt" -> BeaconType.SMT;
+                default -> throw new IllegalArgumentException();
+            };
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("Invalid aggregation beacon type string: " + beaconTypeString);
+        }
+        try {
             maxSize = Integer.parseInt(maxSizeString);
         } catch (Exception ex) {
-            throw new IllegalArgumentException("Invalid aggregation size string: " + maxSizeString);
+            throw new IllegalArgumentException("Invalid aggregation max size string: " + maxSizeString);
         }
-        return aggregationCohorts.get(id, (aggregationCohortId) -> new AggregationCohort(aggregationCohortId, network, maxSize, BeaconType.SMT, ScriptType.P2TR));
+        return aggregationCohorts.get(id, (aggregationCohortId) -> new AggregationCohort(aggregationCohortId, network, maxSize, beaconType, ScriptType.P2TR));
     }
 
     public static boolean containsAggregationCohort(String id) {
