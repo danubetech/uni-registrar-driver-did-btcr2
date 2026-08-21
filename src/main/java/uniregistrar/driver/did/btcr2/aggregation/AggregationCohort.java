@@ -74,6 +74,7 @@ public class AggregationCohort {
     // For an SMT Beacon:
 
     private Map<Integer, BytesArray> smtDidIndexes = new ConcurrentSkipListMap<>();
+    private Map<Integer, BytesArray> smtNonces = new ConcurrentSkipListMap<>();
     private Map<Integer, BytesArray> smtUpdateHashes = new ConcurrentSkipListMap<>();
 
     // For a CAS Beacon:
@@ -393,15 +394,21 @@ public class AggregationCohort {
         // optimizes the tree and generates SMT Proofs for each index to share with the corresponding Aggregation Participant.
 
         if (this.updatesSize() != this.getSmtDidIndexes().size()) throw new IllegalStateException("Invalid number of DID indexes: " + this.getSmtDidIndexes().size());
+        if (this.updatesSize() != this.getSmtNonces().size()) throw new IllegalStateException("Invalid number of nonces: " + this.getSmtNonces().size());
         if (this.updatesSize() != this.getSmtUpdateHashes().size()) throw new IllegalStateException("Invalid number of update hashes: " + this.getSmtUpdateHashes().size());
 
         this.smtProofs.clear();
         SparseMerkleTree sparseMerkleTree = new SparseMerkleTree();
         for (int i=0; i<this.updatesSize(); i++) {
             BytesArray didIndex = this.getSmtDidIndexes().get(i);
+            BytesArray smtNonce = this.getSmtNonces().get(i);
             BytesArray updateHash = this.getSmtUpdateHashes().get(i);
-            if (log.isDebugEnabled()) log.debug("Inserting didIndex {} with updateHash {}", Base64.getUrlEncoder().withoutPadding().encodeToString(didIndex.bytes()), Base64.getUrlEncoder().withoutPadding().encodeToString(updateHash.bytes()));
-            sparseMerkleTree.insertUpdate(didIndex.bytes(), updateHash.bytes());
+            if (log.isDebugEnabled()) log.debug("Inserting didIndex {} with smtNonce {} and updateHash {}", Base64.getUrlEncoder().withoutPadding().encodeToString(didIndex.bytes()), Base64.getUrlEncoder().withoutPadding().encodeToString(smtNonce.bytes()), Base64.getUrlEncoder().withoutPadding().encodeToString(updateHash.bytes()));
+            if (smtNonce.bytes().length == 0) {
+                sparseMerkleTree.insertUpdate(didIndex.bytes(), updateHash.bytes());
+            } else {
+                sparseMerkleTree.insertUpdate(didIndex.bytes(), smtNonce.bytes(), updateHash.bytes());
+            }
         }
         for (int i=0; i<this.updatesSize(); i++) {
             BytesArray didIndex = this.getSmtDidIndexes().get(i);
@@ -457,6 +464,10 @@ public class AggregationCohort {
 
     public void setSmtDidIndex(int participantIndex, BytesArray participantSmtDidIndex) {
         this.getSmtDidIndexes().put(participantIndex, participantSmtDidIndex);
+    }
+
+    public void setSmtNonce(int participantIndex, BytesArray participantSmtNonce) {
+        this.getSmtNonces().put(participantIndex, participantSmtNonce);
     }
 
     public void setSmtUpdateHash(int participantIndex, BytesArray participantSmtUpdateHash) {
@@ -612,6 +623,10 @@ public class AggregationCohort {
         return smtDidIndexes;
     }
 
+    public Map<Integer, BytesArray> getSmtNonces() {
+        return smtNonces;
+    }
+
     public Map<Integer, BytesArray> getSmtUpdateHashes() {
         return smtUpdateHashes;
     }
@@ -672,12 +687,12 @@ public class AggregationCohort {
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         AggregationCohort that = (AggregationCohort) o;
-        return maxSize == that.maxSize && Objects.equals(id, that.id) && network == that.network && beaconType == that.beaconType && scriptType == that.scriptType && Objects.equals(participantPublicKeys, that.participantPublicKeys) && Objects.equals(beaconAddress, that.beaconAddress) && Objects.deepEquals(musig2NonceSessionId, that.musig2NonceSessionId) && Objects.equals(casDids, that.casDids) && Objects.equals(casUpdateHashes, that.casUpdateHashes) && Objects.equals(smtDidIndexes, that.smtDidIndexes) && Objects.equals(smtUpdateHashes, that.smtUpdateHashes) && Objects.equals(musig2SecretNonces, that.musig2SecretNonces) && Objects.equals(musig2PublicNonces, that.musig2PublicNonces) && Objects.equals(casBeaconAnnouncementMap, that.casBeaconAnnouncementMap) && Objects.equals(smtProofs, that.smtProofs) && Objects.equals(unsignedBeaconSignal, that.unsignedBeaconSignal) && Objects.deepEquals(musig2AggregatedNonce, that.musig2AggregatedNonce) && Objects.deepEquals(signalBytes, that.signalBytes) && Objects.equals(beaconAddressUtxos, that.beaconAddressUtxos) && Objects.equals(utxoAggregateSignPayloads, that.utxoAggregateSignPayloads) && Objects.equals(utxoAggregateSignatures, that.utxoAggregateSignatures) && Objects.equals(musig2AggregatedSignatures, that.musig2AggregatedSignatures) && Objects.equals(broadcastRawTransactionId, that.broadcastRawTransactionId);
+        return maxSize == that.maxSize && Objects.equals(id, that.id) && network == that.network && beaconType == that.beaconType && scriptType == that.scriptType && Objects.equals(participantPublicKeys, that.participantPublicKeys) && Objects.equals(beaconAddress, that.beaconAddress) && Objects.deepEquals(musig2NonceSessionId, that.musig2NonceSessionId) && Objects.equals(casDids, that.casDids) && Objects.equals(casUpdateHashes, that.casUpdateHashes) && Objects.equals(smtDidIndexes, that.smtDidIndexes) && Objects.equals(smtNonces, that.smtNonces) && Objects.equals(smtUpdateHashes, that.smtUpdateHashes) && Objects.equals(musig2SecretNonces, that.musig2SecretNonces) && Objects.equals(musig2PublicNonces, that.musig2PublicNonces) && Objects.equals(casBeaconAnnouncementMap, that.casBeaconAnnouncementMap) && Objects.equals(smtProofs, that.smtProofs) && Objects.equals(unsignedBeaconSignal, that.unsignedBeaconSignal) && Objects.deepEquals(musig2AggregatedNonce, that.musig2AggregatedNonce) && Objects.deepEquals(signalBytes, that.signalBytes) && Objects.equals(beaconAddressUtxos, that.beaconAddressUtxos) && Objects.equals(utxoAggregateSignPayloads, that.utxoAggregateSignPayloads) && Objects.equals(utxoAggregateSignatures, that.utxoAggregateSignatures) && Objects.equals(musig2AggregatedSignatures, that.musig2AggregatedSignatures) && Objects.equals(broadcastRawTransactionId, that.broadcastRawTransactionId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, network, maxSize, beaconType, scriptType, participantPublicKeys, beaconAddress, Arrays.hashCode(musig2NonceSessionId), casDids, casUpdateHashes, smtDidIndexes, smtUpdateHashes, musig2SecretNonces, musig2PublicNonces, casBeaconAnnouncementMap, smtProofs, unsignedBeaconSignal, Arrays.hashCode(musig2AggregatedNonce), Arrays.hashCode(signalBytes), beaconAddressUtxos, utxoAggregateSignPayloads, utxoAggregateSignatures, musig2AggregatedSignatures, broadcastRawTransactionId);
+        return Objects.hash(id, network, maxSize, beaconType, scriptType, participantPublicKeys, beaconAddress, Arrays.hashCode(musig2NonceSessionId), casDids, casUpdateHashes, smtDidIndexes, smtNonces, smtUpdateHashes, musig2SecretNonces, musig2PublicNonces, casBeaconAnnouncementMap, smtProofs, unsignedBeaconSignal, Arrays.hashCode(musig2AggregatedNonce), Arrays.hashCode(signalBytes), beaconAddressUtxos, utxoAggregateSignPayloads, utxoAggregateSignatures, musig2AggregatedSignatures, broadcastRawTransactionId);
     }
 
     @Override
@@ -694,6 +709,7 @@ public class AggregationCohort {
                 ", casDids=" + casDids +
                 ", casUpdateHashes=" + casUpdateHashes +
                 ", smtDidIndexes=" + smtDidIndexes +
+                ", smtNonces=" + smtNonces +
                 ", smtUpdateHashes=" + smtUpdateHashes +
                 ", musig2SecretNonces=" + musig2SecretNonces +
                 ", musig2PublicNonces=" + musig2PublicNonces +

@@ -32,6 +32,7 @@ import org.bitcoinj.script.ScriptBuilder;
 import org.bitcoinj.uri.BitcoinURIParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.util.control.Exception;
 import uniregistrar.RegistrationException;
 import uniregistrar.driver.did.btcr2.aggregation.AggregationCohort;
 import uniregistrar.driver.did.btcr2.aggregation.AggregationService;
@@ -341,26 +342,13 @@ public class UpdateProcessUpdateSignPayload {
         aggregationCohort.setSmtDidIndex(participantIndex, BytesArray.bytesArray(didIndex));
 
         // updateHash:
+        // If a nonce is used: hash(hash(nonce) + json_document_hash(update))
+        // If a nonce is not used: json_document_hash(update)
 
-        byte[] updateHash;
+        if (smtNonce == null) smtNonce = new byte[0];
+        byte[] updateHash = JSONDocumentHashing.jsonDocumentHashing(update);
 
-        if (smtNonce != null) {
-
-            // If a nonce is used: hash(hash(nonce) + json_document_hash(update))
-
-            byte[] bytes1 = SHA256Util.sha256(smtNonce);
-            byte[] bytes2 = JSONDocumentHashing.jsonDocumentHashing(update);
-            byte[] bytes = new byte[bytes1.length + bytes2.length];
-            System.arraycopy(bytes1, 0, bytes, 0, bytes1.length);
-            System.arraycopy(bytes2, 0, bytes, bytes1.length, bytes2.length);
-            updateHash = SHA256Util.sha256(bytes);
-        } else {
-
-            // If a nonce is not used: json_document_hash(update)
-
-            updateHash = JSONDocumentHashing.jsonDocumentHashing(update);
-        }
-
+        aggregationCohort.setSmtNonce(participantIndex, BytesArray.bytesArray(smtNonce));
         aggregationCohort.setSmtUpdateHash(participantIndex, BytesArray.bytesArray(updateHash));
 
         // MuSig2 Nonce: A MuSig2 nonce constructed according to the nonce generation algorithm specified in [BIP327].
