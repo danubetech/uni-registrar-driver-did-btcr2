@@ -43,6 +43,8 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.*;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class AggregationCohort {
 
@@ -59,7 +61,7 @@ public class AggregationCohort {
     private final BeaconType beaconType;
     private final ScriptType scriptType;
 
-    private ArrayList<BytesArray> participantPublicKeys = new ArrayList<>();
+    private List<BytesArray> participantPublicKeys = new CopyOnWriteArrayList<>();
 
     private Address beaconAddress;
     private byte[] musig2NonceSessionId;
@@ -67,26 +69,26 @@ public class AggregationCohort {
     // For a CAS Beacon:
 
     private Map<Integer, DID> casDids = new TreeMap<>();
-    private Map<Integer, BytesArray> casUpdateHashes = new TreeMap<>();
+    private Map<Integer, BytesArray> casUpdateHashes = new ConcurrentSkipListMap<>();
 
     // For an SMT Beacon:
 
-    private Map<Integer, BytesArray> smtDidIndexes = new TreeMap<>();
-    private Map<Integer, BytesArray> smtUpdateHashes = new TreeMap<>();
+    private Map<Integer, BytesArray> smtDidIndexes = new ConcurrentSkipListMap<>();
+    private Map<Integer, BytesArray> smtUpdateHashes = new ConcurrentSkipListMap<>();
 
     // For a CAS Beacon:
     // For an SMT Beacon:
 
-    private Map<Integer, BytesArray> musig2SecretNonces = new TreeMap<>();
-    private Map<Integer, BytesArray> musig2PublicNonces = new TreeMap<>();
+    private Map<Integer, BytesArray> musig2SecretNonces = new ConcurrentSkipListMap<>();
+    private Map<Integer, BytesArray> musig2PublicNonces = new ConcurrentSkipListMap<>();
 
     // For a CAS Beacon, the request signal confirmation message contains:
 
-    private LinkedHashMap<DID, BytesArray> casBeaconAnnouncementMap = new LinkedHashMap<>();
+    private Map<DID, BytesArray> casBeaconAnnouncementMap = Collections.synchronizedMap(new LinkedHashMap<>());
 
     // For an SMT Beacon, the request signal confirmation message contains:
 
-    private LinkedHashMap<BytesArray, SMTProof> smtProofs = new LinkedHashMap<>();
+    private Map<BytesArray, SMTProof> smtProofs = Collections.synchronizedMap(new LinkedHashMap<>());
 
     // For a CAS Beacon, the request signal confirmation message contains:
     // For an SMT Beacon, the request signal confirmation message contains:
@@ -98,7 +100,7 @@ public class AggregationCohort {
     private List<TxOut> beaconAddressUtxos;
     private Map<Integer, List<BytesArray>> utxoAggregateSignPayloads;
 
-    private Map<Integer, List<BytesArray>> utxoAggregateSignatures = new TreeMap<>();
+    private Map<Integer, List<BytesArray>> utxoAggregateSignatures = new ConcurrentSkipListMap<>();
 
     private List<BytesArray> musig2AggregatedSignatures;
 
@@ -427,16 +429,22 @@ public class AggregationCohort {
     public CASAnnouncement returnCasAnnouncement() {
         if (! BeaconType.CAS.equals(this.getBeaconType())) return null;
         CASAnnouncement casAnnouncement = new CASAnnouncement();
-        this.getCasBeaconAnnouncementMap().forEach((key, value) -> {
-            casAnnouncement.put(key.getDidString(), Base64.getUrlEncoder().withoutPadding().encodeToString(value.bytes()));
-        });
+        synchronized (getCasBeaconAnnouncementMap()) {
+            this.getCasBeaconAnnouncementMap().forEach((key, value) -> {
+                casAnnouncement.put(key.getDidString(), Base64.getUrlEncoder().withoutPadding().encodeToString(value.bytes()));
+            });
+        }
         return casAnnouncement;
     }
 
     public SMTProof returnSmtProof(DID did) {
         if (! BeaconType.SMT.equals(this.getBeaconType())) return null;
         byte[] didIndex = SHA256Util.sha256(did.getDidString().getBytes(StandardCharsets.UTF_8));
-        return this.getSmtProofs().get(BytesArray.bytesArray(didIndex));
+        SMTProof smtProof;
+        synchronized (this.getSmtProofs()) {
+            smtProof = this.getSmtProofs().get(BytesArray.bytesArray(didIndex));
+        }
+        return smtProof;
     }
 
     public void setCasDid(int participantIndex, DID participantCasDid) {
@@ -580,7 +588,7 @@ public class AggregationCohort {
         return scriptType;
     }
 
-    public ArrayList<BytesArray> getParticipantPublicKeys() {
+    public List<BytesArray> getParticipantPublicKeys() {
         return participantPublicKeys;
     }
 
@@ -616,11 +624,11 @@ public class AggregationCohort {
         return musig2PublicNonces;
     }
 
-    public LinkedHashMap<DID, BytesArray> getCasBeaconAnnouncementMap() {
+    public Map<DID, BytesArray> getCasBeaconAnnouncementMap() {
         return casBeaconAnnouncementMap;
     }
 
-    public LinkedHashMap<BytesArray, SMTProof> getSmtProofs() {
+    public Map<BytesArray, SMTProof> getSmtProofs() {
         return smtProofs;
     }
 
