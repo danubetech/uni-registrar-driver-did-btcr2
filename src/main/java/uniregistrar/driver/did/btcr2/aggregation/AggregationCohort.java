@@ -58,6 +58,7 @@ public class AggregationCohort {
     private final String id;
     private final Network network;
     private final int maxSize;
+    private final Long maxDuration;
     private final BeaconType beaconType;
     private final ScriptType scriptType;
 
@@ -65,6 +66,9 @@ public class AggregationCohort {
 
     private Address beaconAddress;
     private byte[] musig2NonceSessionId;
+
+    private Long startTime;
+    private Long endTime;
 
     // For a CAS Beacon:
 
@@ -107,10 +111,11 @@ public class AggregationCohort {
 
     private String broadcastRawTransactionId;
 
-    public AggregationCohort(String id, Network network, int maxSize, BeaconType beaconType, ScriptType scriptType) {
+    public AggregationCohort(String id, Network network, int maxSize, Long maxDuration, BeaconType beaconType, ScriptType scriptType) {
         this.id = id;
         this.network = network;
         this.maxSize = maxSize;
+        this.maxDuration = maxDuration;
         this.beaconType = beaconType;
         this.scriptType = scriptType;
     }
@@ -122,6 +127,7 @@ public class AggregationCohort {
         metadata.put("beaconType", this.getBeaconType().toString());
         metadata.put("scriptType", this.getScriptType().toString());
         metadata.put("maxSize", this.getMaxSize());
+        metadata.put("maxDuration", this.getEndTime());
         Map<String, Object> metadataCohort = (Map<String, Object>) metadata.computeIfAbsent("cohort", x -> new LinkedHashMap<>());
         metadataCohort.put("cohortSize", this.cohortSize());
         metadataCohort.put("isCohortCompleted", this.isCohortCompleted());
@@ -133,6 +139,8 @@ public class AggregationCohort {
         metadataUpdates.put("updatesSize", this.updatesSize());
         metadataUpdates.put("isUpdatesCompleted", this.isUpdatesCompleted());
         metadataUpdates.put("isUpdatesAggregated", this.isUpdatesAggregated());
+        metadataUpdates.put("startTime", this.getStartTime());
+        metadataUpdates.put("endTime", this.getEndTime());
         metadataUpdates.put("updateHashes", this.getUpdatesHashes().stream().map(BytesArray::bytes).map(Hex::encodeHexString).toList());
         metadataUpdates.put("unsignedBeaconSignal", this.getUnsignedBeaconSignal() == null ? null : Hex.encodeHexString(this.getUnsignedBeaconSignal().serialize()));
         metadataUpdates.put("musig2AggregatedNonce", this.getMusig2AggregatedNonce() == null ? null : Hex.encodeHexString(this.getMusig2AggregatedNonce()));
@@ -159,7 +167,8 @@ public class AggregationCohort {
     }
 
     public boolean isCohortCompleted() {
-        boolean cohortCompleted = this.cohortSize() >= this.getMaxSize();
+        if (this.cohortSize() > this.getMaxSize()) throw new IllegalStateException("The 'cohortSize' " + this.cohortSize() + " is greater than 'maxSize' " + this.getMaxSize() + " for cohort " + this.getId());
+        boolean cohortCompleted = this.cohortSize() == this.getMaxSize();
         if (log.isDebugEnabled()) log.debug("cohortCompleted? {}", cohortCompleted);
         return cohortCompleted;
     }
@@ -282,7 +291,14 @@ public class AggregationCohort {
     }
 
     public boolean isUpdatesCompleted() {
-        boolean updatesCompleted = this.updatesSize() >= this.getMaxSize();
+        if (this.updatesSize() > this.getMaxSize()) throw new IllegalStateException("The 'updatesSize' " + this.updatesSize() + " is greater than 'maxSize' " + this.getMaxSize() + " for cohort " + this.getId());
+        boolean updatesCompleted;
+        if (this.getStartTime() != null && this.getEndTime() != null) {
+            long currentTimeMillis = System.currentTimeMillis();
+            updatesCompleted = currentTimeMillis >= this.getStartTime() && currentTimeMillis < this.getEndTime();
+        } else {
+            updatesCompleted = this.updatesSize() == this.getMaxSize();
+        }
         if (log.isDebugEnabled()) log.debug("updatesCompleted? {}", updatesCompleted);
         return updatesCompleted;
     }
@@ -455,31 +471,45 @@ public class AggregationCohort {
     }
 
     public void setCasDid(int participantIndex, DID participantCasDid) {
+        this.checkStartEndDuration();
         this.getCasDids().put(participantIndex, participantCasDid);
     }
 
     public void setCasUpdateHash(int participantIndex, BytesArray participantCasUpdateHash) {
+        this.checkStartEndDuration();
         this.getCasUpdateHashes().put(participantIndex, participantCasUpdateHash);
     }
 
     public void setSmtDidIndex(int participantIndex, BytesArray participantSmtDidIndex) {
+        this.checkStartEndDuration();
         this.getSmtDidIndexes().put(participantIndex, participantSmtDidIndex);
     }
 
     public void setSmtNonce(int participantIndex, BytesArray participantSmtNonce) {
+        this.checkStartEndDuration();
         this.getSmtNonces().put(participantIndex, participantSmtNonce);
     }
 
     public void setSmtUpdateHash(int participantIndex, BytesArray participantSmtUpdateHash) {
+        this.checkStartEndDuration();
         this.getSmtUpdateHashes().put(participantIndex, participantSmtUpdateHash);
     }
 
     public void setMusig2SecretNonce(int participantIndex, BytesArray participantMusig2SecretNonce) {
+        this.checkStartEndDuration();
         this.getMusig2SecretNonces().put(participantIndex, participantMusig2SecretNonce);
     }
 
     public void setMusig2IndividualNonce(int participantIndex, BytesArray participantMusig2IndividualNonce) {
+        this.checkStartEndDuration();
         this.getMusig2PublicNonces().put(participantIndex, participantMusig2IndividualNonce);
+    }
+
+    private void checkStartEndDuration() {
+        if (this.getMaxDuration() != null && (this.getStartTime() == null || this.getEndTime() == null)) {
+            this.startTime = System.currentTimeMillis();
+            this.endTime = this.startTime + this.getMaxDuration();
+        }
     }
 
     /*
@@ -492,7 +522,8 @@ public class AggregationCohort {
     }
 
     public boolean isSignaturesCompleted() {
-        boolean signaturesCompleted = this.signaturesSize() >= this.getMaxSize();
+        if (this.signaturesSize() > this.updatesSize()) throw new IllegalStateException("The 'signaturesSize' " + this.signaturesSize() + " is greater than 'updatesSize' " + this.updatesSize() + " for cohort " + this.getId());
+        boolean signaturesCompleted = this.signaturesSize() == this.updatesSize();
         if (log.isDebugEnabled()) log.debug("signaturesCompleted? {}", signaturesCompleted);
         return signaturesCompleted;
     }
@@ -591,6 +622,10 @@ public class AggregationCohort {
         return maxSize;
     }
 
+    public Long getMaxDuration() {
+        return maxDuration;
+    }
+
     public BeaconType getBeaconType() {
         return beaconType;
     }
@@ -609,6 +644,14 @@ public class AggregationCohort {
 
     public byte[] getMusig2NonceSessionId() {
         return musig2NonceSessionId;
+    }
+
+    public Long getStartTime() {
+        return startTime;
+    }
+
+    public Long getEndTime() {
+        return endTime;
     }
 
     public Map<Integer, DID> getCasDids() {
@@ -687,12 +730,12 @@ public class AggregationCohort {
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         AggregationCohort that = (AggregationCohort) o;
-        return maxSize == that.maxSize && Objects.equals(id, that.id) && network == that.network && beaconType == that.beaconType && scriptType == that.scriptType && Objects.equals(participantPublicKeys, that.participantPublicKeys) && Objects.equals(beaconAddress, that.beaconAddress) && Objects.deepEquals(musig2NonceSessionId, that.musig2NonceSessionId) && Objects.equals(casDids, that.casDids) && Objects.equals(casUpdateHashes, that.casUpdateHashes) && Objects.equals(smtDidIndexes, that.smtDidIndexes) && Objects.equals(smtNonces, that.smtNonces) && Objects.equals(smtUpdateHashes, that.smtUpdateHashes) && Objects.equals(musig2SecretNonces, that.musig2SecretNonces) && Objects.equals(musig2PublicNonces, that.musig2PublicNonces) && Objects.equals(casBeaconAnnouncementMap, that.casBeaconAnnouncementMap) && Objects.equals(smtProofs, that.smtProofs) && Objects.equals(unsignedBeaconSignal, that.unsignedBeaconSignal) && Objects.deepEquals(musig2AggregatedNonce, that.musig2AggregatedNonce) && Objects.deepEquals(signalBytes, that.signalBytes) && Objects.equals(beaconAddressUtxos, that.beaconAddressUtxos) && Objects.equals(utxoAggregateSignPayloads, that.utxoAggregateSignPayloads) && Objects.equals(utxoAggregateSignatures, that.utxoAggregateSignatures) && Objects.equals(musig2AggregatedSignatures, that.musig2AggregatedSignatures) && Objects.equals(broadcastRawTransactionId, that.broadcastRawTransactionId);
+        return maxSize == that.maxSize && Objects.equals(id, that.id) && network == that.network && Objects.equals(maxDuration, that.maxDuration) && beaconType == that.beaconType && scriptType == that.scriptType && Objects.equals(participantPublicKeys, that.participantPublicKeys) && Objects.equals(beaconAddress, that.beaconAddress) && Objects.deepEquals(musig2NonceSessionId, that.musig2NonceSessionId) && Objects.equals(startTime, that.startTime) && Objects.equals(endTime, that.endTime) && Objects.equals(casDids, that.casDids) && Objects.equals(casUpdateHashes, that.casUpdateHashes) && Objects.equals(smtDidIndexes, that.smtDidIndexes) && Objects.equals(smtNonces, that.smtNonces) && Objects.equals(smtUpdateHashes, that.smtUpdateHashes) && Objects.equals(musig2SecretNonces, that.musig2SecretNonces) && Objects.equals(musig2PublicNonces, that.musig2PublicNonces) && Objects.equals(casBeaconAnnouncementMap, that.casBeaconAnnouncementMap) && Objects.equals(smtProofs, that.smtProofs) && Objects.equals(unsignedBeaconSignal, that.unsignedBeaconSignal) && Objects.deepEquals(musig2AggregatedNonce, that.musig2AggregatedNonce) && Objects.deepEquals(signalBytes, that.signalBytes) && Objects.equals(beaconAddressUtxos, that.beaconAddressUtxos) && Objects.equals(utxoAggregateSignPayloads, that.utxoAggregateSignPayloads) && Objects.equals(utxoAggregateSignatures, that.utxoAggregateSignatures) && Objects.equals(musig2AggregatedSignatures, that.musig2AggregatedSignatures) && Objects.equals(broadcastRawTransactionId, that.broadcastRawTransactionId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, network, maxSize, beaconType, scriptType, participantPublicKeys, beaconAddress, Arrays.hashCode(musig2NonceSessionId), casDids, casUpdateHashes, smtDidIndexes, smtNonces, smtUpdateHashes, musig2SecretNonces, musig2PublicNonces, casBeaconAnnouncementMap, smtProofs, unsignedBeaconSignal, Arrays.hashCode(musig2AggregatedNonce), Arrays.hashCode(signalBytes), beaconAddressUtxos, utxoAggregateSignPayloads, utxoAggregateSignatures, musig2AggregatedSignatures, broadcastRawTransactionId);
+        return Objects.hash(id, network, maxSize, maxDuration, beaconType, scriptType, participantPublicKeys, beaconAddress, Arrays.hashCode(musig2NonceSessionId), startTime, endTime, casDids, casUpdateHashes, smtDidIndexes, smtNonces, smtUpdateHashes, musig2SecretNonces, musig2PublicNonces, casBeaconAnnouncementMap, smtProofs, unsignedBeaconSignal, Arrays.hashCode(musig2AggregatedNonce), Arrays.hashCode(signalBytes), beaconAddressUtxos, utxoAggregateSignPayloads, utxoAggregateSignatures, musig2AggregatedSignatures, broadcastRawTransactionId);
     }
 
     @Override
@@ -701,11 +744,14 @@ public class AggregationCohort {
                 "id='" + id + '\'' +
                 ", network=" + network +
                 ", maxSize=" + maxSize +
+                ", maxDuration=" + maxDuration +
                 ", beaconType=" + beaconType +
                 ", scriptType=" + scriptType +
                 ", participantPublicKeys=" + participantPublicKeys +
                 ", beaconAddress=" + beaconAddress +
                 ", musig2NonceSessionId=" + Arrays.toString(musig2NonceSessionId) +
+                ", startTime=" + startTime +
+                ", endTime=" + endTime +
                 ", casDids=" + casDids +
                 ", casUpdateHashes=" + casUpdateHashes +
                 ", smtDidIndexes=" + smtDidIndexes +

@@ -23,7 +23,8 @@ public class AggregationService {
 
     private static final Logger log = LoggerFactory.getLogger(UpdateProcessUpdateSignPayload.class);
 
-    private static final Pattern COHORT_ID_PATTERN = Pattern.compile("^cohort-([a-z0-9]+)-([a-z0-9]{3})-([0-9]+)(-([a-z0-9]+))?$");
+    private static final Pattern COHORT_ID_PATTERN_MAXSIZE = Pattern.compile("^cohort-([a-z0-9]+)-([a-z0-9]{3})-([0-9]+)(-([a-z]+))?$");
+    private static final Pattern COHORT_ID_PATTERN_MAXSIZE_MAXDURATION = Pattern.compile("^cohort-([a-z0-9]+)-([a-z0-9]{3})-([0-9]+)-([0-9]+)(-([a-z]+))?$");
 
     private static final Cache<String, AggregationCohort> aggregationCohorts = Caffeine.newBuilder()
             .expireAfterAccess(10, TimeUnit.MINUTES)
@@ -34,14 +35,28 @@ public class AggregationService {
     }
 
     public static AggregationCohort getAggregationCohort(String id) {
-        Matcher matcher = COHORT_ID_PATTERN.matcher(id);
-        if (! matcher.matches()) throw new IllegalArgumentException("Invalid aggregation cohort ID: " + id);
-        String networkString = matcher.group(1);
-        String beaconTypeString = matcher.group(2);
-        String maxSizeString = matcher.group(3);
+        Matcher matcher;
+        String networkString;
+        String beaconTypeString;
+        String maxSizeString;
+        String maxDurationString;
+        if (((matcher = COHORT_ID_PATTERN_MAXSIZE_MAXDURATION.matcher(id))).matches()) {
+            networkString = matcher.group(1);
+            beaconTypeString = matcher.group(2);
+            maxSizeString = matcher.group(3);
+            maxDurationString = matcher.group(4);
+        } else if (((matcher = COHORT_ID_PATTERN_MAXSIZE.matcher(id))).matches()) {
+            networkString = matcher.group(1);
+            beaconTypeString = matcher.group(2);
+            maxSizeString = matcher.group(3);
+            maxDurationString = null;
+        } else {
+            throw new IllegalArgumentException("Invalid aggregation cohort ID: " + id);
+        }
         Network network;
         BeaconType beaconType;
         int maxSize;
+        Long maxDuration;
         try {
             network = Network.valueOf(networkString);
         } catch (Exception ex) {
@@ -61,7 +76,12 @@ public class AggregationService {
         } catch (Exception ex) {
             throw new IllegalArgumentException("Invalid aggregation max size string: " + maxSizeString);
         }
-        return aggregationCohorts.get(id, (aggregationCohortId) -> new AggregationCohort(aggregationCohortId, network, maxSize, beaconType, ScriptType.P2TR));
+        try {
+            maxDuration = maxDurationString == null ? null : Long.parseLong(maxDurationString);
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("Invalid aggregation max duration string: " + maxDurationString);
+        }
+        return aggregationCohorts.get(id, (aggregationCohortId) -> new AggregationCohort(aggregationCohortId, network, maxSize, maxDuration, beaconType, ScriptType.P2TR));
     }
 
     public static boolean containsAggregationCohort(String id) {
