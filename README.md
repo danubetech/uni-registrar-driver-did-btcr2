@@ -107,7 +107,7 @@ See https://identity.foundation/did-registration/#options.
     "publishToIpfs": true,
     "generateInitialKey": true,
     "generateStandardBeacons": false,
-    "generateAggregateBeacon": "cohort-mutinynet-cas-2"    
+    "generateAggregateBeacons": "cohort-mutinynet-cas-2"
 }
 ```
 
@@ -121,7 +121,7 @@ See https://identity.foundation/did-registration/#options.
   * Default value: `true`
 * `generateStandardBeacons`: This boolean option indicates whether standard beacon services of types `SingletonBeacon`, `CASBeacon`, `SMTBeacon` should be generated in the genesis document. This option requires `generateInitialKey: true`.
   * Default value: `false`
-* `generateAggregateBeacon`: This string option indicates whether an aggregate beacon service for an aggregation cohort should be generated in the genesis document. The value of this option is the name of the aggregation cohort. This option requires `generateInitialKey: true`.
+* `generateAggregateBeacons`: This string option indicates whether one or more aggregate beacon services for an aggregation cohort should be generated in the genesis document. The value of this option is the name of the aggregation cohort, or a comma-separated list. This option requires `generateInitialKey: true`.
   * Default value: `null`
 * `smtNonce`: A Base64-encoded nonce to be used for the Update operation.
   * Default value: `null`

@@ -33,6 +33,7 @@ import uniregistrar.openapi.model.CreateState;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,13 +64,13 @@ public class StateInit {
         Boolean publishToIpfs = createRequest.getOptions() == null ? null : (createRequest.getOptions().getAdditionalProperty("publishToIpfs") == null ? null : (Boolean) createRequest.getOptions().getAdditionalProperty("publishToIpfs"));
         Boolean generateInitialKey = createRequest.getOptions() == null ? null : (createRequest.getOptions().getAdditionalProperty("generateInitialKey") == null ? null : (Boolean) createRequest.getOptions().getAdditionalProperty("generateInitialKey"));
         Boolean generateStandardBeacons = createRequest.getOptions() == null ? null : (createRequest.getOptions().getAdditionalProperty("generateStandardBeacons") == null ? null : (Boolean) createRequest.getOptions().getAdditionalProperty("generateStandardBeacons"));
-        String generateAggregateBeacon = createRequest.getOptions() == null ? null : (createRequest.getOptions().getAdditionalProperty("generateAggregateBeacon") == null ? null : (String) createRequest.getOptions().getAdditionalProperty("generateAggregateBeacon"));
+        String generateAggregateBeacons = createRequest.getOptions() == null ? null : (createRequest.getOptions().getAdditionalProperty("generateAggregateBeacons") == null ? null : (String) createRequest.getOptions().getAdditionalProperty("generateAggregateBeacons"));
         if (version == null) version = 1;
         if (network == null) network = Network.bitcoin;
         if (publishToIpfs == null) publishToIpfs = Boolean.TRUE;
         if (generateInitialKey == null) generateInitialKey = Boolean.TRUE;
         if (generateStandardBeacons == null) generateStandardBeacons = Boolean.FALSE;
-        if (generateAggregateBeacon == null || generateAggregateBeacon.isBlank()) generateAggregateBeacon = null;
+        if (generateAggregateBeacons == null || generateAggregateBeacons.isBlank()) generateAggregateBeacons = null;
 
         // find Bitcoin connection
 
@@ -82,7 +83,7 @@ public class StateInit {
 
         // unassemble genesisDocument
 
-        boolean forceGenesisDocument = generateStandardBeacons || generateAggregateBeacon != null;
+        boolean forceGenesisDocument = generateStandardBeacons || generateAggregateBeacons != null;
         DIDDocumentV1_1 unassembledGenesisDocument = DidDocUnAssembler.unassembleGenesisDocument(didDocument, forceGenesisDocument);
 
         // generate initial key?
@@ -140,56 +141,63 @@ public class StateInit {
 
         AggregationCohort aggregationCohort = null;
 
-        if (generateAggregateBeacon != null) {
+        if (generateAggregateBeacons != null) {
 
             if (unassembledInitialKey == null) {
-                throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Cannot generate standard beacons without initial key. Try setting option `generateInitialKey: true`.");
+                throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Cannot generate aggregate beacon without initial key. Try setting option `generateInitialKey: true`.");
             }
 
-            aggregationCohort = AggregationService.getAggregationCohort(generateAggregateBeacon);
-            if (aggregationCohort == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Unknown aggregation cohort: " + generateAggregateBeacon);
+            List<Service> aggregateBeaconServices = new ArrayList<>();
 
-            // DID controllers that wish to join an Aggregation Cohort and become an Aggregation Participant would need to provide the Aggregation Service with a Schnorr public key.
+            for (String generateAggregateBeacon : generateAggregateBeacons.split(",")) {
 
-            if (! aggregationCohort.containsParticipantPublicKey(unassembledInitialKey)) {
-                if (aggregationCohort.isCohortCompleted()) {
-                    throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Aggregation cohort " + aggregationCohort.getId() + " already completed.");
+                aggregationCohort = AggregationService.getAggregationCohort(generateAggregateBeacon);
+                if (aggregationCohort == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Unknown aggregation cohort: " + generateAggregateBeacon);
+
+                // DID controllers that wish to join an Aggregation Cohort and become an Aggregation Participant would need to provide the Aggregation Service with a Schnorr public key.
+
+                if (! aggregationCohort.containsParticipantPublicKey(unassembledInitialKey)) {
+                    if (aggregationCohort.isCohortCompleted()) {
+                        throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Aggregation cohort " + aggregationCohort.getId() + " already completed.");
+                    }
+                    aggregationCohort.addParticipantPublicKey(unassembledInitialKey);
                 }
-                aggregationCohort.addParticipantPublicKey(unassembledInitialKey);
+
+                // The Aggregation Service decides when to finalize the membership of the Aggregation Cohort.
+
+                if (! aggregationCohort.isCohortCompleted()) {
+                    // next state
+                    return TransitionInit.transitionToInitCompleteAggregationCohort(bitcoinConnection, ipfsConnection, aggregationCohort, didRegistrationMetadata, didDocumentMetadata);
+                }
+
+                if (! aggregationCohort.isCohortFinalized()) {
+                    aggregationCohort.finalizeCohort(bitcoinConnector);
+                    if (log.isDebugEnabled()) log.debug("Finalized cohort: {}", aggregationCohort.getMetadata());
+                }
+
+                // This Beacon Address must be sent to all Aggregation Participants with the set of keys used to construct it.
+
+                URI aggregateServiceId = aggregationCohort.toAggregateServiceId();
+                String aggregateServiceType = aggregationCohort.toAggregateServiceType();
+                URI aggregateServiceEndpoint = aggregationCohort.toAggregateServiceEndpoint();
+
+                Service aggregationBeaconService = Service.builder()
+                        .id(aggregateServiceId)
+                        .type(aggregateServiceType)
+                        .serviceEndpoint(aggregateServiceEndpoint)
+                        .build();
+                aggregateBeaconServices.add(aggregationBeaconService);
             }
-
-            // The Aggregation Service decides when to finalize the membership of the Aggregation Cohort.
-
-            if (! aggregationCohort.isCohortCompleted()) {
-                // next state
-                return TransitionInit.transitionToInitCompleteAggregationCohort(bitcoinConnection, ipfsConnection, aggregationCohort, didRegistrationMetadata, didDocumentMetadata);
-            }
-
-            if (! aggregationCohort.isCohortFinalized()) {
-                aggregationCohort.finalizeCohort(bitcoinConnector);
-                if (log.isDebugEnabled()) log.debug("Finalized cohort: {}", aggregationCohort.getMetadata());
-            }
-
-            // This Beacon Address must be sent to all Aggregation Participants with the set of keys used to construct it.
-
-            URI aggregateServiceId = aggregationCohort.toAggregateServiceId();
-            String aggregateServiceType = aggregationCohort.toAggregateServiceType();
-            URI aggregateServiceEndpoint = aggregationCohort.toAggregateServiceEndpoint();
 
             // Once the Aggregation Participants have verified the newly formed Beacon Address, they can construct the service object that can be included within their DID document’s service array.
 
             unassembledGenesisDocument = DIDDocumentV1_1.builder()
                     .base(unassembledGenesisDocument)
                     .defaultContexts(false)
-                    .services(List.of(
-                            Service.builder()
-                                    .id(aggregateServiceId)
-                                    .type(aggregateServiceType)
-                                    .serviceEndpoint(aggregateServiceEndpoint)
-                                    .build()))
+                    .services(aggregateBeaconServices)
                     .build();
 
-            if (log.isDebugEnabled()) log.debug("Generated aggregate beacon: " + unassembledGenesisDocument);
+            if (log.isDebugEnabled()) log.debug("Generated aggregate beacons: " + unassembledGenesisDocument);
         }
 
         // create()
