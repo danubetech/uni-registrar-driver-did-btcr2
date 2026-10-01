@@ -328,7 +328,7 @@ public class UpdateProcessUpdateSignPayload {
         List<PublicKey> participantPublicKeys = aggregationCohort.getParticipantPublicKeys().stream().map(BytesArray::bytes).map(PublicKey::parse).toList();
         Pair<SecretNonce, IndividualNonce> pair = Musig2.generateNonce(new ByteVector32(aggregationCohort.getMusig2NonceSessionId()), new Either.Right<PublicKey>(participantPublicKey), participantPublicKeys, null, null);
 
-        aggregationCohort.setMusig2SecretNonce(participantIndex, BytesArray.bytesArray(pair.component1().getData$bitcoin_kmp().getBytes$bitcoin_kmp()));
+        aggregationCohort.setMusig2SecretNonce(participantIndex, BytesArray.bytesArray(pair.component1().getData$bitcoin_kmp()));
         aggregationCohort.setMusig2IndividualNonce(participantIndex, BytesArray.bytesArray(pair.component2().toByteArray()));
     }
 
@@ -358,7 +358,7 @@ public class UpdateProcessUpdateSignPayload {
         List<PublicKey> participantPublicKeys = aggregationCohort.getParticipantPublicKeys().stream().map(BytesArray::bytes).map(PublicKey::parse).toList();
         Pair<SecretNonce, IndividualNonce> pair = Musig2.generateNonce(new ByteVector32(aggregationCohort.getMusig2NonceSessionId()), new Either.Right<PublicKey>(participantPublicKey), participantPublicKeys, null, null);
 
-        aggregationCohort.setMusig2SecretNonce(participantIndex, BytesArray.bytesArray(pair.component1().getData$bitcoin_kmp().getBytes$bitcoin_kmp()));
+        aggregationCohort.setMusig2SecretNonce(participantIndex, BytesArray.bytesArray(pair.component1().getData$bitcoin_kmp()));
         aggregationCohort.setMusig2IndividualNonce(participantIndex, BytesArray.bytesArray(pair.component2().toByteArray()));
     }
 

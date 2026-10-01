@@ -291,13 +291,11 @@ public class AggregationCohort {
     }
 
     public boolean isUpdatesCompleted() {
-        if (this.updatesSize() > this.getMaxSize()) throw new IllegalStateException("The 'updatesSize' " + this.updatesSize() + " is greater than 'maxSize' " + this.getMaxSize() + " for cohort " + this.getId());
-        boolean updatesCompleted;
+        if (this.updatesSize() > this.cohortSize()) throw new IllegalStateException("The 'updatesSize' " + this.updatesSize() + " is greater than 'cohortSize' " + this.cohortSize() + " for cohort " + this.getId());
+        boolean updatesCompleted = this.updatesSize() == this.cohortSize();
         if (this.getStartTime() != null && this.getEndTime() != null) {
             long currentTimeMillis = System.currentTimeMillis();
-            updatesCompleted = currentTimeMillis >= this.getStartTime() && currentTimeMillis < this.getEndTime();
-        } else {
-            updatesCompleted = this.updatesSize() == this.getMaxSize();
+            updatesCompleted |= currentTimeMillis >= this.getStartTime() && currentTimeMillis < this.getEndTime();
         }
         if (log.isDebugEnabled()) log.debug("updatesCompleted? {}", updatesCompleted);
         return updatesCompleted;
@@ -522,8 +520,8 @@ public class AggregationCohort {
     }
 
     public boolean isSignaturesCompleted() {
-        if (this.signaturesSize() > this.updatesSize()) throw new IllegalStateException("The 'signaturesSize' " + this.signaturesSize() + " is greater than 'updatesSize' " + this.updatesSize() + " for cohort " + this.getId());
-        boolean signaturesCompleted = this.signaturesSize() == this.updatesSize();
+        if (this.signaturesSize() > this.cohortSize()) throw new IllegalStateException("The 'signaturesSize' " + this.signaturesSize() + " is greater than 'cohortSize' " + this.cohortSize() + " for cohort " + this.getId());
+        boolean signaturesCompleted = this.signaturesSize() == this.cohortSize();
         if (log.isDebugEnabled()) log.debug("signaturesCompleted? {}", signaturesCompleted);
         return signaturesCompleted;
     }
