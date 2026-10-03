@@ -172,7 +172,7 @@
         <dependency>
             <groupId>com.danubetech</groupId>
             <artifactId>key-formats-java</artifactId>
-            <version>1.34.0</version>
+            <version>1.36.0</version>
         </dependency>
         <dependency>
             <groupId>decentralized-identity</groupId>
