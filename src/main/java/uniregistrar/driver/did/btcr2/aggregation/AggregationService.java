@@ -23,8 +23,8 @@ public class AggregationService {
 
     private static final Logger log = LoggerFactory.getLogger(UpdateProcessUpdateSignPayload.class);
 
-    private static final Pattern COHORT_ID_PATTERN_MAXSIZE = Pattern.compile("^cohort-([a-z0-9]+)-([a-z0-9]{3})-([0-9]+)(-([a-z]+))?$");
-    private static final Pattern COHORT_ID_PATTERN_MAXSIZE_MAXDURATION = Pattern.compile("^cohort-([a-z0-9]+)-([a-z0-9]{3})-([0-9]+)-([0-9]+)(-([a-z]+))?$");
+    private static final Pattern COHORT_ID_PATTERN_MAXSIZE = Pattern.compile("^cohort-([a-z0-9]+)-([a-z0-9]{3})-([0-9]+)(\\*([0-9]+))?$");
+    private static final Pattern COHORT_ID_PATTERN_MAXSIZE_MAXDURATION = Pattern.compile("^cohort-([a-z0-9]+)-([a-z0-9]{3})-([0-9]+)-([0-9]+)(\\*([0-9]+))?$");
 
     private static final Cache<String, AggregationCohort> aggregationCohorts = Caffeine.newBuilder()
             .expireAfterAccess(10, TimeUnit.MINUTES)
