@@ -17,6 +17,8 @@ public class TransitionInit {
 
     public static UpdateState transitionToInitGetVerificationMethod(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
 
+        Map<String, Object> jobId = Collections.emptyMap();
+
         // REGISTRATION STATE: verification method template
 
         VerificationMethodTemplate capabilityInvocationVerificationMethodTemplate = new VerificationMethodTemplate()
@@ -38,6 +40,7 @@ public class TransitionInit {
         // REGISTRATION STATE: update()
 
         UpdateState updateState = new UpdateState();
+        updateState.setJobId(new RegistrarStateJobId(jobId));
         updateState.setDidState(didStateAction);
         updateState.setDidRegistrationMetadata(didRegistrationMetadata);
         updateState.setDidDocumentMetadata(didDocumentMetadata);
