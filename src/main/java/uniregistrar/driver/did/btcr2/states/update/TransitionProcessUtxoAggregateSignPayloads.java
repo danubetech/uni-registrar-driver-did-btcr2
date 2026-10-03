@@ -46,7 +46,7 @@ public class TransitionProcessUtxoAggregateSignPayloads {
         if (ipfsConnection != null) didRegistrationMetadata.putAll(ipfsConnection.getMetadata());
         if (aggregationCohort != null) didRegistrationMetadata.putAll(aggregationCohort.getMetadata());
 
-        // create() state
+        // REGISTRATION STATE: update()
 
         UpdateState updateState = new UpdateState();
         updateState.setDidState(didStateWait);
@@ -80,7 +80,7 @@ public class TransitionProcessUtxoAggregateSignPayloads {
         if (merkleNodeUpdate != null) didDocumentMetadata.put("updateCid", merkleNodeUpdate.hash.toString());
         if (merkleNodeCasAnnouncement != null) didDocumentMetadata.put("casAnnouncementCid", merkleNodeCasAnnouncement.hash.toString());
 
-        // update state
+        // REGISTRATION STATE: update()
 
         UpdateState updateState = new UpdateState();
         updateState.setDidState(didStateFinished);

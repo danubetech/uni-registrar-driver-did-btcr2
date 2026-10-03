@@ -29,7 +29,7 @@ public class TransitionProcessUtxoSingletonSignPayloads {
         if (update != null) didDocumentMetadata.put("update", update.getJsonObject());
         if (merkleNodeUpdate != null) didDocumentMetadata.put("updateCid", merkleNodeUpdate.hash.toString());
 
-        // update state
+        // REGISTRATION STATE: update()
 
         UpdateState updateState = new UpdateState();
         updateState.setDidState(didStateFinished);

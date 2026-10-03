@@ -86,7 +86,7 @@ public class TransitionProcessUpdateSignPayload {
         if (ipfsConnection != null) didRegistrationMetadata.putAll(ipfsConnection.getMetadata());
         if (aggregationCohort != null) didRegistrationMetadata.putAll(aggregationCohort.getMetadata());
 
-        // create() state
+        // REGISTRATION STATE: update()
 
         UpdateState updateState = new UpdateState();
         updateState.setDidState(didStateWait);

@@ -38,7 +38,7 @@ public class TransitionInit {
         if (bitcoinConnection != null) didRegistrationMetadata.putAll(bitcoinConnection.getMetadata());
         if (ipfsConnection != null) didRegistrationMetadata.putAll(ipfsConnection.getMetadata());
 
-        // create() state
+        // REGISTRATION STATE: create()
 
         CreateState createState = new CreateState();
         createState.setDidState(didStateAction);
@@ -65,7 +65,7 @@ public class TransitionInit {
         if (ipfsConnection != null) didRegistrationMetadata.putAll(ipfsConnection.getMetadata());
         if (aggregationCohort != null) didRegistrationMetadata.putAll(aggregationCohort.getMetadata());
 
-        // create() state
+        // REGISTRATION STATE: create()
 
         CreateState createState = new CreateState();
         createState.setDidState(didStateWait);
@@ -124,7 +124,7 @@ public class TransitionInit {
         if (genesisDocument != null) didDocumentMetadata.put("genesisDocument", genesisDocument.toMap());
         if (merkleNodeGenesisDocument != null) didDocumentMetadata.put("genesisDocumentCid", merkleNodeGenesisDocument.hash.toString());
 
-        // create() state
+        // REGISTRATION STATE: create()
 
         CreateState createState = new CreateState();
         createState.setDidState(didStateFinished);
