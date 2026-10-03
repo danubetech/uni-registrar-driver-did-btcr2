@@ -312,8 +312,6 @@ public class AggregationCohort {
         if (! this.isUpdatesCompleted()) throw new IllegalStateException("Aggregation updates " + this.getId() + " not yet completed.");
         if (this.isUpdatesAggregated()) throw new IllegalStateException("Aggregation updates " + this.getId() + " already aggregated.");
 
-        if (this.updatesSize() != this.cohortSize()) throw new IllegalStateException("Aggregation updates number " + this.updatesSize() + " is different from " + this.cohortSize());
-
         if (! this.getNetwork().equals(bitcoinConnection.getNetwork())) throw new IllegalArgumentException("Invalid network: " + bitcoinConnection.getNetwork() + " is not " + this.getNetwork());
 
         // Aggregation of updates into a Beacon Signal depends on the type of BTCR2 Beacon.
