@@ -170,7 +170,7 @@ public class StateInit {
 
             // The Aggregation Service decides when to finalize the membership of the Aggregation Cohort.
 
-            List<AggregationCohort> completeAggregationCohorts = aggregationCohorts.stream().filter(x -> ! x.isCohortCompleted()).toList();
+            List<AggregationCohort> completeAggregationCohorts = aggregationCohorts.stream().filter(aggregationCohort -> ! aggregationCohort.isCohortCompleted()).toList();
 
             if (! completeAggregationCohorts.isEmpty()) {
                 // next state

@@ -154,7 +154,7 @@ public class AggregationCohort {
         metadataSignatures.put("utxoAggregateSignatures", this.getUtxoAggregateSignatures() == null ? null : this.getUtxoAggregateSignatures().values().stream().map(x -> x.stream().map(BytesArray::bytes).map(Hex::encodeHexString).toList()).toList());
         metadataSignatures.put("musig2AggregatedSignatures", this.getMusig2AggregatedSignatures() == null ? null : this.getMusig2AggregatedSignatures().stream().map(BytesArray::bytes).map(Hex::encodeHexString).toList());
         metadata.put("broadcastRawTransactionId", this.getBroadcastRawTransactionId());
-        return Map.of("aggregationCohort", metadata);
+        return metadata;
     }
 
     /*

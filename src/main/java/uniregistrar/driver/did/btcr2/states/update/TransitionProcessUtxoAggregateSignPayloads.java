@@ -44,7 +44,7 @@ public class TransitionProcessUtxoAggregateSignPayloads {
 
         if (bitcoinConnection != null) didRegistrationMetadata.putAll(bitcoinConnection.getMetadata());
         if (ipfsConnection != null) didRegistrationMetadata.putAll(ipfsConnection.getMetadata());
-        didRegistrationMetadata.putAll(aggregationCohort.getMetadata());
+        didRegistrationMetadata.put("aggregationCohort", aggregationCohort.getMetadata());
 
         // REGISTRATION STATE: update()
 
@@ -69,7 +69,7 @@ public class TransitionProcessUtxoAggregateSignPayloads {
 
         if (bitcoinConnection != null) didRegistrationMetadata.putAll(bitcoinConnection.getMetadata());
         if (ipfsConnection != null) didRegistrationMetadata.putAll(ipfsConnection.getMetadata());
-        didRegistrationMetadata.putAll(aggregationCohort.getMetadata());
+        didRegistrationMetadata.put("aggregationCohort", aggregationCohort.getMetadata());
 
         // REGISTRATION STATE: didDocumentMetadata
 
