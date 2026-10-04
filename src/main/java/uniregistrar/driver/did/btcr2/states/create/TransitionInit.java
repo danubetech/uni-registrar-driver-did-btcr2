@@ -50,20 +50,20 @@ public class TransitionInit {
         return createState;
     }
 
-    public static CreateState transitionToInitCompleteAggregationCohort(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, AggregationCohort aggregationCohort, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
+    public static CreateState transitionToInitCompleteAggregationCohort(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, List<AggregationCohort> completeAggregationCohorts, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
 
         // REGISTRATION STATE: didState.state="wait"
 
         DidStateWait didStateWait = new DidStateWait();
         didStateWait.setState("wait");
         didStateWait.setWait("completeAggregationCohort");
-        didStateWait.putAdditionalProperty("aggregationCohort", aggregationCohort.getId());
+        didStateWait.putAdditionalProperty("aggregationCohorts", completeAggregationCohorts.stream().map(AggregationCohort::getId).toList());
 
         // REGISTRATION STATE: didRegistrationMetadata
 
         if (bitcoinConnection != null) didRegistrationMetadata.putAll(bitcoinConnection.getMetadata());
         if (ipfsConnection != null) didRegistrationMetadata.putAll(ipfsConnection.getMetadata());
-        if (aggregationCohort != null) didRegistrationMetadata.putAll(aggregationCohort.getMetadata());
+        didRegistrationMetadata.put("aggregationCohorts", completeAggregationCohorts.stream().map(AggregationCohort::getMetadata).toList());
 
         // REGISTRATION STATE: create()
 
@@ -77,7 +77,7 @@ public class TransitionInit {
         return createState;
     }
 
-    public static CreateState transitionToFinished(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, AggregationCohort aggregationCohort, byte[] initialKey, DIDDocument genesisDocument, DID did, MerkleNode merkleNodeGenesisDocument, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
+    public static CreateState transitionToFinished(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, List<AggregationCohort> aggregationCohorts, byte[] initialKey, DIDDocument genesisDocument, DID did, MerkleNode merkleNodeGenesisDocument, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
 
         // REGISTRATION STATE: jobId
 
@@ -116,7 +116,7 @@ public class TransitionInit {
 
         if (bitcoinConnection != null) didRegistrationMetadata.putAll(bitcoinConnection.getMetadata());
         if (ipfsConnection != null) didRegistrationMetadata.putAll(ipfsConnection.getMetadata());
-        if (aggregationCohort != null) didRegistrationMetadata.putAll(aggregationCohort.getMetadata());
+        if (aggregationCohorts != null) didRegistrationMetadata.put("aggregationCohorts", aggregationCohorts.stream().map(AggregationCohort::getMetadata).toList());
 
         // REGISTRATION STATE: didDocumentMetadata
 

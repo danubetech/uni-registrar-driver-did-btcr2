@@ -139,7 +139,7 @@ public class StateInit {
 
         // generate aggregate beacon?
 
-        AggregationCohort aggregationCohort = null;
+        List<AggregationCohort> aggregationCohorts = null;
 
         if (generateAggregateBeacons != null) {
 
@@ -147,12 +147,16 @@ public class StateInit {
                 throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Cannot generate aggregate beacon without initial key. Try setting option `generateInitialKey: true`.");
             }
 
-            List<Service> aggregateBeaconServices = new ArrayList<>();
+            aggregationCohorts = new ArrayList<>();
 
             for (String generateAggregateBeacon : generateAggregateBeacons.split(",")) {
 
-                aggregationCohort = AggregationService.getAggregationCohort(generateAggregateBeacon);
+                AggregationCohort aggregationCohort = AggregationService.getAggregationCohort(generateAggregateBeacon);
                 if (aggregationCohort == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Unknown aggregation cohort: " + generateAggregateBeacon);
+                aggregationCohorts.add(aggregationCohort);
+            }
+
+            for (AggregationCohort aggregationCohort : aggregationCohorts) {
 
                 // DID controllers that wish to join an Aggregation Cohort and become an Aggregation Participant would need to provide the Aggregation Service with a Schnorr public key.
 
@@ -162,13 +166,20 @@ public class StateInit {
                     }
                     aggregationCohort.addParticipantPublicKey(unassembledInitialKey);
                 }
+            }
 
-                // The Aggregation Service decides when to finalize the membership of the Aggregation Cohort.
+            // The Aggregation Service decides when to finalize the membership of the Aggregation Cohort.
 
-                if (! aggregationCohort.isCohortCompleted()) {
-                    // next state
-                    return TransitionInit.transitionToInitCompleteAggregationCohort(bitcoinConnection, ipfsConnection, aggregationCohort, didRegistrationMetadata, didDocumentMetadata);
-                }
+            List<AggregationCohort> completeAggregationCohorts = aggregationCohorts.stream().filter(x -> ! x.isCohortCompleted()).toList();
+
+            if (! completeAggregationCohorts.isEmpty()) {
+                // next state
+                return TransitionInit.transitionToInitCompleteAggregationCohort(bitcoinConnection, ipfsConnection, completeAggregationCohorts, didRegistrationMetadata, didDocumentMetadata);
+            }
+
+            List<Service> aggregateBeaconServices = new ArrayList<>();
+
+            for (AggregationCohort aggregationCohort : aggregationCohorts) {
 
                 if (! aggregationCohort.isCohortFinalized()) {
                     aggregationCohort.finalizeCohort(bitcoinConnector);
@@ -220,6 +231,6 @@ public class StateInit {
 
         // next state
 
-        return TransitionInit.transitionToFinished(bitcoinConnection, ipfsConnection, aggregationCohort, createInitResult.initialKey(), createInitResult.genesisDocument(), createInitResult.did(), merkleNodeGenesisDocument, didRegistrationMetadata, didDocumentMetadata);
+        return TransitionInit.transitionToFinished(bitcoinConnection, ipfsConnection, aggregationCohorts, createInitResult.initialKey(), createInitResult.genesisDocument(), createInitResult.did(), merkleNodeGenesisDocument, didRegistrationMetadata, didDocumentMetadata);
     }
 }
