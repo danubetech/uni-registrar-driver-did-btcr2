@@ -132,7 +132,7 @@ public class AggregationCohort {
         metadataCohort.put("cohortSize", this.cohortSize());
         metadataCohort.put("isCohortCompleted", this.isCohortCompleted());
         metadataCohort.put("isCohortFinalized", this.isCohortFinalized());
-        metadataCohort.put("participantPublicKeys", this.getParticipantPublicKeys().stream().map(BytesArray::bytes).map(Hex::encodeHexString).toList());
+        metadataCohort.put("participantPublicKeys", this.getParticipantPublicKeys().size());
         metadataCohort.put("beaconAddress", this.getBeaconAddress() == null ? null : this.getBeaconAddress().toString());
         metadataCohort.put("musig2NonceSessionId", this.getMusig2NonceSessionId() == null ? null : Hex.encodeHexString(this.getMusig2NonceSessionId()));
         Map<String, Object> metadataUpdates = (Map<String, Object>) metadata.computeIfAbsent("updates", x -> new LinkedHashMap<>());
@@ -141,18 +141,18 @@ public class AggregationCohort {
         metadataUpdates.put("isUpdatesAggregated", this.isUpdatesAggregated());
         metadataUpdates.put("startTime", this.getStartTime());
         metadataUpdates.put("endTime", this.getEndTime());
-        metadataUpdates.put("updateHashes", this.getUpdatesHashes().stream().map(BytesArray::bytes).map(Hex::encodeHexString).toList());
+        metadataUpdates.put("updateHashes", this.getUpdatesHashes().size());
         metadataUpdates.put("unsignedBeaconSignal", this.getUnsignedBeaconSignal() == null ? null : Hex.encodeHexString(this.getUnsignedBeaconSignal().serialize()));
         metadataUpdates.put("musig2AggregatedNonce", this.getMusig2AggregatedNonce() == null ? null : Hex.encodeHexString(this.getMusig2AggregatedNonce()));
         metadataUpdates.put("signalBytes", this.getSignalBytes() == null ? null : Hex.encodeHexString(this.getSignalBytes()));
         metadataUpdates.put("beaconAddressUtxos", this.getBeaconAddressUtxos() == null ? null : this.getBeaconAddressUtxos().stream().map(TxOut::txId).toList());
-        metadataUpdates.put("utxoAggregateSignPayloads", this.getUtxoAggregateSignPayloads() == null ? null : this.getUtxoAggregateSignPayloads().values().stream().map(x -> x.stream().map(BytesArray::bytes).map(Hex::encodeHexString).toList()).toList());
+        metadataUpdates.put("utxoAggregateSignPayloads", this.getUtxoAggregateSignPayloads() == null ? null : this.getUtxoAggregateSignPayloads().values().size());
         Map<String, Object> metadataSignatures = (Map<String, Object>) metadata.computeIfAbsent("signatures", x -> new LinkedHashMap<>());
         metadataSignatures.put("signaturesSize", this.signaturesSize());
         metadataSignatures.put("isSignaturesCompleted", this.isSignaturesCompleted());
         metadataSignatures.put("isSignaturesAggregated", this.isSignaturesAggregated());
-        metadataSignatures.put("utxoAggregateSignatures", this.getUtxoAggregateSignatures() == null ? null : this.getUtxoAggregateSignatures().values().stream().map(x -> x.stream().map(BytesArray::bytes).map(Hex::encodeHexString).toList()).toList());
-        metadataSignatures.put("musig2AggregatedSignatures", this.getMusig2AggregatedSignatures() == null ? null : this.getMusig2AggregatedSignatures().stream().map(BytesArray::bytes).map(Hex::encodeHexString).toList());
+        metadataSignatures.put("utxoAggregateSignatures", this.getUtxoAggregateSignatures() == null ? null : this.getUtxoAggregateSignatures().values().size());
+        metadataSignatures.put("musig2AggregatedSignatures", this.getMusig2AggregatedSignatures() == null ? null : this.getMusig2AggregatedSignatures().size());
         metadata.put("broadcastRawTransactionId", this.getBroadcastRawTransactionId());
         return metadata;
     }
