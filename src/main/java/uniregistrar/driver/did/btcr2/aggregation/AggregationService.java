@@ -88,12 +88,6 @@ public class AggregationService {
         return aggregationCohorts.getIfPresent(id) != null;
     }
 
-    public static AggregationCohort findByBeaconAddress(Address beaconAddress) {
-        AggregationCohort aggregationCohort = aggregationCohorts.asMap().values().stream().filter(x -> beaconAddress.equals(x.getBeaconAddress())).findFirst().orElse(null);
-        if (log.isDebugEnabled()) log.debug("For beacon address {} found aggregation cohort: {}", beaconAddress, aggregationCohort);
-        return aggregationCohort;
-    }
-
     public static AggregationCohort findByBeaconService(Service beaconService) throws RegistrationException {
         URI serviceEndpoint = (URI) beaconService.getServiceEndpoint();
         BitcoinURI bitcoinURI;
@@ -103,8 +97,15 @@ public class AggregationService {
             throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Beacon service endpoint " + serviceEndpoint + " has invalid Bitcoin URI: " + ex.getMessage(), ex);
         }
         Address beaconAddress = bitcoinURI == null ? null : bitcoinURI.getAddress();
+        if (beaconAddress == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "No beacon address for service endpoint " + serviceEndpoint);
         if (log.isDebugEnabled()) log.debug("For beacon service {} found beacon address: {}", beaconService, beaconAddress);
-        return findByBeaconAddress(beaconAddress);
+        AggregationCohort aggregationCohort = aggregationCohorts.asMap().values().stream()
+                .filter(x -> ("#" + beaconService.getId().toString()).equals(x.getId()))
+                .filter(x -> BeaconType.fromServiceType(beaconService.getType()).equals(x.getBeaconType()))
+                .filter(x -> beaconAddress.equals(x.getBeaconAddress()))
+                .findFirst().orElse(null);
+        if (log.isDebugEnabled()) log.debug("For beacon service {} and beacon address {} found aggregation cohort: {}", beaconService, beaconAddress, aggregationCohort);
+        return aggregationCohort;
     }
 
     public static void removeAggregationCohort(AggregationCohort aggregationCohort) {
