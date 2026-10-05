@@ -27,7 +27,7 @@ public class AggregationService {
     private static final Pattern COHORT_ID_PATTERN_MAXSIZE_MAXDURATION = Pattern.compile("^cohort-([a-z0-9]+)-([a-z0-9]{3})-([0-9]+)-([0-9]+)(\\*([0-9]+))?$");
 
     private static final Cache<String, AggregationCohort> aggregationCohorts = Caffeine.newBuilder()
-            .expireAfterAccess(10, TimeUnit.MINUTES)
+            .expireAfterAccess(1, TimeUnit.DAYS)
             .build();
 
     private static void addAggregationCohort(AggregationCohort aggregationCohort) {
