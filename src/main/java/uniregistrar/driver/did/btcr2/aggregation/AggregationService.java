@@ -100,7 +100,7 @@ public class AggregationService {
         if (beaconAddress == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "No beacon address for service endpoint " + serviceEndpoint);
         if (log.isDebugEnabled()) log.debug("For beacon service {} found beacon address: {}", beaconService, beaconAddress);
         AggregationCohort aggregationCohort = aggregationCohorts.asMap().values().stream()
-                .filter(x -> ("#" + beaconService.getId().toString()).equals(x.getId()))
+                .filter(x -> beaconService.getId().toString().equals("#" + x.getId()))
                 .filter(x -> BeaconType.fromServiceType(beaconService.getType()).equals(x.getBeaconType()))
                 .filter(x -> beaconAddress.equals(x.getBeaconAddress()))
                 .findFirst().orElse(null);
