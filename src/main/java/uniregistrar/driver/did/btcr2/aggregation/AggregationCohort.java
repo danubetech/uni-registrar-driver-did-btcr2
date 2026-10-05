@@ -179,7 +179,7 @@ public class AggregationCohort {
         return cohortFinalized;
     }
 
-    public void finalizeCohort(BitcoinConnector bitcoinConnector) {
+    public synchronized void finalizeCohort(BitcoinConnector bitcoinConnector) {
 
         if (! this.isCohortCompleted()) throw new IllegalStateException("Aggregation cohort " + this.getId() + " not yet completed.");
         if (this.isCohortFinalized()) throw new IllegalStateException("Aggregation cohort " + this.getId() + " already finalized.");
@@ -307,7 +307,7 @@ public class AggregationCohort {
         return updatesAggregated;
     }
 
-    public void aggregateUpdates(BitcoinConnection bitcoinConnection) throws UpdateActionFundAddressException {
+    public synchronized void aggregateUpdates(BitcoinConnection bitcoinConnection) throws UpdateActionFundAddressException {
 
         if (! this.isUpdatesCompleted()) throw new IllegalStateException("Aggregation updates " + this.getId() + " not yet completed.");
         if (this.isUpdatesAggregated()) throw new IllegalStateException("Aggregation updates " + this.getId() + " already aggregated.");
@@ -532,7 +532,7 @@ public class AggregationCohort {
         return signaturesAggregated;
     }
 
-    public void aggregateSignatures(BitcoinConnection bitcoinConnection)  {
+    public synchronized void aggregateSignatures(BitcoinConnection bitcoinConnection)  {
 
         if (! this.isSignaturesCompleted()) throw new IllegalStateException("Aggregation signatures " + this.getId() + " not yet completed.");
         if (this.isSignaturesAggregated()) throw new IllegalStateException("Aggregation signatures " + this.getId() + " already aggregated.");
