@@ -316,13 +316,15 @@ public class AggregationCohort {
 
         // Aggregation of updates into a Beacon Signal depends on the type of BTCR2 Beacon.
 
-        if (log.isDebugEnabled()) log.debug("Aggregating signal bytes for beacon type: " + this.getBeaconType());
-        this.signalBytes = switch (this.getBeaconType()) {
-            case CAS -> this.signalBytesCas();
-            case SMT -> this.signalBytesSmt();
-            default -> throw new IllegalStateException("Unexpected value: " + this.getBeaconType());
-        };
-        if (log.isDebugEnabled()) log.debug("Aggregated signal bytes for beacon type " + this.getBeaconType() + ": " + Hex.encodeHexString(this.getSignalBytes()));
+        if (this.signalBytes == null) {
+            if (log.isDebugEnabled()) log.debug("Aggregating signal bytes for beacon type: " + this.getBeaconType());
+            this.signalBytes = switch (this.getBeaconType()) {
+                case CAS -> this.signalBytesCas();
+                case SMT -> this.signalBytesSmt();
+                default -> throw new IllegalStateException("Unexpected value: " + this.getBeaconType());
+            };
+            if (log.isDebugEnabled()) log.debug("Aggregated signal bytes for beacon type " + this.getBeaconType() + ": " + Hex.encodeHexString(this.getSignalBytes()));
+        }
 
         // it aggregates the update announcements into an Unsigned Beacon Signal.
 
