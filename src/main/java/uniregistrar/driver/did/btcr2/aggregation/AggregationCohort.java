@@ -217,16 +217,16 @@ public class AggregationCohort {
     public boolean containsParticipantPublicKey(byte[] participantPublicKey) {
         BytesArray participantPublicKeyBytesArray = BytesArray.bytesArray(participantPublicKey);
         boolean containsParticipantPublicKey = this.getParticipantPublicKeys().contains(participantPublicKeyBytesArray);
-        if (log.isDebugEnabled()) log.debug("Contains participant public key " + Hex.encodeHexString(participantPublicKeyBytesArray.bytes()) + " in " + this.getParticipantPublicKeys().stream().map(BytesArray::bytes).map(Hex::encodeHexString).toList() + ": " + containsParticipantPublicKey + " (size now " + this.cohortSize() + ")");
+        if (log.isDebugEnabled()) log.debug("Contains participant public key " + Hex.encodeHexString(participantPublicKeyBytesArray.bytes()) + " in " + this.getParticipantPublicKeys().size() + ": " + containsParticipantPublicKey + " (size now " + this.cohortSize() + ")");
         return containsParticipantPublicKey;
     }
 
     public void addParticipantPublicKey(byte[] participantPublicKey) {
         if (this.isCohortCompleted()) throw new IllegalStateException("Aggregation cohort " + this.getId() + " already completed.");
         BytesArray participantPublicKeyBytesArray = BytesArray.bytesArray(participantPublicKey);
-        if (log.isDebugEnabled()) log.debug("Adding participant public key " + Hex.encodeHexString(participantPublicKeyBytesArray.bytes()) + " to " + this.getParticipantPublicKeys().stream().map(BytesArray::bytes).map(Hex::encodeHexString).toList() + " (size now " + this.cohortSize() + ")");
+        if (log.isDebugEnabled()) log.debug("Adding participant public key " + Hex.encodeHexString(participantPublicKeyBytesArray.bytes()) + " to " + this.getParticipantPublicKeys().size() + " (size now " + this.cohortSize() + ")");
         this.getParticipantPublicKeys().add(participantPublicKeyBytesArray);
-        if (log.isDebugEnabled()) log.debug("Added participant public key " + Hex.encodeHexString(participantPublicKeyBytesArray.bytes()) + " to " + this.getParticipantPublicKeys().stream().map(BytesArray::bytes).map(Hex::encodeHexString).toList() + " (size now " + this.cohortSize() + ")");
+        if (log.isDebugEnabled()) log.debug("Added participant public key " + Hex.encodeHexString(participantPublicKeyBytesArray.bytes()) + " to " + this.getParticipantPublicKeys().size() + " (size now " + this.cohortSize() + ")");
     }
 
     public int findParticipantIndexByVerificationMethod(DIDDocument didDocument, URI verificationMethodId) throws RegistrationException {
@@ -254,7 +254,7 @@ public class AggregationCohort {
             }
         }
         if (participantIndex == null) {
-            throw new RegistrationException("INVALID_UPDATE", "Participant public key " + Hex.encodeHexString(verificationMethodKey) + " not found in aggregation cohort " + this.getId() + ": " + this.getParticipantPublicKeys().stream().map(BytesArray::bytes).map(Hex::encodeHexString).toList());
+            throw new RegistrationException("INVALID_UPDATE", "Participant public key " + Hex.encodeHexString(verificationMethodKey) + " not found in aggregation cohort " + this.getId() + ": " + this.getParticipantPublicKeys().size());
         }
 
         return participantIndex;
