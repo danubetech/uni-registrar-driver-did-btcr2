@@ -198,7 +198,8 @@ public class AggregationCohort {
                 yield LegacyAddress.fromScriptHash(this.getNetwork().toBitcoinjNetwork(), ScriptPattern.extractHashFromP2PKH(script));
             }
             case P2TR -> {
-                List<PublicKey> publicKeys = this.getParticipantPublicKeys().stream().map(BytesArray::bytes).map(PublicKey::parse).toList();
+                List<PublicKey> publicKeys = new ArrayList<>(this.getParticipantPublicKeys().stream().map(BytesArray::bytes).map(PublicKey::parse).toList());
+                Collections.shuffle(publicKeys);
                 XonlyPublicKey aggregatePublicKey = Musig2.aggregateKeys(publicKeys);
                 aggregatePublicKey.tweak(Crypto.TaprootTweak.KeyPathTweak.INSTANCE);
                 yield AddressParser.getDefault().parseAddress(aggregatePublicKey.p2trAddress(new BlockHash(bitcoinConnector.getGenesisHash(this.getNetwork()))));
