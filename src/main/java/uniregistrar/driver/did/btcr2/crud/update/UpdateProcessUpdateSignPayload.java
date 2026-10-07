@@ -269,6 +269,10 @@ public class UpdateProcessUpdateSignPayload {
             throw new RegistrationException(RegistrationException.ERROR_INVALID_OPTIONS, "Cannot find aggregation cohort for beacon service " + beaconService.getId());
         }
 
+        if (aggregationCohort.isRawTransactionBroadcast()) {
+            aggregationCohort.resetUpdates();
+        }
+
         // Aggregation Participants must submit a response to every update opportunity announced by the Aggregation Service;
 
         int participantIndex = aggregationCohort.findParticipantIndexByVerificationMethod(didSourceDocument, verificationMethodId);
