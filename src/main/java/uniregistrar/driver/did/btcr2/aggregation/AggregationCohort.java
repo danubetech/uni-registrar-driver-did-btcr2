@@ -211,7 +211,7 @@ public class AggregationCohort {
         random.nextBytes(bytes);
         this.musig2NonceSessionId = bytes;
 
-        if (log.isDebugEnabled()) log.debug("For script tyoe " + this.getScriptType() + " and size " + this.cohortSize() + " finalized cohort with beacon address " + this.getBeaconAddress() + " and nonce sessionId " + Hex.encodeHexString(this.getMusig2NonceSessionId()));
+        if (log.isDebugEnabled()) log.debug("For script type " + this.getScriptType() + " and size " + this.cohortSize() + " finalized cohort with beacon address " + this.getBeaconAddress() + " and nonce sessionId " + Hex.encodeHexString(this.getMusig2NonceSessionId()));
     }
 
     public boolean containsParticipantPublicKey(byte[] participantPublicKey) {
