@@ -450,7 +450,7 @@ public class AggregationCohort {
     public CASAnnouncement returnCasAnnouncement() {
         if (! BeaconType.CAS.equals(this.getBeaconType())) return null;
         CASAnnouncement casAnnouncement = new CASAnnouncement();
-        synchronized (getCasBeaconAnnouncementMap()) {
+        synchronized (this.getCasBeaconAnnouncementMap()) {
             this.getCasBeaconAnnouncementMap().forEach((key, value) -> {
                 casAnnouncement.put(key.getDidString(), Base64.getUrlEncoder().withoutPadding().encodeToString(value.bytes()));
             });
