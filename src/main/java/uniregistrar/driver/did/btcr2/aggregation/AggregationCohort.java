@@ -345,7 +345,7 @@ public class AggregationCohort {
         }
         this.unsignedBeaconSignal.addOutput(totalValue.minus(BITCOIN_FEE), this.getBeaconAddress());
         this.unsignedBeaconSignal.addOutput(Coin.ZERO, ScriptBuilder.createOpReturnScript(this.getSignalBytes()));
-        if (log.isDebugEnabled()) log.debug("Unsigned beacon signal before signing: {}", this.unsignedBeaconSignal);
+        if (log.isDebugEnabled()) log.debug("unsignedBeaconSignal before signing: {}", this.unsignedBeaconSignal);
 
         // The Aggregation Service also combines the MuSig2 nonces from each Aggregation Participant following the nonce aggregation algorithm in [BIP327].
 
