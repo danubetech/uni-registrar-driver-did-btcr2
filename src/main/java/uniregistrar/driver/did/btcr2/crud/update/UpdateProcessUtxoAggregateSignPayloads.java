@@ -109,10 +109,14 @@ public class UpdateProcessUtxoAggregateSignPayloads {
             broadcastRawTransactionId = aggregationCohort.broadcastRawTransaction(bitcoinConnection);
         }
 
-        // result
-
         CASAnnouncement casAnnouncement = aggregationCohort.returnCasAnnouncement();
         SMTProof smtProof = aggregationCohort.returnSmtProof(did);
+
+        // reset updates
+
+        aggregationCohort.resetUpdates();
+
+        // result
 
         UpdateProcessUtxoAggregateSignPayloadsResult updateProcessUtxoAggregateSignPayloads = new UpdateProcessUtxoAggregateSignPayloadsResult(broadcastRawTransactionId, update, casAnnouncement, smtProof, aggregationCohort);
         if (log.isDebugEnabled()) log.debug("Update: " + updateProcessUtxoAggregateSignPayloads);

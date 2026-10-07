@@ -604,6 +604,46 @@ public class AggregationCohort {
         return this.getBroadcastRawTransactionId();
     }
 
+    public void resetUpdates() {
+
+        SecureRandom random = new SecureRandom();
+        byte[] bytes = new byte[32];
+        random.nextBytes(bytes);
+        this.musig2NonceSessionId = bytes;
+
+        this.startTime = null;
+        this.endTime = null;
+
+        this.casDids = new TreeMap<>();
+        this.casUpdateHashes = new ConcurrentSkipListMap<>();
+
+        this.smtDidIndexes = new ConcurrentSkipListMap<>();
+        this.smtNonces = new ConcurrentSkipListMap<>();
+        this.smtUpdateHashes = new ConcurrentSkipListMap<>();
+
+        this.musig2SecretNonces = new ConcurrentSkipListMap<>();
+        this.musig2PublicNonces = new ConcurrentSkipListMap<>();
+
+        this.casBeaconAnnouncementMap = Collections.synchronizedMap(new LinkedHashMap<>());
+
+        this.smtProofs = Collections.synchronizedMap(new LinkedHashMap<>());
+
+        this.unsignedBeaconSignal = null;
+        this.musig2AggregatedNonce = null;
+
+        this.signalBytes = null;
+        this.beaconAddressUtxos = null;
+        this.utxoAggregateSignPayloads = null;
+
+        this.utxoAggregateSignatures = new ConcurrentSkipListMap<>();
+
+        this.musig2AggregatedSignatures = null;
+
+        this.broadcastRawTransactionId = null;
+
+        if (log.isDebugEnabled()) log.debug("For script type " + this.getScriptType() + " and size " + this.cohortSize() + " reset cohort with beacon address " + this.getBeaconAddress() + " and nonce sessionId " + Hex.encodeHexString(this.getMusig2NonceSessionId()));
+    }
+
     /*
      * Getters
      */
