@@ -1,7 +1,7 @@
 # Dockerfile for universalregistrar/driver-did-btcr2
 
 FROM maven:3-eclipse-temurin-21-alpine AS build
-MAINTAINER Markus Sabadello <markus@danubetech.com>
+LABEL org.opencontainers.image.authors="markus@danubetech.com"
 
 # build driver-did-btcr2
 
@@ -13,7 +13,7 @@ RUN cd /opt/driver-did-btcr2/ && mvn clean package -P war -N -DskipTests
 # build image
 
 FROM jetty:12.0.18-jre21-eclipse-temurin
-MAINTAINER Markus Sabadello <markus@danubetech.com>
+LABEL org.opencontainers.image.authors="markus@danubetech.com"
 
 # variables
 
