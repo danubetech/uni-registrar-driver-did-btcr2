@@ -61,9 +61,19 @@ public class UpdateProcessUtxoSingletonSignPayloads {
         String txId = bitcoinConnection.broadcastRawTransaction(beaconSignalBytes);
         if (log.isDebugEnabled()) log.debug("Transaction from beacon signal result: " + txId);
 
+        // empty update?
+
+        BTCR2Update returnUpdate;
+
+        if (update.getPatch().isEmpty()) {
+            returnUpdate = null;
+        } else {
+            returnUpdate = update;
+        }
+
         // result
 
-        UpdateProcessUtxoSingletonSignPayloadsResult updateProcessUtxoSingletonSignPayloadsResult = new UpdateProcessUtxoSingletonSignPayloadsResult(txId, update);
+        UpdateProcessUtxoSingletonSignPayloadsResult updateProcessUtxoSingletonSignPayloadsResult = new UpdateProcessUtxoSingletonSignPayloadsResult(txId, returnUpdate);
         if (log.isDebugEnabled()) log.debug("Update: " + updateProcessUtxoSingletonSignPayloadsResult);
         return updateProcessUtxoSingletonSignPayloadsResult;
     }

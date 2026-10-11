@@ -109,12 +109,25 @@ public class UpdateProcessUtxoAggregateSignPayloads {
             broadcastRawTransactionId = aggregationCohort.broadcastRawTransaction(bitcoinConnection);
         }
 
-        CASAnnouncement casAnnouncement = aggregationCohort.returnCasAnnouncement();
-        SMTProof smtProof = aggregationCohort.returnSmtProof(did);
+        // empty update?
+
+        BTCR2Update returnUpdate;
+        CASAnnouncement returnCasAnnouncement;
+        SMTProof returnSmtProof;
+
+        if (update.getPatch().isEmpty()) {
+            returnUpdate = null;
+            returnCasAnnouncement = aggregationCohort.returnCasAnnouncement();
+            returnSmtProof = aggregationCohort.returnSmtProof(did);
+        } else {
+            returnUpdate = update;
+            returnCasAnnouncement = aggregationCohort.returnCasAnnouncement();
+            returnSmtProof = aggregationCohort.returnSmtProof(did);
+        }
 
         // result
 
-        UpdateProcessUtxoAggregateSignPayloadsResult updateProcessUtxoAggregateSignPayloads = new UpdateProcessUtxoAggregateSignPayloadsResult(broadcastRawTransactionId, update, casAnnouncement, smtProof, aggregationCohort);
+        UpdateProcessUtxoAggregateSignPayloadsResult updateProcessUtxoAggregateSignPayloads = new UpdateProcessUtxoAggregateSignPayloadsResult(broadcastRawTransactionId, returnUpdate, returnCasAnnouncement, returnSmtProof, aggregationCohort);
         if (log.isDebugEnabled()) log.debug("Update: " + updateProcessUtxoAggregateSignPayloads);
         return updateProcessUtxoAggregateSignPayloads;
     }

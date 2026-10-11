@@ -424,7 +424,7 @@ public class AggregationCohort {
             if (updateHash.bytes().length == 0) {
                 if (log.isDebugEnabled()) log.debug("Not inserting didIndex {} with smtNonce {}", Base64.getUrlEncoder().withoutPadding().encodeToString(didIndex.bytes()), Base64.getUrlEncoder().withoutPadding().encodeToString(smtNonce.bytes()));
                 if (smtNonce.bytes().length == 0) {
-                    throw new IllegalStateException("Not inserting " + Base64.getUrlEncoder().withoutPadding().encodeToString(didIndex.bytes()) + " , but SMT nonce is empty");
+                    sparseMerkleTree.insertNonUpdate(didIndex.bytes());
                 } else {
                     sparseMerkleTree.insertNonUpdate(didIndex.bytes(), smtNonce.bytes());
                 }

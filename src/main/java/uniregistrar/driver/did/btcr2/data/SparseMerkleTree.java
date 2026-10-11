@@ -23,7 +23,7 @@ public class SparseMerkleTree {
         }
     }
 
-    private record Leaf(BigInteger index, byte[] nonce, byte[] updateData) { }
+    private record Leaf(BigInteger index, byte[] nonce, byte[] updateHash) { }
 
     private final List<Leaf> leaves = new ArrayList<>();
 
@@ -31,16 +31,16 @@ public class SparseMerkleTree {
     // Public API – mutations
     // -------------------------------------------------------------------------
 
-    public void insertUpdate(byte[] didIndex, byte[] nonce, byte[] updateData) {
-        leaves.add(new Leaf(new BigInteger(1, didIndex), nonce, updateData));
+    public void insertUpdate(byte[] didIndex, byte[] nonce, byte[] updateHash) {
+        leaves.add(new Leaf(new BigInteger(1, didIndex), nonce, updateHash));
     }
 
     public void insertUpdate(byte[] didIndex, byte[] updateHash) {
         this.insertUpdate(didIndex, null, updateHash);
     }
 
-    public void insertUpdate(String did, byte[] nonce, byte[] updateData) {
-        this.insertUpdate(didToIndex(did), nonce, updateData);
+    public void insertUpdate(String did, byte[] nonce, byte[] updateHash) {
+        this.insertUpdate(didToIndex(did), nonce, updateHash);
     }
 
     public void insertUpdate(String did, byte[] updateHash) {
@@ -51,8 +51,16 @@ public class SparseMerkleTree {
         leaves.add(new Leaf(new BigInteger(1, didIndex), nonce, null));
     }
 
+    public void insertNonUpdate(byte[] didIndex) {
+        this.insertNonUpdate(didIndex, null);
+    }
+
     public void insertNonUpdate(String did, byte[] nonce) {
         this.insertNonUpdate(didToIndex(did), nonce);
+    }
+
+    public void insertNonUpdate(String did) {
+        this.insertNonUpdate(didToIndex(did));
     }
 
     /*
@@ -97,7 +105,7 @@ public class SparseMerkleTree {
         Leaf leaf = leaves.stream().filter(e -> didIndex.equals(e.index())).findAny().orElse(null);
         if (leaf == null) throw new IllegalArgumentException("DID not found in SMT.");
 
-        return new SMTProof(rootHash, leaf.nonce(), leaf.updateData(), bigIntegerToBytes(collapsed), siblingHashes);
+        return new SMTProof(rootHash, leaf.nonce(), leaf.updateHash(), bigIntegerToBytes(collapsed), siblingHashes);
     }
 
     private static byte[] subtreeHash(List<Leaf> leaves, int level) {
@@ -167,7 +175,7 @@ public class SparseMerkleTree {
     }
 
     private static byte[] computeLeafHash(Leaf leaf) {
-        return computeLeafHash(leaf.nonce(), leaf.updateData());
+        return computeLeafHash(leaf.nonce(), leaf.updateHash());
     }
 
     private static byte[] computeLeafForUpdate(byte[] nonce, byte[] updateHash) {
