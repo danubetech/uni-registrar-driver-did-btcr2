@@ -389,8 +389,12 @@ public class AggregationCohort {
         for (int i=0; i<this.updatesSize(); i++) {
             DID did = this.getCasDids().get(i);
             BytesArray updateHash = this.getCasUpdateHashes().get(i);
-            if (log.isDebugEnabled()) log.debug("Inserting did {} with updateHash {}", did, Base64.getUrlEncoder().withoutPadding().encodeToString(updateHash.bytes()));
-            this.casBeaconAnnouncementMap.put(did, updateHash);
+            if (updateHash.bytes().length == 0) {
+                if (log.isDebugEnabled()) log.debug("Not inserting did {}", did);
+            } else {
+                if (log.isDebugEnabled()) log.debug("Inserting did {} with updateHash {}", did, Base64.getUrlEncoder().withoutPadding().encodeToString(updateHash.bytes()));
+                this.casBeaconAnnouncementMap.put(did, updateHash);
+            }
         }
 
         // The Signal Bytes included in a CAS Beacon Signal is the SHA-256 hash of the Beacon Announcement Map.
@@ -417,11 +421,20 @@ public class AggregationCohort {
             BytesArray didIndex = this.getSmtDidIndexes().get(i);
             BytesArray smtNonce = this.getSmtNonces().get(i);
             BytesArray updateHash = this.getSmtUpdateHashes().get(i);
-            if (log.isDebugEnabled()) log.debug("Inserting didIndex {} with smtNonce {} and updateHash {}", Base64.getUrlEncoder().withoutPadding().encodeToString(didIndex.bytes()), Base64.getUrlEncoder().withoutPadding().encodeToString(smtNonce.bytes()), Base64.getUrlEncoder().withoutPadding().encodeToString(updateHash.bytes()));
-            if (smtNonce.bytes().length == 0) {
-                sparseMerkleTree.insertUpdate(didIndex.bytes(), updateHash.bytes());
+            if (updateHash.bytes().length == 0) {
+                if (log.isDebugEnabled()) log.debug("Not inserting didIndex {} with smtNonce {}", Base64.getUrlEncoder().withoutPadding().encodeToString(didIndex.bytes()), Base64.getUrlEncoder().withoutPadding().encodeToString(smtNonce.bytes()));
+                if (smtNonce.bytes().length == 0) {
+                    throw new IllegalStateException("Not inserting " + Base64.getUrlEncoder().withoutPadding().encodeToString(didIndex.bytes()) + " , but SMT nonce is empty");
+                } else {
+                    sparseMerkleTree.insertNonUpdate(didIndex.bytes(), smtNonce.bytes());
+                }
             } else {
-                sparseMerkleTree.insertUpdate(didIndex.bytes(), smtNonce.bytes(), updateHash.bytes());
+                if (log.isDebugEnabled()) log.debug("Inserting didIndex {} with smtNonce {} and updateHash {}", Base64.getUrlEncoder().withoutPadding().encodeToString(didIndex.bytes()), Base64.getUrlEncoder().withoutPadding().encodeToString(smtNonce.bytes()), Base64.getUrlEncoder().withoutPadding().encodeToString(updateHash.bytes()));
+                if (smtNonce.bytes().length == 0) {
+                    sparseMerkleTree.insertUpdate(didIndex.bytes(), updateHash.bytes());
+                } else {
+                    sparseMerkleTree.insertUpdate(didIndex.bytes(), smtNonce.bytes(), updateHash.bytes());
+                }
             }
         }
         for (int i=0; i<this.updatesSize(); i++) {

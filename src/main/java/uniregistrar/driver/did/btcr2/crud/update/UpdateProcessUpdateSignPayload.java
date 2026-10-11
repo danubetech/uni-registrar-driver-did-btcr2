@@ -322,7 +322,7 @@ public class UpdateProcessUpdateSignPayload {
 
         // updateHash: The SHA-256 hash of the BTCR2 Update to be included, created with the JSON Document Hashing algorithm.
 
-        byte[] updateHash = JSONDocumentHashing.jsonDocumentHashing(update);
+        byte[] updateHash = update.getPatch().isEmpty() ? new byte[0] : JSONDocumentHashing.jsonDocumentHashing(update);
 
         aggregationCohort.setCasUpdateHash(participantIndex, BytesArray.bytesArray(updateHash));
 
@@ -351,7 +351,7 @@ public class UpdateProcessUpdateSignPayload {
         // If a nonce is not used: json_document_hash(update)
 
         if (smtNonce == null) smtNonce = new byte[0];
-        byte[] updateHash = JSONDocumentHashing.jsonDocumentHashing(update);
+        byte[] updateHash = update.getPatch().isEmpty() ? new byte[0] : JSONDocumentHashing.jsonDocumentHashing(update);
 
         aggregationCohort.setSmtNonce(participantIndex, BytesArray.bytesArray(smtNonce));
         aggregationCohort.setSmtUpdateHash(participantIndex, BytesArray.bytesArray(updateHash));
