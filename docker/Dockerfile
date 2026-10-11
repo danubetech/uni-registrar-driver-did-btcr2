@@ -12,7 +12,7 @@ RUN cd /opt/driver-did-btcr2/ && mvn clean package -P war -N -DskipTests
 
 # build image
 
-FROM jetty:12.0.18-jre21-eclipse-temurin
+FROM jetty:12.0.40-jre21-eclipse-temurin
 LABEL org.opencontainers.image.authors="markus@danubetech.com"
 
 # variables
@@ -32,4 +32,4 @@ COPY --from=build --chown=jetty /opt/driver-did-btcr2/target/*.war /var/lib/jett
 
 EXPOSE 9080
 RUN java -Djetty.http.port=9080 -jar "$JETTY_HOME/start.jar" --add-modules=ee10-webapp,ee10-deploy,ee10-jsp,ee10-jstl
-CMD java -Djetty.http.port=9080 -jar "$JETTY_HOME/start.jar"
+CMD ["sh", "-c", "exec java -Djetty.http.port=9080 -jar \"$JETTY_HOME/start.jar\""]
