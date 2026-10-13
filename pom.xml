@@ -187,7 +187,7 @@
         <dependency>
             <groupId>com.danubetech</groupId>
             <artifactId>btc-common-java</artifactId>
-            <version>0.14.0</version>
+            <version>0.15.0</version>
         </dependency>
         <dependency>
             <groupId>com.github.ipfs</groupId>
@@ -202,7 +202,7 @@
         <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
-            <version>1.22.1</version>
+            <version>1.23.0</version>
         </dependency>
         <dependency>
             <groupId>io.leonard</groupId>
@@ -222,7 +222,7 @@
         <dependency>
             <groupId>com.github.ben-manes.caffeine</groupId>
             <artifactId>caffeine</artifactId>
-            <version>3.3.0</version>
+            <version>3.3.1</version>
         </dependency>
 	</dependencies>
 </project>
