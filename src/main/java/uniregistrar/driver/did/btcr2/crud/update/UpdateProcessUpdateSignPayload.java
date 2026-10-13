@@ -240,7 +240,7 @@ public class UpdateProcessUpdateSignPayload {
 
         Transaction unsignedBeaconSignal = new Transaction();
         for (TxOut beaconAddressUtxo : beaconAddressUtxos) {
-            unsignedBeaconSignal.addInput(Sha256Hash.wrap(beaconAddressUtxo.txIdBytes()), beaconAddressUtxo.txOutIndex(), Script.parse(new byte[0]));
+            unsignedBeaconSignal.addInput(Sha256Hash.wrap(beaconAddressUtxo.txIdBytes()), beaconAddressUtxo.txOutIndex(), Script.parse(beaconAddressUtxo.scriptBytes()));
         }
         unsignedBeaconSignal.addOutput(totalValue.minus(BITCOIN_FEE), beaconAddress);
         unsignedBeaconSignal.addOutput(Coin.ZERO, ScriptBuilder.createOpReturnScript(signalBytes));
