@@ -600,7 +600,9 @@ public class AggregationCohort {
             TransactionInput transactionInput = beaconSignal.getInput(i);
             byte[] musig2AggregatedSignature = this.getMusig2AggregatedSignatures().get(i).bytes();
             TransactionWitness transactionWitness = TransactionWitness.of(musig2AggregatedSignature);
+            if (log.isDebugEnabled()) log.debug("transactionWitness ({}): {}", i, transactionWitness);
             TransactionInput signedTransactionInput = transactionInput.withWitness(transactionWitness).withoutScriptBytes();
+            if (log.isDebugEnabled()) log.debug("signedTransactionInput ({}): {}", i, signedTransactionInput);
             beaconSignal.replaceInput(i, signedTransactionInput);
         }
         if (log.isDebugEnabled()) log.debug("beaconSignal after signing: {}", beaconSignal);

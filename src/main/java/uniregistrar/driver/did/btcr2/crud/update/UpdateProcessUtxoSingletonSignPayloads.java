@@ -5,8 +5,10 @@ import org.apache.commons.codec.binary.Hex;
 import org.bitcoinj.base.Coin;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionInput;
+import org.bitcoinj.core.TransactionWitness;
 import org.bitcoinj.crypto.ECKey;
 import org.bitcoinj.crypto.TransactionSignature;
+import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,13 +45,10 @@ public class UpdateProcessUtxoSingletonSignPayloads {
         for (int i=0; i<beaconSignal.getInputs().size(); i++) {
             TransactionInput transactionInput = beaconSignal.getInput(i);
             byte[] utxoSingletonSignature = utxoSingletonSignatures.get(i);
-            byte[] r = new byte[32];
-            byte[] s = new byte[32];
-            System.arraycopy(utxoSingletonSignature, 0, r, 0, r.length);
-            System.arraycopy(utxoSingletonSignature, 32, s, 0, s.length);
-            ECKey.ECDSASignature signature = new ECKey.ECDSASignature(new BigInteger(1, r), new BigInteger(1, s));
-            TransactionSignature transactionSignature = new TransactionSignature(signature, Transaction.SigHash.ALL, false);
-            TransactionInput signedTransactionInput = transactionInput.withScriptSig(ScriptBuilder.createInputScript(transactionSignature, updateECKey));
+            TransactionWitness transactionWitness = TransactionWitness.of(utxoSingletonSignature);
+            if (log.isDebugEnabled()) log.debug("transactionWitness ({}): {}", i, transactionWitness);
+            TransactionInput signedTransactionInput = transactionInput.withWitness(transactionWitness).withoutScriptBytes();
+            if (log.isDebugEnabled()) log.debug("signedTransactionInput ({}): {}", i, signedTransactionInput);
             beaconSignal.replaceInput(i, signedTransactionInput);
         }
         if (log.isDebugEnabled()) log.debug("beaconSignal after signing: {}", beaconSignal);

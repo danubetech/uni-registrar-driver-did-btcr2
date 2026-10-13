@@ -98,6 +98,32 @@ public class TransitionProcessUpdateSignPayload {
         return updateState;
     }
 
+    public static UpdateState transitionToFinished(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
+
+        // REGISTRATION STATE: didState.state="finished"
+
+        DidStateFinished didStateFinished = new DidStateFinished();
+        didStateFinished.setState("finished");
+
+        // REGISTRATION STATE: didRegistrationMetadata
+
+        if (bitcoinConnection != null) didRegistrationMetadata.putAll(bitcoinConnection.getMetadata());
+        if (ipfsConnection != null) didRegistrationMetadata.putAll(ipfsConnection.getMetadata());
+
+        // REGISTRATION STATE: didDocumentMetadata
+
+        // REGISTRATION STATE: update()
+
+        UpdateState updateState = new UpdateState();
+        updateState.setDidState(didStateFinished);
+        updateState.setDidRegistrationMetadata(didRegistrationMetadata);
+        updateState.setDidDocumentMetadata(didDocumentMetadata);
+
+        // done
+
+        return updateState;
+    }
+
     public static UpdateState transitionToUtxoSingletonSignPayloads(BitcoinConnection bitcoinConnection, IPFSConnection ipfsConnection, BTCR2Update update, Transaction unsignedBeaconSignal, List<byte[]> utxoSingletonSignPayloads, Map<String, Object> didRegistrationMetadata, Map<String, Object> didDocumentMetadata) {
 
         // REGISTRATION STATE: jobId
@@ -115,7 +141,7 @@ public class TransitionProcessUpdateSignPayload {
         // REGISTRATION STATE: signing request
 
         List<SigningRequest> utxoSingletonSigningRequests = utxoSingletonSignPayloads.stream().map( x -> new SigningRequest()
-                        .alg(JWSAlgorithm.ES256KRR)
+                        .alg(JWSAlgorithm.ES256KS)
                         .purpose("capabilityInvocation")
                         .serializedPayload(Base64.getEncoder().encodeToString(x)))
                 .toList();

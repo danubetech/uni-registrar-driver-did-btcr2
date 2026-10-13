@@ -101,6 +101,9 @@ public class StateProcessUpdateSignPayload {
 
         // next state
 
+        if (updateProcessUpdateSignPayloadResult.utxoSingletonSignPayloads() == null && updateProcessUpdateSignPayloadResult.utxoAggregateSignPayloads() == null) {
+            return TransitionProcessUpdateSignPayload.transitionToFinished(bitcoinConnection, ipfsConnection, didRegistrationMetadata, didDocumentMetadata);
+        }
         if (updateProcessUpdateSignPayloadResult.utxoSingletonSignPayloads() != null) {
             return TransitionProcessUpdateSignPayload.transitionToUtxoSingletonSignPayloads(bitcoinConnection, ipfsConnection, updateProcessUpdateSignPayloadResult.update(), updateProcessUpdateSignPayloadResult.unsignedBeaconSignal(), updateProcessUpdateSignPayloadResult.utxoSingletonSignPayloads(), didRegistrationMetadata, didDocumentMetadata);
         }

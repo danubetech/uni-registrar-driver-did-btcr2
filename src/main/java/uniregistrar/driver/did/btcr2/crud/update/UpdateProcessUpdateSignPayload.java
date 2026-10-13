@@ -32,7 +32,6 @@ import org.bitcoinj.script.ScriptBuilder;
 import org.bitcoinj.uri.BitcoinURIParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.util.control.Exception;
 import uniregistrar.RegistrationException;
 import uniregistrar.driver.did.btcr2.aggregation.AggregationCohort;
 import uniregistrar.driver.did.btcr2.aggregation.AggregationService;
@@ -49,6 +48,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -176,7 +176,8 @@ public class UpdateProcessUpdateSignPayload {
             serviceStream = serviceStream.filter(service -> beaconServiceType.equals(service.getType()));
         }
         serviceStream = serviceStream.filter(BeaconType::isValid);
-        Service beaconService = serviceStream.findFirst().orElse(null);
+        List<Service> services = serviceStream.toList();
+        Service beaconService = services.isEmpty() ? null : services.get(new Random().nextInt(services.size()));
         if (beaconService == null && (beaconServiceId != null || beaconServiceType != null)) throw new RegistrationException("INVALID_DID_UPDATE", "No valid beacon service found for beaconServiceId " + beaconServiceId + " and beaconServiceType " + beaconServiceType);
         if (beaconService == null) beaconService = didSourceDocument.getServices() == null || didSourceDocument.getServices().isEmpty() ? null : didSourceDocument.getServices().getFirst();
         if (log.isDebugEnabled()) log.debug("beaconService for id {} and type {}: {}", beaconServiceId, beaconServiceType, beaconService);
@@ -184,11 +185,17 @@ public class UpdateProcessUpdateSignPayload {
         if (beaconService == null) throw new RegistrationException(RegistrationException.ERROR_INVALID_DID_DOCUMENT, "No valid beacon service found in source DID document: " + didSourceDocument);
         if (! BeaconType.isValid(beaconService)) throw new RegistrationException("INVALID_DID_UPDATE", "Invalid beacon service: " + beaconService);
 
-        UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayloadResult = switch (BeaconType.fromServiceType(beaconService.getType())) {
-            case SINGLETON -> announceToSingletonBeacon(bitcoinConnection, update, beaconService);
-            case CAS, SMT -> announceToAggregateBeacon(bitcoinConnection, did, didSourceDocument, update, verificationMethodId, beaconService, smtNonce);
-        };
+        BeaconType beaconType = BeaconType.fromServiceType(beaconService.getType());
+        UpdateProcessUpdateSignPayloadResult updateProcessUpdateSignPayloadResult;
 
+        if (BeaconType.SINGLETON.equals(beaconType) && update.getPatch().isEmpty()) {
+            updateProcessUpdateSignPayloadResult = new UpdateProcessUpdateSignPayloadResult(null, null, null, null, null);
+        } else {
+            updateProcessUpdateSignPayloadResult = switch (beaconType) {
+                case SINGLETON -> announceToSingletonBeacon(bitcoinConnection, update, beaconService);
+                case CAS, SMT -> announceToAggregateBeacon(bitcoinConnection, did, didSourceDocument, update, verificationMethodId, beaconService, smtNonce);
+            };
+        }
         // result
 
         if (log.isDebugEnabled()) log.debug("Update: " + updateProcessUpdateSignPayloadResult);
@@ -233,7 +240,7 @@ public class UpdateProcessUpdateSignPayload {
 
         Transaction unsignedBeaconSignal = new Transaction();
         for (TxOut beaconAddressUtxo : beaconAddressUtxos) {
-            unsignedBeaconSignal.addInput(Sha256Hash.wrap(beaconAddressUtxo.txIdBytes()), beaconAddressUtxo.txOutIndex(), Script.parse(beaconAddressUtxo.scriptBytes()));
+            unsignedBeaconSignal.addInput(Sha256Hash.wrap(beaconAddressUtxo.txIdBytes()), beaconAddressUtxo.txOutIndex(), Script.parse(new byte[0]));
         }
         unsignedBeaconSignal.addOutput(totalValue.minus(BITCOIN_FEE), beaconAddress);
         unsignedBeaconSignal.addOutput(Coin.ZERO, ScriptBuilder.createOpReturnScript(signalBytes));
